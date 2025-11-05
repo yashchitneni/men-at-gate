@@ -3,7 +3,7 @@ const Story = () => {
     {
       year: "May 2023",
       title: "Twice a Month Workouts",
-      description: "Begin hosting workouts twice a month (every other Friday) to provide more regular opportunities for men to gather and train"
+      description: "Started hosting workouts twice a month (every other Friday) to provide more regular opportunities for men to gather, train, and connect over deeper levels of conversation."
     },
     {
       year: "Summer 2023",
