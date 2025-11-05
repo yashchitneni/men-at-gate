@@ -2,6 +2,7 @@ import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import Stats from "@/components/Stats";
 import Mission from "@/components/Mission";
+import Story from "@/components/Story";
 import Pillars from "@/components/Pillars";
 import Events from "@/components/Events";
 import Testimonials from "@/components/Testimonials";
@@ -17,6 +18,7 @@ const Index = () => {
       <div id="mission">
         <Mission />
       </div>
+      <Story />
       <div id="pillars">
         <Pillars />
       </div>
