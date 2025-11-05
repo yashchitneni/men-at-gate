@@ -1,11 +1,13 @@
 import { Mountain, Target, Book, Handshake } from "lucide-react";
+import challengeImg from "@/assets/challenge.png";
 
 const Pillars = () => {
   const pillars = [
     {
       icon: Mountain,
       title: "Challenge",
-      description: "Stepping into the hard things—weekly workouts, overnight marathon rucks, and endurance events. Growth happens when we push beyond our comfort zones."
+      description: "Stepping into the hard things—weekly workouts, overnight marathon rucks, and endurance events. Growth happens when we push beyond our comfort zones.",
+      image: challengeImg
     },
     {
       icon: Target,
@@ -38,13 +40,22 @@ const Pillars = () => {
           {pillars.map((pillar, index) => (
             <div 
               key={index} 
-              className="bg-card p-8 rounded-lg border hover:shadow-lg transition-all group"
+              className="bg-card rounded-lg border hover:border-accent/50 transition-colors overflow-hidden"
             >
-              <div className="w-16 h-16 bg-accent/10 rounded-lg flex items-center justify-center mb-6 group-hover:bg-accent/20 transition-colors">
-                <pillar.icon className="w-8 h-8 text-accent" />
+              {pillar.image && (
+                <div className="w-full h-64 overflow-hidden">
+                  <img 
+                    src={pillar.image} 
+                    alt={pillar.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <div className="p-8">
+                <pillar.icon className="w-12 h-12 text-accent mb-4" />
+                <h3 className="text-xl font-bold mb-3">{pillar.title}</h3>
+                <p className="text-muted-foreground">{pillar.description}</p>
               </div>
-              <h3 className="text-2xl font-bold mb-4">{pillar.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">{pillar.description}</p>
             </div>
           ))}
         </div>
