@@ -55,7 +55,7 @@ const Pillars = () => {
                     alt={pillar.title}
                     className={`w-full h-full object-cover ${
                       pillar.title === "Duty" ? "object-[center_32%]" : 
-                      pillar.title === "Fellowship" ? "object-[center_45%]" : ""
+                      pillar.title === "Fellowship" ? "object-[center_15%]" : ""
                     }`}
                   />
                 </div>
