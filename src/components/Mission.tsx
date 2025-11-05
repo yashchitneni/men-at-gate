@@ -1,5 +1,6 @@
 import { Users, TrendingUp, Phone, Heart } from "lucide-react";
 import leadersGoFirstImg from "@/assets/leaders-go-first.jpg";
+import answerTheCallImg from "@/assets/answer-the-call.png";
 
 const Mission = () => {
   const values = [
@@ -19,7 +20,7 @@ const Mission = () => {
       icon: Phone,
       title: "Answer the Call",
       description: "Take decisive action when it matters most",
-      image: null
+      image: answerTheCallImg
     },
     {
       icon: Heart,
