@@ -23,7 +23,7 @@ const Story = () => {
     {
       year: "Fall 2024/Spring 2025",
       title: "Men In the Arena × Ainsley's Angels",
-      description: "Our Men were colectived helped push dozens of Ainsley's Angels racers in the Houston Twilight 5k and the Austin Marathon"
+      description: "MTA Men collectively helped push dozens of Ainsley's Angels racers in the Houston Twilight 5k and the Austin Marathon"
     },
     {
       year: "May 2025",
