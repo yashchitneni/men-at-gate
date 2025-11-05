@@ -47,7 +47,7 @@ const Story = () => {
             <p className="text-lg text-muted-foreground mb-4">
               We started because we saw too many men suffering in silence—isolated, without purpose, 
               and lacking the brotherhood that makes us stronger. What began as a handful of guys meeting 
-              for early morning workouts has grown into a movement.
+              up for workouts has grown into a movement.
             </p>
             <p className="text-lg text-muted-foreground">
               Our aim is simple but profound: to create spaces where men can show up authentically, 
