@@ -49,7 +49,7 @@ const Pillars = () => {
                   <img 
                     src={pillar.image} 
                     alt={pillar.title}
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full object-cover ${pillar.title === "Duty" ? "object-[center_35%]" : ""}`}
                   />
                 </div>
               )}
