@@ -52,7 +52,7 @@ const Mission = () => {
                     <img 
                       src={value.image} 
                       alt={value.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   </div>
                 )}
