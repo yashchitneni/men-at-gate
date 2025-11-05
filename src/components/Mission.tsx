@@ -1,26 +1,31 @@
 import { Users, TrendingUp, Phone, Heart } from "lucide-react";
+import leadersGoFirstImg from "@/assets/leaders-go-first.jpg";
 
 const Mission = () => {
   const values = [
     {
       icon: Users,
       title: "Together We Rise",
-      description: "Brotherhood and support lift us all higher"
+      description: "Brotherhood and support lift us all higher",
+      image: null
     },
     {
       icon: TrendingUp,
       title: "Leaders Go First",
-      description: "Setting the example through action and service"
+      description: "Setting the example through action and service",
+      image: leadersGoFirstImg
     },
     {
       icon: Phone,
       title: "Answer the Call",
-      description: "Take decisive action when it matters most"
+      description: "Take decisive action when it matters most",
+      image: null
     },
     {
       icon: Heart,
       title: "Vulnerability is Strength",
-      description: "True power comes from authentic connection with one another"
+      description: "True power comes from authentic connection with one another",
+      image: null
     }
   ];
 
@@ -40,10 +45,21 @@ const Mission = () => {
           <h3 className="text-2xl font-bold mb-10 text-center">Our Values are Simple:</h3>
           <div className="grid md:grid-cols-2 gap-8">
             {values.map((value, index) => (
-              <div key={index} className="bg-card p-8 rounded-lg border hover:border-accent/50 transition-colors">
-                <value.icon className="w-12 h-12 text-accent mb-4" />
-                <h4 className="text-xl font-bold mb-3">{value.title}</h4>
-                <p className="text-muted-foreground">{value.description}</p>
+              <div key={index} className="bg-card rounded-lg border hover:border-accent/50 transition-colors overflow-hidden">
+                {value.image && (
+                  <div className="w-full h-64 overflow-hidden">
+                    <img 
+                      src={value.image} 
+                      alt={value.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="p-8">
+                  <value.icon className="w-12 h-12 text-accent mb-4" />
+                  <h4 className="text-xl font-bold mb-3">{value.title}</h4>
+                  <p className="text-muted-foreground">{value.description}</p>
+                </div>
               </div>
             ))}
           </div>
