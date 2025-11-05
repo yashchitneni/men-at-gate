@@ -8,7 +8,7 @@ const Story = () => {
     {
       year: "Summer 2023",
       title: "Introduced Men's Social Gatherings",
-      description: "Launch casual social gatherings to build deeper relationships outside of workouts"
+      description: "Launched casual social gatherings to build deeper relationships outside of workouts"
     },
     {
       year: "Fall 2023",
