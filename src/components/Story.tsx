@@ -16,9 +16,39 @@ const Story = () => {
       description: "Hosted our first community service project and expanded membership"
     },
     {
-      year: "2023",
-      title: "Became a 501(c)(3) Nonprofit",
-      description: "Officially incorporated as a nonprofit to serve our mission at scale"
+      year: "May 2023",
+      title: "Twice a Month Workouts",
+      description: "Begin hosting workouts twice a month (every other Friday) to provide more regular opportunities for men to gather and train"
+    },
+    {
+      year: "Summer 2023",
+      title: "Introduced Men's Social Gatherings",
+      description: "Launch casual social gatherings to build deeper relationships outside of workouts"
+    },
+    {
+      year: "Fall 2023",
+      title: "Men In the Arena × PWR Lift HYROX Collaboration",
+      description: "Partner with PWR Lift to host HYROX-style collaborative workouts and competitions"
+    },
+    {
+      year: "Spring 2024",
+      title: "Introduction of Endurance & Fitness Challenges",
+      description: "Expand our programming with endurance and fitness challenges designed to test and strengthen the community"
+    },
+    {
+      year: "Fall 2024/Spring 2025",
+      title: "Men In the Arena × Ainsley's Angels",
+      description: "Partner with Ainsley's Angels to participate in inclusive races like the Twilight 5K Race and the Austin Marathon"
+    },
+    {
+      year: "May 2025",
+      title: "2-Year Anniversary Overnight Marathon Ruck",
+      description: "Celebrate our two-year anniversary with an overnight marathon ruck to raise awareness for men's mental health"
+    },
+    {
+      year: "Fall 2025",
+      title: "Became a 501(c)(3) Non-Profit",
+      description: "Officially achieve nonprofit status to support and expand our mission"
     },
     {
       year: "2025",
