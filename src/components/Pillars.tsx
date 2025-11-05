@@ -1,6 +1,7 @@
 import { Mountain, Target, Book, Handshake } from "lucide-react";
 import challengeImg from "@/assets/challenge.png";
 import dutyImg from "@/assets/duty.png";
+import reflectionImg from "@/assets/reflection.png";
 
 const Pillars = () => {
   const pillars = [
@@ -19,7 +20,8 @@ const Pillars = () => {
     {
       icon: Book,
       title: "Reflection",
-      description: "Looking inward with honesty and courage. Through journaling, discussion, and feedback, we understand who we are and who we want to become."
+      description: "Looking inward with honesty and courage. Through journaling, discussion, and feedback, we understand who we are and who we want to become.",
+      image: reflectionImg
     },
     {
       icon: Handshake,
