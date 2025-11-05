@@ -13,7 +13,7 @@ const Story = () => {
     {
       year: "Fall 2023",
       title: "Men In the Arena × PWR Lift HYROX Collaboration",
-      description: "Partner with PWR Lift to host HYROX-style collaborative workouts and competitions"
+      description: "Partnered with PWR Lift for HYROX Dallas"
     },
     {
       year: "Spring 2024",
