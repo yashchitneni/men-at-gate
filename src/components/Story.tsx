@@ -49,11 +49,6 @@ const Story = () => {
       year: "Fall 2025",
       title: "Became a 501(c)(3) Non-Profit",
       description: "Officially achieve nonprofit status to support and expand our mission"
-    },
-    {
-      year: "2025",
-      title: "Expanding Our Reach",
-      description: "Launching digital platform and expanding to new communities nationwide"
     }
   ];
 
