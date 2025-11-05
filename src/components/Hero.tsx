@@ -17,22 +17,22 @@ const Hero = () => {
           backgroundPosition: 'center',
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/80 to-primary/70" />
+        <div className="absolute inset-0 bg-black/75" />
       </div>
       
       <div className="container relative z-10 px-4 py-20 text-center">
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 text-primary-foreground">
+        <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white">
           Enter the Arena.
         </h1>
-        <p className="text-2xl md:text-3xl mb-8 text-primary-foreground/90 max-w-3xl mx-auto font-light">
+        <p className="text-2xl md:text-3xl mb-8 text-white/95 max-w-3xl mx-auto font-light">
           Rise as the Man You Were Meant to Be.
         </p>
-        <p className="text-lg md:text-xl mb-12 text-primary-foreground/80 max-w-2xl mx-auto">
+        <p className="text-lg md:text-xl mb-12 text-white/90 max-w-2xl mx-auto">
           We help men transform through duty, challenge, reflection, and fellowship.
         </p>
         <Button 
           size="lg" 
-          className="bg-accent hover:bg-accent/90 text-accent-foreground text-lg px-8 py-6 h-auto"
+          className="bg-[#1e3a5f] hover:bg-[#2a4a75] text-white text-lg px-8 py-6 h-auto"
           onClick={() => scrollToSection('events')}
         >
           Join a Workout
