@@ -1,21 +1,6 @@
 const Story = () => {
   const milestones = [
     {
-      year: "2020",
-      title: "Started Small Group Workouts",
-      description: "Began with small group workouts to combat isolation during uncertain times"
-    },
-    {
-      year: "2021",
-      title: "Launched Endurance Challenges",
-      description: "Introduced overnight ruck marches and endurance challenges to build resilience"
-    },
-    {
-      year: "2022",
-      title: "Community Service & Growth",
-      description: "Hosted our first community service project and expanded membership"
-    },
-    {
       year: "May 2023",
       title: "Twice a Month Workouts",
       description: "Begin hosting workouts twice a month (every other Friday) to provide more regular opportunities for men to gather and train"
