@@ -2,6 +2,7 @@ import { Mountain, Target, Book, Handshake } from "lucide-react";
 import challengeImg from "@/assets/challenge.png";
 import dutyImg from "@/assets/duty.png";
 import reflectionImg from "@/assets/reflection.png";
+import fellowshipImg from "@/assets/fellowship.png";
 
 const Pillars = () => {
   const pillars = [
@@ -26,7 +27,8 @@ const Pillars = () => {
     {
       icon: Handshake,
       title: "Fellowship",
-      description: "Building genuine connections with other men. In shared struggle and celebration, we find belonging and brotherhood that carries us through life."
+      description: "Building genuine connections with other men. In shared struggle and celebration, we find belonging and brotherhood that carries us through life.",
+      image: fellowshipImg
     }
   ];
 
