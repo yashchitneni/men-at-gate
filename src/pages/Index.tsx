@@ -4,8 +4,11 @@ import Stats from "@/components/Stats";
 import Mission from "@/components/Mission";
 import Story from "@/components/Story";
 import Pillars from "@/components/Pillars";
+import Impact from "@/components/Impact";
+import GetInvolved from "@/components/GetInvolved";
 import Events from "@/components/Events";
 import Testimonials from "@/components/Testimonials";
+import Vision from "@/components/Vision";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 
@@ -22,10 +25,13 @@ const Index = () => {
       <div id="pillars">
         <Pillars />
       </div>
+      <Impact />
+      <GetInvolved />
       <Events />
       <div id="testimonials">
         <Testimonials />
       </div>
+      <Vision />
       <div id="faq">
         <FAQ />
       </div>
