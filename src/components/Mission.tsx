@@ -1,6 +1,7 @@
 import { Users, TrendingUp, Phone, Heart } from "lucide-react";
 import leadersGoFirstImg from "@/assets/leaders-go-first.jpg";
 import answerTheCallImg from "@/assets/answer-the-call.png";
+import vulnerabilityImg from "@/assets/vulnerability-is-strength.png";
 
 const Mission = () => {
   const values = [
@@ -26,7 +27,7 @@ const Mission = () => {
       icon: Heart,
       title: "Vulnerability is Strength",
       description: "True power comes from authentic connection with one another",
-      image: null
+      image: vulnerabilityImg
     }
   ];
 
