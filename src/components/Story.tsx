@@ -28,7 +28,7 @@ const Story = () => {
     {
       year: "May 2025",
       title: "2-Year Anniversary Overnight Marathon Ruck",
-      description: "Celebrate our two-year anniversary with an overnight marathon ruck to raise awareness for men's mental health"
+      description: "Celebrated our two-year anniversary with 30+ men completing an overnight marathon ruck to raise awareness for men's mental health"
     },
     {
       year: "Fall 2025",
