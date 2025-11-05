@@ -2,6 +2,7 @@ import { Users, TrendingUp, Phone, Heart } from "lucide-react";
 import leadersGoFirstImg from "@/assets/leaders-go-first.jpg";
 import answerTheCallImg from "@/assets/answer-the-call.png";
 import vulnerabilityImg from "@/assets/vulnerability-is-strength.png";
+import togetherWeRiseImg from "@/assets/together-we-rise.png";
 
 const Mission = () => {
   const values = [
@@ -9,7 +10,7 @@ const Mission = () => {
       icon: Users,
       title: "Together We Rise",
       description: "Brotherhood and support lift us all higher",
-      image: null
+      image: togetherWeRiseImg
     },
     {
       icon: TrendingUp,
