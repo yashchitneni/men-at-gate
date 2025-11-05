@@ -41,7 +41,7 @@ const Navigation = () => {
                 {item.label}
               </button>
             ))}
-            <Button size="sm" variant="outline" className="border-white text-white hover:bg-white hover:text-[#1a1a1a]">
+            <Button size="sm" className="bg-[#1e3a5f] hover:bg-[#2a4a75] text-white">
               Join Now
             </Button>
           </div>
@@ -68,7 +68,7 @@ const Navigation = () => {
                   {item.label}
                 </button>
               ))}
-              <Button size="sm" variant="outline" className="border-white text-white hover:bg-white hover:text-[#1a1a1a] w-full">
+              <Button size="sm" className="bg-[#1e3a5f] hover:bg-[#2a4a75] text-white w-full">
                 Join Now
               </Button>
             </div>
