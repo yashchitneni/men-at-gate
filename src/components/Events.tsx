@@ -28,7 +28,7 @@ const Events = () => {
       date: "Seasonal",
       time: "Evening",
       location: "Community Space",
-      description: "Connect deeper with your brothers. Share stories, reflect on growth, and set intentions for the next quarter."
+      description: "Connect deeper with your brothers. Share stories, take on challenges, reflect on life, and set intentions to move forward together."
     }
   ];
 
