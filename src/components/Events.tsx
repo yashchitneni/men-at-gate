@@ -26,7 +26,7 @@ const Events = () => {
       title: "Arena Retreats - Coming Soon",
       type: "Fellowship",
       date: "Seasonal",
-      time: "Evening",
+      time: "Weekend",
       location: "Community Space",
       description: "Connect deeper with your brothers. Share stories, take on challenges, reflect on life, and set intentions to move forward together."
     }
