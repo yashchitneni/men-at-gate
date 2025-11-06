@@ -20,7 +20,7 @@ const Events = () => {
       date: "First Sunday",
       time: "5:00 AM",
       location: "Trail System",
-      description: "Load up your pack and push your limits. 10-15 mile weighted ruck march through challenging terrain."
+      description: "Quarterly Challenges that bring Men together to test their physical and mental resilience through healthy competitions."
     },
     {
       title: "Arena Retreats - Coming Soon",
