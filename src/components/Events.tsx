@@ -17,7 +17,7 @@ const Events = () => {
     {
       title: "Enter The Arena",
       type: "Challenge",
-      date: "First Sunday",
+      date: "Quarterly",
       time: "5:00 AM",
       location: "Trail System",
       description: "Quarterly Challenges that bring Men together to test their physical and mental resilience through healthy competitions."
