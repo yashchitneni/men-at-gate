@@ -1,5 +1,6 @@
 import { Dumbbell, Trophy, Users, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const GetInvolved = () => {
   const opportunities = [
@@ -8,7 +9,7 @@ const GetInvolved = () => {
       title: "Join a Workout",
       description: "Start your journey with us at one of our regular group workouts. No experience necessary—just show up ready to work.",
       cta: "Find a Workout",
-      link: "#events"
+      link: "/calendar"
     },
     {
       icon: Trophy,
@@ -49,7 +50,11 @@ const GetInvolved = () => {
                 <h3 className="text-xl font-bold mb-3">{opportunity.title}</h3>
                 <p className="text-muted-foreground mb-6 flex-grow">{opportunity.description}</p>
                 <Button asChild className="w-full">
-                  <a href={opportunity.link}>{opportunity.cta}</a>
+                  {opportunity.link.startsWith('#') ? (
+                    <a href={opportunity.link}>{opportunity.cta}</a>
+                  ) : (
+                    <Link to={opportunity.link}>{opportunity.cta}</Link>
+                  )}
                 </Button>
               </div>
             ))}
