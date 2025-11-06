@@ -6,7 +6,7 @@ import { Calendar, MapPin, Clock } from "lucide-react";
 const Events = () => {
   const events = [
     {
-      title: "Weekly Workout",
+      title: "Twice A Month Workout",
       type: "Recurring",
       date: "Every Other Friday",
       time: "4:00 PM",
