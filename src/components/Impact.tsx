@@ -4,18 +4,18 @@ const Impact = () => {
   const stats = [
     {
       icon: Users,
-      number: "500+",
-      label: "Men Trained with Men in the Arena"
+      number: "300+",
+      label: "Men Trained with Men In The Arena"
     },
     {
       icon: Activity,
-      number: "1,200+",
-      label: "Workouts, Rucks & Challenges Held"
+      number: "150+",
+      label: "Workouts & challenges Held"
     },
     {
       icon: Heart,
-      number: "3,500+",
-      label: "Total Volunteer Hours Contributed"
+      number: "100+",
+      label: "Hours Contributed to Giving Back"
     }
   ];
 
