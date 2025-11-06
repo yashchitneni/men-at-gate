@@ -5,8 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 
 const Calendar = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   // Workout dates for the rest of 2025
   const workoutDates = [
     { date: 14, month: 10 }, // November 14th (month is 0-indexed)
