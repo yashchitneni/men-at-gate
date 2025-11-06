@@ -20,7 +20,7 @@ const Events = () => {
       date: "Quarterly",
       time: "5:00 AM",
       location: "Trail System",
-      description: "Quarterly Challenges that bring Men together to test their physical and mental resilience through healthy competitions."
+      description: "Challenges that bring Men together to test their physical and mental resilience through healthy competitions."
     },
     {
       title: "Arena Retreats - Coming Soon",
