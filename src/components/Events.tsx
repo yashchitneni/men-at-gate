@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Clock } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Events = () => {
   const events = [
@@ -71,9 +72,11 @@ const Events = () => {
         </div>
 
         <div className="text-center">
-          <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-            View Full Calendar
-          </Button>
+          <Link to="/calendar">
+            <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              View Full Calendar
+            </Button>
+          </Link>
         </div>
       </div>
     </section>
