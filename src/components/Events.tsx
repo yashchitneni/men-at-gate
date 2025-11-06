@@ -8,7 +8,7 @@ const Events = () => {
     {
       title: "Weekly Workout",
       type: "Recurring",
-      date: "Every Saturday",
+      date: "Every Other Friday",
       time: "6:00 AM",
       location: "Local Park",
       description: "Join us for our signature weekly workout. High-intensity functional fitness followed by coffee and conversation."
