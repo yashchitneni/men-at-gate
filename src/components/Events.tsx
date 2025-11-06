@@ -27,7 +27,7 @@ const Events = () => {
       type: "Fellowship",
       date: "Seasonal",
       time: "Weekend",
-      location: "Community Space",
+      location: "Out In Nature Somewhere",
       description: "Connect deeper with your brothers. Share stories, take on challenges, reflect on life, and set intentions to move forward together."
     }
   ];
