@@ -23,7 +23,7 @@ const Events = () => {
       description: "Load up your pack and push your limits. 10-15 mile weighted ruck march through challenging terrain."
     },
     {
-      title: "Quarterly Gathering",
+      title: "Arena Retreats",
       type: "Fellowship",
       date: "Seasonal",
       time: "Evening",
