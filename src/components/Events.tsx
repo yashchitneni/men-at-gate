@@ -15,7 +15,7 @@ const Events = () => {
       description: "Led by Men in our community, join us for high intensity workouts that will also have you asking yourself hard questions and meeting/making new friends within our community."
     },
     {
-      title: "Monthly Ruck",
+      title: "Enter The Arena",
       type: "Challenge",
       date: "First Sunday",
       time: "5:00 AM",
