@@ -11,7 +11,7 @@ const Events = () => {
       date: "Every Other Friday",
       time: "4:00 PM",
       location: "Squatch Frontier Fitness, East Austin",
-      description: "Join us for our signature weekly workout. High-intensity functional fitness followed by coffee and conversation."
+      description: "Join us for our signature workouts. Led by Men in our community, join us for high intensity workouts that also will have you asking yourself hard questions and meeting/collaborating with other Men in the community."
     },
     {
       title: "Monthly Ruck",
