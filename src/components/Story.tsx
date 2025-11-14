@@ -54,10 +54,21 @@ const Story = () => {
             }
           });
         },
-        { threshold: 0.2 }
+        { 
+          threshold: 0.1,
+          rootMargin: '50px 0px'
+        }
       );
 
       observer.observe(ref);
+      
+      // Check if element is already in viewport on mount
+      const rect = ref.getBoundingClientRect();
+      const isInViewport = rect.top < window.innerHeight && rect.bottom > 0;
+      if (isInViewport) {
+        setVisibleItems((prev) => [...new Set([...prev, index])]);
+      }
+      
       return observer;
     });
 
