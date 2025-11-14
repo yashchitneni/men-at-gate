@@ -14,7 +14,7 @@ const ValuesCarousel = ({ values }: { values: Array<{ icon: any; title: string; 
       <Carousel 
         opts={{ 
           align: "start",
-          loop: true,
+          loop: false,
         }}
         className="w-full"
         setApi={(api) => {
