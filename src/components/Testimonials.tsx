@@ -32,10 +32,10 @@ const Testimonials = () => {
 
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
-            <Card key={index} className="border-none shadow-lg">
-              <CardContent className="pt-6">
+            <Card key={index} className="border-none shadow-lg flex flex-col">
+              <CardContent className="pt-6 flex flex-col flex-1">
                 <Quote className="w-10 h-10 text-accent mb-4" />
-                <p className="text-lg mb-6 leading-relaxed">{testimonial.quote}</p>
+                <p className="text-lg mb-6 leading-relaxed flex-1">{testimonial.quote}</p>
                 <div className="border-t pt-4">
                   <p className="font-semibold">{testimonial.author}</p>
                   <p className="text-sm text-muted-foreground">{testimonial.role}</p>
