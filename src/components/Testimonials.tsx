@@ -21,17 +21,17 @@ const Testimonials = () => {
     {
       preview: "Brothers who show up for each other when it matters most. This group has leveled me up in every way: fitness, mindset, leadership, and personal growth.",
       author: "Jake Morsch",
-      full: "\"Men in the Arena quickly became my community when I moved to Austin. It was the group of men I didn't know I needed. Brothers who show up for each other when it matters most. This group has leveled me up in every way: fitness, mindset, leadership, and personal growth. I'm proud to help organize and lead it, and I truly believe there's a place for every man here. MTA is making a real difference in men's lives.\" — Jake Morsch"
+      quote: "Men in the Arena quickly became my community when I moved to Austin. It was the group of men I didn't know I needed. Brothers who show up for each other when it matters most. This group has leveled me up in every way: fitness, mindset, leadership, and personal growth. I'm proud to help organize and lead it, and I truly believe there's a place for every man here. MTA is making a real difference in men's lives."
     },
     {
       preview: "The honesty and brotherhood here are unlike anything I've been part of.",
       author: "Robin",
-      full: "\"Men in the Arena has been a place for me to reset, connect, and push myself with other men who want to grow. It challenged me not just as an athlete but as a leader. Leading four workouts taught me how to motivate, guide, and hold others accountable while being stretched myself. The honesty and brotherhood here are unlike anything I've been part of.\" — Robin"
+      quote: "Men in the Arena has been a place for me to reset, connect, and push myself with other men who want to grow. It challenged me not just as an athlete but as a leader. Leading four workouts taught me how to motivate, guide, and hold others accountable while being stretched myself. The honesty and brotherhood here are unlike anything I've been part of."
     },
     {
       preview: "For the first time in 15 years, I felt welcomed, seen, and connected with men who actually knew my name.",
       author: "Blair",
-      full: "\"In April 2023, I was coming out of a breakup and a divorce, feeling lost and without any real community. Finding Men in the Arena on Eventbrite changed everything. I showed up once and haven't stopped since. For the first time in 15 years, I felt welcomed, seen, and connected with men who actually knew my name. MTA gave me the brotherhood and support I didn't even realize I needed.\" — Blair"
+      quote: "In April 2023, I was coming out of a breakup and a divorce, feeling lost and without any real community. Finding Men in the Arena on Eventbrite changed everything. I showed up once and haven't stopped since. For the first time in 15 years, I felt welcomed, seen, and connected with men who actually knew my name. MTA gave me the brotherhood and support I didn't even realize I needed."
     }
   ];
 
@@ -107,15 +107,18 @@ const Testimonials = () => {
 
       {/* Modal */}
       <Dialog open={selectedTestimonial !== null} onOpenChange={(open) => !open && setSelectedTestimonial(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-[90%] md:max-w-2xl p-6 md:p-8 rounded-xl">
           <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
             <X className="h-4 w-4" />
             <span className="sr-only">Close</span>
           </DialogClose>
-          <div className="pt-6">
+          <div className="pt-2">
             <Quote className="w-12 h-12 text-accent mb-6" />
-            <p className="text-lg leading-relaxed">
-              {selectedTestimonial !== null && testimonials[selectedTestimonial].full}
+            <p className="text-lg leading-relaxed mb-4">
+              "{selectedTestimonial !== null && testimonials[selectedTestimonial].quote}"
+            </p>
+            <p className="font-semibold text-accent text-lg mt-6">
+              — {selectedTestimonial !== null && testimonials[selectedTestimonial].author}
             </p>
           </div>
         </DialogContent>
