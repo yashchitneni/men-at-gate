@@ -4,19 +4,19 @@ import { Quote } from "lucide-react";
 const Testimonials = () => {
   const testimonials = [
     {
-      quote: "I went from having zero close friends to having a brotherhood I can count on. These men showed up for me when I needed it most.",
-      author: "James M.",
-      role: "Member since 2022"
+      quote: "Men in the Arena has been a place for me to reset, connect, and push myself with other men who want to grow. It challenged me not just as an athlete but as a leader. Leading four workouts taught me how to motivate, guide, and hold others accountable while being stretched myself. The honesty and brotherhood here are unlike anything I've been part of.",
+      author: "Robin",
+      role: "Workout Leader"
     },
     {
-      quote: "The workouts push me physically, but the real transformation has been mental and emotional. I'm a better husband and father because of this community.",
-      author: "Michael S.",
+      quote: "In April 2023, I was coming out of a breakup and a divorce, feeling lost and without any real community. Finding Men in the Arena on Eventbrite changed everything. I showed up once and haven't stopped since. For the first time in 15 years, I felt welcomed, seen, and connected with men who actually knew my name. MTA gave me the brotherhood and support I didn't even realize I needed.",
+      author: "Blair",
       role: "Member since 2023"
     },
     {
-      quote: "I was skeptical about 'men's groups' but this is different. It's about action, not just talk. We show up, we do the work, we hold each other accountable.",
-      author: "David R.",
-      role: "Member since 2021"
+      quote: "Men in the Arena quickly became my community when I moved to Austin. It was the group of men I didn't know I needed. Brothers who show up for each other when it matters most. This group has leveled me up in every way: fitness, mindset, leadership, and personal growth. I'm proud to help organize and lead it, and I truly believe there's a place for every man here. MTA is making a real difference in men's lives.",
+      author: "Jake",
+      role: "Organizer & Leader"
     }
   ];
 
