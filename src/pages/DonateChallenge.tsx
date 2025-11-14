@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useEffect } from "react";
+import gritTestHero from "@/assets/grit-test-hero.png";
 
 const DonateChallenge = () => {
   useEffect(() => {
@@ -39,10 +40,12 @@ const DonateChallenge = () => {
                 </p>
               </div>
             </div>
-            <div className="bg-muted rounded-lg aspect-[4/5] flex items-center justify-center">
-              <p className="text-muted-foreground text-center px-8">
-                [Upload your Canva "ENTER THE ARENA – The Grit Test" graphic here]
-              </p>
+            <div className="rounded-lg aspect-[4/5] overflow-hidden">
+              <img 
+                src={gritTestHero} 
+                alt="Men training together in The Grit Test challenge" 
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
         </div>
