@@ -12,25 +12,11 @@ const GetInvolved = () => {
       link: "/calendar"
     },
     {
-      icon: Trophy,
-      title: "Sign Up for Challenges & Competitions",
-      description: "Push your limits with overnight rucks, endurance challenges, and competitive events designed to forge brotherhood.",
-      cta: "View Challenges",
-      link: "#events"
-    },
-    {
       icon: Users,
-      title: "Volunteer or Lead",
-      description: "Give back by serving the community, mentoring new members, or hosting an event. Leadership opportunities available.",
-      cta: "Learn More",
-      link: "#events"
-    },
-    {
-      icon: Heart,
-      title: "Donate & Support",
-      description: "Men in the Arena is a 501(c)(3) nonprofit. Your donation fuels our mission to help men step into the arena and become who they're meant to be.",
-      cta: "Support Our Mission",
-      link: "#"
+      title: "Lead the Charge",
+      description: "Take the next step in the arena. Compete in our challenges, volunteer for events, or step into a leadership role. This is your call to action.",
+      cta: "Explore Opportunities",
+      link: "https://www.instagram.com/meninthearena_/"
     }
   ];
 
