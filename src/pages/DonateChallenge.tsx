@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useEffect } from "react";
-import gritTestHero from "@/assets/hero-workout.jpg";
+import gritTestHero from "@/assets/grit-test-hero.png";
 
 const DonateChallenge = () => {
   useEffect(() => {
