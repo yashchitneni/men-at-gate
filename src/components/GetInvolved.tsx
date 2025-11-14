@@ -17,6 +17,13 @@ const GetInvolved = () => {
       description: "Take the next step in the arena. Compete in our challenges, volunteer for events, or step into a leadership role. This is your call to action.",
       cta: "Explore Opportunities",
       link: "https://www.instagram.com/meninthearena_/"
+    },
+    {
+      icon: Heart,
+      title: "Join The Grit Test",
+      description: "Enter the arena and give back. Join our special Donate & Train Challenge—your entry fee becomes a tax-deductible donation that helps men serve, lead, and give back.",
+      cta: "Support Our Mission",
+      link: "/donate-challenge"
     }
   ];
 
@@ -29,7 +36,7 @@ const GetInvolved = () => {
             Whether you're ready to train, lead, or support our mission, there's a place for you in the arena.
           </p>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {opportunities.map((opportunity, index) => (
               <div key={index} className="bg-card p-8 rounded-lg border hover:border-accent/50 transition-colors flex flex-col">
                 <opportunity.icon className="w-12 h-12 text-accent mb-4" />
