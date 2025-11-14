@@ -28,9 +28,9 @@ const ValuesCarousel = ({ values }: { values: Array<{ icon: any; title: string; 
         <CarouselContent className="-ml-2 md:-ml-4">
           {values.map((value, index) => (
             <CarouselItem key={index} className="pl-2 md:pl-4 basis-[85%]">
-              <div className="bg-card rounded-lg border hover:border-accent/50 transition-colors overflow-hidden">
+              <div className="bg-card rounded-lg border hover:border-accent/50 transition-colors overflow-hidden flex flex-col h-full">
                 {value.image && (
-                  <div className="w-full h-64 overflow-hidden">
+                  <div className="w-full h-64 overflow-hidden flex-shrink-0">
                     <img 
                       src={value.image} 
                       alt={value.title}
@@ -38,10 +38,10 @@ const ValuesCarousel = ({ values }: { values: Array<{ icon: any; title: string; 
                     />
                   </div>
                 )}
-                <div className="p-8">
-                  <value.icon className="w-12 h-12 text-accent mb-4" />
-                  <h4 className="text-xl font-bold mb-3">{value.title}</h4>
-                  <p className="text-muted-foreground">{value.description}</p>
+                <div className="p-8 flex flex-col flex-1">
+                  <value.icon className="w-12 h-12 text-accent mb-4 flex-shrink-0" />
+                  <h4 className="text-xl font-bold mb-3 flex-shrink-0">{value.title}</h4>
+                  <p className="text-muted-foreground flex-1">{value.description}</p>
                 </div>
               </div>
             </CarouselItem>
