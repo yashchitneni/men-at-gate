@@ -17,7 +17,7 @@ const FAQ = () => {
     },
     {
       question: "How do I get started?",
-      answer: "Just show up to a Saturday morning workout. No registration needed. Introduce yourself, tell us you're new, and we'll take care of the rest. First-timers are always welcome."
+      answer: "Just show up to a Friday evening workout. No registration needed. Introduce yourself, tell us you're new, and we'll take care of the rest. First-timers are always welcome."
     },
     {
       question: "What if I can't make every event?",
