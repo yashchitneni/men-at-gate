@@ -3,139 +3,129 @@ import leadersGoFirstImg from "@/assets/leaders-go-first.jpg";
 import answerTheCallImg from "@/assets/answer-the-call.png";
 import vulnerabilityImg from "@/assets/vulnerability-is-strength.png";
 import togetherWeRiseImg from "@/assets/together-we-rise.png";
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { useState } from "react";
-
-const ValuesCarousel = ({ values }: { values: Array<{ icon: any; title: string; description: string; image: string }> }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  return (
-    <div className="relative">
-      <Carousel 
-        opts={{ 
-          align: "start",
-          loop: false,
-        }}
-        className="w-full"
-        setApi={(api) => {
-          if (!api) return;
-          
-          api.on("select", () => {
-            setCurrentIndex(api.selectedScrollSnap());
-          });
-        }}
-      >
-        <CarouselContent className="-ml-2 md:-ml-4">
-          {values.map((value, index) => (
-            <CarouselItem key={index} className="pl-2 md:pl-4 basis-[85%]">
-              <div className="bg-card rounded-lg border hover:border-accent/50 transition-colors overflow-hidden flex flex-col h-full">
-                {value.image && (
-                  <div className="w-full h-64 overflow-hidden flex-shrink-0">
-                    <img 
-                      src={value.image} 
-                      alt={value.title}
-                      className={`w-full h-full object-cover ${value.title === "Together We Rise" ? "object-[center_30%]" : ""}`}
-                    />
-                  </div>
-                )}
-                <div className="p-8 flex flex-col flex-1">
-                  <value.icon className="w-12 h-12 text-accent mb-4 flex-shrink-0" />
-                  <h4 className="text-xl font-bold mb-3 flex-shrink-0">{value.title}</h4>
-                  <p className="text-muted-foreground flex-1">{value.description}</p>
-                </div>
-              </div>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-      </Carousel>
-
-      {/* Pagination dots */}
-      <div className="flex justify-center gap-2 mt-6">
-        {values.map((_, index) => (
-          <button
-            key={index}
-            className={`h-2 rounded-full transition-all ${
-              index === currentIndex 
-                ? "w-8 bg-accent" 
-                : "w-2 bg-muted-foreground/30"
-            }`}
-            onClick={() => {}}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
+import ScrollReveal from "@/components/ScrollReveal";
+import { cn } from "@/lib/utils";
 
 const Mission = () => {
+  const [activeTab, setActiveTab] = useState(0);
+
   const values = [
     {
       icon: Users,
-      title: "Together We Rise",
-      description: "Brotherhood and support lift us all higher",
+      title: "Brotherhood",
+      subtitle: "Together We Rise",
+      description: "We don't go it alone. We forge deep, authentic connections that withstand the storms of life. In a world of isolation, we choose community.",
       image: togetherWeRiseImg
     },
     {
       icon: TrendingUp,
-      title: "Leaders Go First",
-      description: "Setting the example through action and service",
+      title: "Leadership",
+      subtitle: "Leaders Go First",
+      description: "We don't wait for permission. We step up, take responsibility, and set the standard for our families and communities through our actions.",
       image: leadersGoFirstImg
     },
     {
       icon: Phone,
-      title: "Answer the Call",
-      description: "Take decisive action when it matters most",
+      title: "Action",
+      subtitle: "Answer the Call",
+      description: "Passivity is the enemy. When duty calls, we answer with decisive action. We train to be ready for whatever life throws our way.",
       image: answerTheCallImg
     },
     {
       icon: Heart,
-      title: "Vulnerability is Strength",
-      description: "True power comes from authentic connection with one another",
+      title: "Courage",
+      subtitle: "Vulnerability is Strength",
+      description: "Real strength isn't hiding your struggles. It's having the courage to be open, honest, and real with your brothers. That's where healing begins.",
       image: vulnerabilityImg
     }
   ];
 
   return (
-    <section className="py-20 bg-subtle-gradient">
-      <div className="container px-4">
-        <div className="max-w-4xl mx-auto text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Our Mission</h2>
-          <p className="text-lg text-muted-foreground">
-            We are a collective of men helping one another step into the arena to compete, 
-            to struggle, and to emerge as better men for our friends, family, teams and 
-            everyone that we love most.
-          </p>
-        </div>
+    <section className="py-24 bg-black relative overflow-hidden min-h-[800px] flex flex-col">
+      <div className="container px-4 relative z-10 flex-1 flex flex-col">
+        <ScrollReveal>
+          <div className="max-w-4xl mb-12">
+            <h2 className="text-4xl md:text-6xl font-heading font-black mb-6 uppercase tracking-tighter text-white">
+              Our Code
+            </h2>
+            <p className="text-xl text-gray-400 max-w-2xl">
+              We live by a simple but powerful set of values. These aren't just words on a wall—they are the standards we hold ourselves to every single day.
+            </p>
+          </div>
+        </ScrollReveal>
 
-        <div className="max-w-5xl mx-auto">
-          <h3 className="text-2xl font-bold mb-10 text-center">Our Values are Simple:</h3>
-          
-          {/* Desktop: Grid layout */}
-          <div className="hidden md:grid md:grid-cols-2 gap-8">
+        <div className="flex flex-col lg:flex-row gap-8 flex-1">
+          {/* Tabs Navigation */}
+          <div className="flex flex-col justify-center gap-4 w-full lg:w-1/3 z-20">
             {values.map((value, index) => (
-              <div key={index} className="bg-card rounded-lg border hover:border-accent/50 transition-colors overflow-hidden">
-                {value.image && (
-                  <div className="w-full h-64 overflow-hidden">
-                    <img 
-                      src={value.image} 
-                      alt={value.title}
-                      className={`w-full h-full object-cover ${value.title === "Together We Rise" ? "object-[center_30%]" : ""}`}
-                    />
-                  </div>
+              <button
+                key={value.title}
+                onClick={() => setActiveTab(index)}
+                className={cn(
+                  "text-left px-8 py-6 transition-all duration-300 border-2 flex items-center gap-4 group relative overflow-hidden rounded-lg",
+                  activeTab === index
+                    ? "border-accent bg-accent text-white shadow-[0_0_20px_rgba(249,115,22,0.3)]"
+                    : "border-white/10 bg-white/5 hover:border-accent/50 hover:bg-white/10 text-gray-400 hover:text-white"
                 )}
-                <div className="p-8">
-                  <value.icon className="w-12 h-12 text-accent mb-4" />
-                  <h4 className="text-xl font-bold mb-3">{value.title}</h4>
-                  <p className="text-muted-foreground">{value.description}</p>
-                </div>
-              </div>
+              >
+                <span className={cn(
+                  "text-xl font-heading font-bold uppercase tracking-wider transition-colors duration-300",
+                  activeTab === index ? "text-white" : "text-gray-400 group-hover:text-white"
+                )}>
+                  {value.title}
+                </span>
+                {activeTab === index && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full animate-pulse" />
+                )}
+              </button>
             ))}
           </div>
 
-          {/* Mobile: Carousel with pagination */}
-          <div className="md:hidden">
-            <ValuesCarousel values={values} />
+          {/* Content Display */}
+          <div className="w-full lg:w-2/3 relative rounded-2xl overflow-hidden min-h-[400px] lg:h-auto group">
+            {values.map((value, index) => (
+              <div
+                key={index}
+                className={cn(
+                  "absolute inset-0 transition-all duration-700 ease-in-out",
+                  activeTab === index ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8 pointer-events-none"
+                )}
+              >
+                {/* Background Image */}
+                <div className="absolute inset-0">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10" />
+                  <img
+                    src={value.image}
+                    alt={value.title}
+                    className={cn(
+                      "w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105",
+                      value.title === "Brotherhood" ? "object-[center_20%]" : "object-center"
+                    )}
+                  />
+                </div>
+
+                {/* Text Content */}
+                <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 z-20">
+                  <div className="overflow-hidden">
+                    <h3 className={cn(
+                      "text-3xl md:text-5xl font-bold text-white mb-4 transform transition-transform duration-500 delay-100",
+                      activeTab === index ? "translate-y-0" : "translate-y-full"
+                    )}>
+                      {value.subtitle}
+                    </h3>
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className={cn(
+                      "text-lg md:text-xl text-white/90 max-w-2xl transform transition-transform duration-500 delay-200",
+                      activeTab === index ? "translate-y-0" : "translate-y-full"
+                    )}>
+                      {value.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

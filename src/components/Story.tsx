@@ -40,40 +40,59 @@ const Story = () => {
   ];
 
   const [visibleItems, setVisibleItems] = useState<number[]>([]);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const mobileItemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const desktopItemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    const observers = itemRefs.current.map((ref, index) => {
-      if (!ref) return null;
-      
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              setVisibleItems((prev) => [...new Set([...prev, index])]);
-            }
-          });
-        },
-        { 
-          threshold: 0.01,
-          rootMargin: '0px'
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const index = Number(entry.target.getAttribute('data-index'));
+          if (!isNaN(index)) {
+            setVisibleItems((prev) => [...new Set([...prev, index])]);
+          }
         }
-      );
+      });
+    };
 
-      observer.observe(ref);
-      
-      // Check if element is already in viewport on mount
-      const rect = ref.getBoundingClientRect();
-      const isInViewport = rect.top < window.innerHeight && rect.bottom > 0;
-      if (isInViewport) {
-        setVisibleItems((prev) => [...new Set([...prev, index])]);
-      }
-      
-      return observer;
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px'
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+    // Observe both mobile and desktop refs
+    mobileItemRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
     });
 
+    desktopItemRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    // Initial check for elements in viewport
+    const checkVisibility = () => {
+      [...mobileItemRefs.current, ...desktopItemRefs.current].forEach((ref, index) => {
+        if (ref) {
+          const rect = ref.getBoundingClientRect();
+          const isInViewport = rect.top < window.innerHeight && rect.bottom > 0;
+          if (isInViewport) {
+            // Note: This index logic might be tricky if we mix mobile/desktop arrays
+            // Better to rely on data-index attribute
+            const dataIndex = Number(ref.getAttribute('data-index'));
+            if (!isNaN(dataIndex)) {
+              setVisibleItems((prev) => [...new Set([...prev, dataIndex])]);
+            }
+          }
+        }
+      });
+    };
+    
+    checkVisibility();
+
     return () => {
-      observers.forEach((observer) => observer?.disconnect());
+      observer.disconnect();
     };
   }, []);
 
@@ -110,7 +129,8 @@ const Story = () => {
               {milestones.map((milestone, index) => (
                 <div 
                   key={index} 
-                  ref={(el) => (itemRefs.current[index] = el)}
+                  data-index={index}
+                  ref={(el) => (mobileItemRefs.current[index] = el)}
                   className="relative pl-12"
                 >
                   {/* Timeline dot - pulse animation when visible */}
@@ -159,7 +179,8 @@ const Story = () => {
                 return (
                   <div 
                     key={index}
-                    ref={(el) => (itemRefs.current[index] = el)}
+                    data-index={index}
+                    ref={(el) => (desktopItemRefs.current[index] = el)}
                     className={`relative flex items-center ${isLeft ? 'justify-start' : 'justify-end'}`}
                   >
                     {/* Timeline dot */}

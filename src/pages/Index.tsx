@@ -8,35 +8,27 @@ import Impact from "@/components/Impact";
 import GetInvolved from "@/components/GetInvolved";
 import Events from "@/components/Events";
 import Testimonials from "@/components/Testimonials";
+import SuccessStory from "@/components/SuccessStory";
 import Vision from "@/components/Vision";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
-    <div className="min-h-screen">
-      <Navigation />
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <Hero />
       <Stats />
-      <div id="mission">
-        <Mission />
-      </div>
+      <Mission />
+      <Pillars />
       <Story />
-      <div id="pillars">
-        <Pillars />
-      </div>
-      <Impact />
+      <SuccessStory />
       <GetInvolved />
       <Events />
-      <div id="testimonials">
-        <Testimonials />
-      </div>
+      <Impact />
       <Vision />
-      <div id="faq">
-        <FAQ />
-      </div>
+      <FAQ />
       <Footer />
-    </div>
+    </div >
   );
 };
 

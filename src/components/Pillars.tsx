@@ -3,70 +3,100 @@ import challengeImg from "@/assets/challenge.png";
 import dutyImg from "@/assets/duty.png";
 import reflectionImg from "@/assets/reflection.png";
 import fellowshipImg from "@/assets/fellowship.png";
+import ScrollReveal from "@/components/ScrollReveal";
+import { cn } from "@/lib/utils";
 
 const Pillars = () => {
-  const pillars = [
-    {
-      icon: Mountain,
-      title: "Challenge",
-      description: "Stepping into the hard things—weekly workouts, overnight marathon rucks, and endurance events. Growth happens when we push beyond our comfort zones.",
-      image: challengeImg
-    },
-    {
-      icon: Target,
-      title: "Duty",
-      description: "Showing up for one another with accountability and commitment. We serve something bigger than ourselves and hold each other to a higher standard.",
-      image: dutyImg
-    },
-    {
-      icon: Book,
-      title: "Reflection",
-      description: "Looking inward with honesty and courage. Through journaling, discussion, and feedback, we understand who we are and who we want to become.",
-      image: reflectionImg
-    },
-    {
-      icon: Handshake,
-      title: "Fellowship",
-      description: "Building genuine connections with other men. In shared struggle and celebration, we find belonging and brotherhood that carries us through life.",
-      image: fellowshipImg
-    }
-  ];
-
   return (
-    <section className="py-20 bg-background">
+    <section className="py-24 bg-background">
       <div className="container px-4">
-        <div className="max-w-4xl mx-auto text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">How We Do It</h2>
-          <p className="text-lg text-muted-foreground">
-            We believe men transform when they commit to four pillars:
-          </p>
-        </div>
+        <ScrollReveal>
+          <div className="max-w-4xl mb-16">
+            <h2 className="text-4xl md:text-6xl font-heading font-black mb-6 uppercase tracking-tighter">
+              The Framework
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl">
+              We don't just talk about being better men. We have a proven framework that gets results.
+            </p>
+          </div>
+        </ScrollReveal>
 
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
-          {pillars.map((pillar, index) => (
-            <div 
-              key={index} 
-              className="bg-card rounded-lg border hover:border-accent/50 transition-colors overflow-hidden"
-            >
-              {pillar.image && (
-                <div className="w-full h-64 overflow-hidden">
-                  <img 
-                    src={pillar.image} 
-                    alt={pillar.title}
-                    className={`w-full h-full object-cover ${
-                      pillar.title === "Duty" ? "object-[center_32%]" : 
-                      pillar.title === "Fellowship" ? "object-[center_15%]" : ""
-                    }`}
-                  />
-                </div>
-              )}
-              <div className="p-8">
-                <pillar.icon className="w-12 h-12 text-accent mb-4" />
-                <h3 className="text-xl font-bold mb-3">{pillar.title}</h3>
-                <p className="text-muted-foreground">{pillar.description}</p>
-              </div>
+        <div className="flex flex-col md:flex-row gap-4 h-auto md:h-[600px]">
+
+          {/* Challenge */}
+          <div className="group relative flex-1 hover:flex-[2] transition-all duration-500 ease-in-out overflow-hidden rounded-2xl min-h-[300px] md:min-h-0">
+            <div className="absolute inset-0">
+              <img
+                src={challengeImg}
+                alt="Challenge"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition-colors duration-500" />
             </div>
-          ))}
+            <div className="absolute bottom-0 left-0 p-8 w-full">
+              <Mountain className="w-10 h-10 text-accent mb-4" />
+              <h3 className="text-3xl font-bold text-white mb-2 whitespace-nowrap">Challenge</h3>
+              <p className="text-white/80 max-w-md opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                Stepping into the hard things—weekly workouts, overnight marathon rucks, and endurance events.
+              </p>
+            </div>
+          </div>
+
+          {/* Duty */}
+          <div className="group relative flex-1 hover:flex-[2] transition-all duration-500 ease-in-out overflow-hidden rounded-2xl bg-black border border-white/10 hover:border-accent/50 min-h-[300px] md:min-h-0">
+            <div className="absolute inset-0 h-full md:h-1/2 opacity-40 md:opacity-60 transition-all duration-500">
+              <img
+                src={dutyImg}
+                alt="Duty"
+                className="w-full h-full object-cover object-[center_30%]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+            </div>
+            <div className="absolute bottom-0 left-0 p-8 w-full">
+              <Target className="w-10 h-10 text-accent mb-4" />
+              <h3 className="text-2xl font-bold text-white mb-2 whitespace-nowrap">Duty</h3>
+              <p className="text-gray-400 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                Showing up for one another with accountability. We serve something bigger than ourselves.
+              </p>
+            </div>
+          </div>
+
+          {/* Reflection */}
+          <div className="group relative flex-1 hover:flex-[2] transition-all duration-500 ease-in-out overflow-hidden rounded-2xl bg-[#1a1a1a] text-white min-h-[300px] md:min-h-0">
+            <div className="absolute inset-0 opacity-20 md:opacity-40 transition-opacity duration-500">
+              <img
+                src={reflectionImg}
+                alt="Reflection"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="absolute bottom-0 left-0 p-8 w-full">
+              <Book className="w-10 h-10 text-accent mb-4" />
+              <h3 className="text-2xl font-bold mb-2 whitespace-nowrap">Reflection</h3>
+              <p className="text-white/80 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                Looking inward with honesty. Through journaling and discussion, we understand who we are.
+              </p>
+            </div>
+          </div>
+
+          {/* Fellowship */}
+          <div className="group relative flex-1 hover:flex-[2] transition-all duration-500 ease-in-out overflow-hidden rounded-2xl bg-accent min-h-[300px] md:min-h-0">
+            <div className="absolute inset-0 opacity-20 mix-blend-multiply">
+              <img
+                src={fellowshipImg}
+                alt="Fellowship"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="absolute bottom-0 left-0 p-8 w-full">
+              <Handshake className="w-10 h-10 text-white mb-4" />
+              <h3 className="text-2xl font-bold text-white mb-2 whitespace-nowrap">Fellowship</h3>
+              <p className="text-white/90 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                Building genuine connections that carry us through life.
+              </p>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
