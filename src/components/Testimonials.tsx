@@ -40,7 +40,7 @@ const Testimonials = () => {
       <section className="py-20 bg-subtle-gradient">
         <div className="container px-4">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">From the Arena</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">Real Change: <span className="text-accent">Voices from the Arena</span></h2>
             <p className="text-lg text-muted-foreground">
               Hear from the men who've stepped into the arena
             </p>

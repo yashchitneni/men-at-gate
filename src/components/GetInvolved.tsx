@@ -13,22 +13,22 @@ const GetInvolved = () => {
     },
     {
       number: "02",
-      title: "Lead the Charge",
-      description: "Take the next step in the arena. Compete in our challenges, volunteer for events, or step into a leadership role.",
-      cta: "Explore Opportunities",
+      title: "Get Connected",
+      description: "Join the community—DM us on Instagram to get added to the group chat and plugged into meetups.",
+      cta: "Connect on Instagram",
       link: "https://www.instagram.com/meninthearena_/"
     },
     {
       number: "03",
-      title: "Join The Grit Test",
-      description: "Enter the arena and give back. Join our special Donate & Train Challenge—your entry fee becomes a tax-deductible donation.",
-      cta: "Support Our Mission",
-      link: "/donate-challenge"
+      title: "Next Initiative",
+      description: "Be first to join our next big challenge or service project. Details coming soon.",
+      cta: "Stay Tuned",
+      link: "/#"
     }
   ];
 
   return (
-    <section className="py-24 bg-background relative overflow-hidden">
+    <section id="get-involved" className="py-24 bg-background relative overflow-hidden">
       <div className="absolute inset-0 bg-gritty-texture opacity-20 pointer-events-none" />
 
       <div className="container px-4 relative z-10">
@@ -45,23 +45,27 @@ const GetInvolved = () => {
           <div className="grid md:grid-cols-3 gap-8">
             {opportunities.map((opportunity, index) => (
               <ScrollReveal key={index} delay={index * 100} animation="slide-up">
-                <div className="bg-card p-8 md:p-10 rounded-none border-l-4 border-accent hover:bg-accent/5 transition-all duration-300 flex flex-col h-full group relative overflow-hidden">
+                <div className="bg-card p-8 md:p-10 rounded-none border-l-4 border-accent hover:bg-accent/5 transition-all duration-300 flex flex-col h-full group relative overflow-hidden min-h-[360px]">
                   <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <span className="text-8xl font-black text-foreground">{opportunity.number}</span>
                   </div>
 
-                  <div className="relative z-10">
-                    <span className="text-accent font-bold text-sm tracking-widest uppercase mb-4 block">Step {opportunity.number}</span>
-                    <h3 className="text-2xl font-bold mb-4 uppercase tracking-tight">{opportunity.title}</h3>
-                    <p className="text-muted-foreground mb-8 leading-relaxed">{opportunity.description}</p>
+                  <div className="relative z-10 flex flex-col h-full">
+                    <div className="flex-1">
+                      <span className="text-accent font-bold text-sm tracking-widest uppercase mb-4 block">Step {opportunity.number}</span>
+                      <h3 className="text-2xl font-bold mb-4 uppercase tracking-tight">{opportunity.title}</h3>
+                      <p className="text-muted-foreground leading-relaxed">{opportunity.description}</p>
+                    </div>
 
-                    <Button asChild variant="outline" className="w-full border-2 border-foreground hover:bg-foreground hover:text-background uppercase tracking-widest font-bold rounded-none transition-all">
-                      {opportunity.link.startsWith('#') ? (
-                        <a href={opportunity.link}>{opportunity.cta}</a>
-                      ) : (
-                        <Link to={opportunity.link}>{opportunity.cta}</Link>
-                      )}
-                    </Button>
+                    <div className="mt-8">
+                      <Button asChild variant="outline" className="w-full border-2 border-foreground hover:bg-foreground hover:text-background uppercase tracking-widest font-bold rounded-none transition-all">
+                        {opportunity.link.startsWith('#') ? (
+                          <a href={opportunity.link}>{opportunity.cta}</a>
+                        ) : (
+                          <Link to={opportunity.link}>{opportunity.cta}</Link>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </ScrollReveal>

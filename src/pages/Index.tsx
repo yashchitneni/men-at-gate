@@ -3,12 +3,11 @@ import Hero from "@/components/Hero";
 import Stats from "@/components/Stats";
 import Mission from "@/components/Mission";
 import Story from "@/components/Story";
-import Pillars from "@/components/Pillars";
+/* Framework/Pillars removed per feedback */
 import Impact from "@/components/Impact";
 import GetInvolved from "@/components/GetInvolved";
-import Events from "@/components/Events";
-import Testimonials from "@/components/Testimonials";
-import SuccessStory from "@/components/SuccessStory";
+/* Events removed per feedback */
+/* Testimonials not shown on homepage per preference */
 import Vision from "@/components/Vision";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
@@ -19,12 +18,11 @@ const Index = () => {
       <Hero />
       <Stats />
       <Mission />
-      <Pillars />
+      {/* <Pillars /> removed */}
       <Story />
-      <SuccessStory />
-      <GetInvolved />
-      <Events />
       <Impact />
+      <GetInvolved />
+      {/* <Events /> removed */}
       <Vision />
       <FAQ />
       <Footer />

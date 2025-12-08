@@ -1,4 +1,4 @@
-import { Users, TrendingUp, Phone, Heart } from "lucide-react";
+import { Mountain, Handshake, Target, Book } from "lucide-react";
 import leadersGoFirstImg from "@/assets/leaders-go-first.jpg";
 import answerTheCallImg from "@/assets/answer-the-call.png";
 import vulnerabilityImg from "@/assets/vulnerability-is-strength.png";
@@ -12,37 +12,37 @@ const Mission = () => {
 
   const values = [
     {
-      icon: Users,
-      title: "Brotherhood",
-      subtitle: "Together We Rise",
-      description: "We don't go it alone. We forge deep, authentic connections that withstand the storms of life. In a world of isolation, we choose community.",
-      image: togetherWeRiseImg
-    },
-    {
-      icon: TrendingUp,
-      title: "Leadership",
-      subtitle: "Leaders Go First",
-      description: "We don't wait for permission. We step up, take responsibility, and set the standard for our families and communities through our actions.",
-      image: leadersGoFirstImg
-    },
-    {
-      icon: Phone,
-      title: "Action",
+      icon: Mountain,
+      title: "Challenge",
       subtitle: "Answer the Call",
-      description: "Passivity is the enemy. When duty calls, we answer with decisive action. We train to be ready for whatever life throws our way.",
+      description: "We step into hard things—training, endurance events, and challenges that forge character.",
       image: answerTheCallImg
     },
     {
-      icon: Heart,
-      title: "Courage",
+      icon: Handshake,
+      title: "Fellowship",
+      subtitle: "Together We Rise",
+      description: "We don't go it alone. Brotherhood and authentic connection are our foundation.",
+      image: togetherWeRiseImg
+    },
+    {
+      icon: Target,
+      title: "Duty",
+      subtitle: "Answer the Call",
+      description: "We show up for our families, brothers, and community—owning responsibility with action.",
+      image: leadersGoFirstImg
+    },
+    {
+      icon: Book,
+      title: "Reflection",
       subtitle: "Vulnerability is Strength",
-      description: "Real strength isn't hiding your struggles. It's having the courage to be open, honest, and real with your brothers. That's where healing begins.",
+      description: "We practice honest reflection—through journaling and discussion—to grow with integrity.",
       image: vulnerabilityImg
     }
   ];
 
   return (
-    <section className="py-24 bg-black relative overflow-hidden min-h-[800px] flex flex-col">
+    <section id="mission" className="py-24 bg-black relative overflow-hidden min-h-[800px] flex flex-col">
       <div className="container px-4 relative z-10 flex-1 flex flex-col">
         <ScrollReveal>
           <div className="max-w-4xl mb-12">

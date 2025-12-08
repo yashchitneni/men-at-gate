@@ -38,16 +38,8 @@ const Hero = () => {
       {/* Content */}
       <div className="relative z-20 container h-full flex flex-col justify-center px-4 md:px-8 lg:px-16">
         <div className="max-w-3xl">
-          <div className="inline-block mb-6 animate-fade-in">
-            <span className="px-4 py-1.5 rounded-full border border-accent/30 bg-accent/10 text-accent text-sm font-bold tracking-widest uppercase backdrop-blur-sm">
-              Men in the Arena
-            </span>
-          </div>
-
-          <h1 className="text-6xl md:text-8xl lg:text-9xl font-heading font-black leading-[0.9] mb-8 tracking-tighter uppercase text-white">
-            <span className="block animate-fade-in-left" style={{ animationDelay: "100ms" }}>Forge</span>
-            <span className="block animate-fade-in-left" style={{ animationDelay: "200ms" }}>Your</span>
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-accent to-orange-500 animate-fade-in-left" style={{ animationDelay: "300ms" }}>Purpose</span>
+          <h1 className="text-6xl md:text-8xl lg:text-9xl font-heading font-black leading-[0.9] mb-8 tracking-tighter uppercase text-accent animate-fade-in" style={{ animationDelay: "150ms" }}>
+            MEN IN THE ARENA
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-xl leading-relaxed animate-fade-in font-light" style={{ animationDelay: "400ms" }}>
@@ -58,9 +50,9 @@ const Hero = () => {
             <Button
               size="lg"
               className="bg-accent hover:bg-accent/90 text-white text-lg px-12 py-8 h-auto uppercase font-bold tracking-widest transition-all duration-300 rounded-none border-2 border-accent"
-              onClick={() => scrollToSection('events')}
+              onClick={() => scrollToSection('get-involved')}
             >
-              Join The Arena
+              Enter the Arena
             </Button>
             <Button
               size="lg"

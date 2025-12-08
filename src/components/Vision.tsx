@@ -65,12 +65,9 @@ const Vision = () => {
                 <p className="text-lg md:text-xl text-background/80 mb-10 max-w-2xl mx-auto font-light">
                   As a 501(c)(3) nonprofit, we rely on donations and partnerships to bring this life-changing work to more men.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                <div className="flex justify-center">
                   <Button size="lg" asChild className="bg-accent text-foreground hover:bg-accent/90 font-bold uppercase tracking-widest px-8 py-6 h-auto rounded-none">
                     <a href="#">Donate Now</a>
-                  </Button>
-                  <Button size="lg" variant="outline" asChild className="bg-transparent border-2 border-background text-background hover:bg-background hover:text-foreground font-bold uppercase tracking-widest px-8 py-6 h-auto rounded-none">
-                    <a href="#events">Join the Movement</a>
                   </Button>
                 </div>
               </div>
