@@ -16,6 +16,7 @@ export default {
       fontFamily: {
         sans: ["Inter", "sans-serif"],
         heading: ["Outfit", "sans-serif"],
+        handwriting: ["Caveat", "cursive"],
       },
       colors: {
         border: "hsl(var(--border))",

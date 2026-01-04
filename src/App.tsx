@@ -3,30 +3,43 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Calendar from "./pages/Calendar";
 import DonateChallenge from "./pages/DonateChallenge";
 import Donate from "./pages/Donate";
+import Men from "./pages/Men";
+import Races from "./pages/Races";
+import RaceSubmit from "./pages/RaceSubmit";
+import Workouts from "./pages/Workouts";
+import AdminWorkouts from "./pages/AdminWorkouts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/donate-challenge" element={<DonateChallenge />} />
-          <Route path="/donate" element={<Donate />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/donate-challenge" element={<DonateChallenge />} />
+            <Route path="/donate" element={<Donate />} />
+            <Route path="/men" element={<Men />} />
+            <Route path="/races" element={<Races />} />
+            <Route path="/races/submit" element={<RaceSubmit />} />
+            <Route path="/workouts" element={<Workouts />} />
+            <Route path="/admin/workouts" element={<AdminWorkouts />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

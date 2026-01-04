@@ -45,6 +45,15 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
+            <Link to="/races" className="text-sm font-medium text-white hover:text-accent transition-colors uppercase tracking-wider">
+              Races
+            </Link>
+            <Link to="/workouts" className="text-sm font-medium text-white hover:text-accent transition-colors uppercase tracking-wider">
+              Workouts
+            </Link>
+            <Link to="/men" className="text-sm font-medium text-white hover:text-accent transition-colors uppercase tracking-wider">
+              The Men
+            </Link>
             <Link to="/donate" className="text-sm font-medium text-white hover:text-accent transition-colors uppercase tracking-wider">
               Donate
             </Link>
@@ -69,6 +78,27 @@ const Navigation = () => {
         {/* Mobile Menu */}
         {isOpen && (
           <div className="md:hidden absolute top-full left-0 w-full bg-background/95 backdrop-blur-md border-b border-border p-4 flex flex-col gap-4 animate-fade-in">
+            <Link
+              to="/races"
+              className="text-lg font-medium hover:text-accent transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              Races
+            </Link>
+            <Link
+              to="/workouts"
+              className="text-lg font-medium hover:text-accent transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              Workouts
+            </Link>
+            <Link
+              to="/men"
+              className="text-lg font-medium hover:text-accent transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              The Men
+            </Link>
             <Link
               to="/donate"
               className="text-lg font-medium hover:text-accent transition-colors"
