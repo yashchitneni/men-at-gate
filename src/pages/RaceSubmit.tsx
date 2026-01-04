@@ -88,7 +88,10 @@ export default function RaceSubmit() {
   async function onSubmit(values: FormValues) {
     try {
       await createRace.mutateAsync({
-        ...values,
+        race_name: values.race_name,
+        race_date: values.race_date,
+        location: values.location,
+        distance_type: values.distance_type,
         registration_url: values.registration_url || undefined,
         description: values.description || undefined,
       });

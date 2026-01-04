@@ -1,14 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import type { Profile, MemberPhoto, ProfileWithPhotos, CoreRosterMember } from '@/types/database.types';
 
 // Helper for direct fetch
 async function supabaseFetch<T>(path: string): Promise<T> {
-  const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/${path}`;
+  const url = `https://prursaeokvkulphtskdn.supabase.co/rest/v1/${path}`;
+  const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydXJzYWVva3ZrdWxwaHRza2RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NTYwOTIsImV4cCI6MjA4MzEzMjA5Mn0.Lqku85Nn1jKfomnrtMFpJ20z7wH70JgiMWYBN4iNP-Q';
   const response = await fetch(url, {
     headers: {
-      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      'apikey': anonKey,
+      'Authorization': `Bearer ${anonKey}`,
     },
   });
   if (!response.ok) {
