@@ -1,12 +1,21 @@
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
 import { useState } from "react";
-
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthModal } from "@/components/AuthModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -57,14 +66,32 @@ const Navigation = () => {
             <Link to="/donate" className="text-sm font-medium text-white hover:text-accent transition-colors uppercase tracking-wider">
               Donate
             </Link>
-            <Button
-              className="bg-accent hover:bg-accent/90 text-white font-bold uppercase tracking-wider"
-              asChild
-            >
-              <a href="https://www.instagram.com/meninthearena_/" target="_blank" rel="noopener noreferrer">
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="font-bold uppercase tracking-wider"
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    {profile?.full_name?.split(' ')[0] || 'Profile'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                className="bg-accent hover:bg-accent/90 text-white font-bold uppercase tracking-wider"
+                onClick={() => setAuthModalOpen(true)}
+              >
                 Join Now
-              </a>
-            </Button>
+              </Button>
+            )}
           </div>
 
           {/* Mobile Navigation */}
@@ -106,17 +133,34 @@ const Navigation = () => {
             >
               Donate
             </Link>
-            <Button
-              className="bg-accent hover:bg-accent/90 text-white w-full"
-              asChild
-            >
-              <a href="https://www.instagram.com/meninthearena_/" target="_blank" rel="noopener noreferrer">
+            {user ? (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  signOut();
+                  setIsOpen(false);
+                }}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            ) : (
+              <Button
+                className="bg-accent hover:bg-accent/90 text-white w-full"
+                onClick={() => {
+                  setAuthModalOpen(true);
+                  setIsOpen(false);
+                }}
+              >
                 Join Now
-              </a>
-            </Button>
+              </Button>
+            )}
           </div>
         )}
       </div>
+
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </nav>
   );
 };
