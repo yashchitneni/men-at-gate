@@ -8,8 +8,8 @@ interface AuthContextType {
   profile: Profile | null;
   session: Session | null;
   loading: boolean;
-  signInWithEmail: (email: string) => Promise<{ error: Error | null }>;
-  signInWithGoogle: () => Promise<{ error: Error | null }>;
+  signInWithEmail: (email: string, redirectPath?: string) => Promise<{ error: Error | null }>;
+  signInWithGoogle: (redirectPath?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -72,21 +72,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function signInWithEmail(email: string) {
+  async function signInWithEmail(email: string, redirectPath?: string) {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/races`,
+        emailRedirectTo: `${window.location.origin}${redirectPath || window.location.pathname}`,
       },
     });
     return { error };
   }
 
-  async function signInWithGoogle() {
+  async function signInWithGoogle(redirectPath?: string) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/races`,
+        redirectTo: `${window.location.origin}${redirectPath || window.location.pathname}`,
       },
     });
     return { error };

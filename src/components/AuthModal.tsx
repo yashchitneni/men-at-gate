@@ -16,20 +16,24 @@ import { Mail, Loader2 } from 'lucide-react';
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  redirectPath?: string;
 }
 
-export function AuthModal({ open, onOpenChange }: AuthModalProps) {
+export function AuthModal({ open, onOpenChange, redirectPath }: AuthModalProps) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const { signInWithEmail, signInWithGoogle } = useAuth();
+  
+  // Capture the current path when modal opens for redirect after auth
+  const currentPath = redirectPath || window.location.pathname;
   const { toast } = useToast();
 
   async function handleEmailSignIn(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await signInWithEmail(email);
+    const { error } = await signInWithEmail(email, currentPath);
 
     if (error) {
       toast({
@@ -50,7 +54,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
   async function handleGoogleSignIn() {
     setLoading(true);
-    const { error } = await signInWithGoogle();
+    const { error } = await signInWithGoogle(currentPath);
     if (error) {
       toast({
         title: 'Error',
