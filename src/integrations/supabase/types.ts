@@ -55,6 +55,13 @@ export type Database = {
             foreignKeyName: "member_photos_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_photos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "upcoming_workout"
             referencedColumns: ["leader_id"]
           },
@@ -162,6 +169,13 @@ export type Database = {
             foreignKeyName: "race_participants_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "race_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "upcoming_workout"
             referencedColumns: ["leader_id"]
           },
@@ -223,6 +237,13 @@ export type Database = {
             foreignKeyName: "races_submitted_by_fkey"
             columns: ["submitted_by"]
             isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "races_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
             referencedRelation: "upcoming_workout"
             referencedColumns: ["leader_id"]
           },
@@ -266,6 +287,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_interest_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -330,6 +358,13 @@ export type Database = {
             foreignKeyName: "workout_slots_leader_id_fkey"
             columns: ["leader_id"]
             isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_slots_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
             referencedRelation: "upcoming_workout"
             referencedColumns: ["leader_id"]
           },
@@ -346,6 +381,36 @@ export type Database = {
           mission: string | null
           primary_photo_url: string | null
           role: string | null
+        }
+        Relationships: []
+      }
+      public_profiles: {
+        Row: {
+          bio: string | null
+          full_name: string | null
+          id: string | null
+          instagram_handle: string | null
+          is_core_member: boolean | null
+          mission: string | null
+          role: string | null
+        }
+        Insert: {
+          bio?: string | null
+          full_name?: string | null
+          id?: string | null
+          instagram_handle?: string | null
+          is_core_member?: boolean | null
+          mission?: string | null
+          role?: string | null
+        }
+        Update: {
+          bio?: string | null
+          full_name?: string | null
+          id?: string | null
+          instagram_handle?: string | null
+          is_core_member?: boolean | null
+          mission?: string | null
+          role?: string | null
         }
         Relationships: []
       }
