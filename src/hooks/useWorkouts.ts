@@ -41,12 +41,12 @@ export function useUpcomingWorkout() {
       
       if (!data || data.length === 0) return null;
       
-      // Fetch leader separately if exists
+      // Fetch leader separately if exists (using public view)
       const slot = data[0];
       let leader = null;
       if (slot.leader_id) {
         const leaders = await supabaseFetch<Profile[]>(
-          `profiles?id=eq.${slot.leader_id}`
+          `public_profiles?id=eq.${slot.leader_id}`
         );
         leader = leaders[0] || null;
       }
@@ -65,8 +65,8 @@ export function useWorkoutSlots() {
         'workout_slots?select=*&order=workout_date.asc'
       );
       
-      // Fetch all profiles to join
-      const profiles = await supabaseFetch<Profile[]>('profiles?select=*');
+      // Fetch all public profiles to join (excludes sensitive data)
+      const profiles = await supabaseFetch<Profile[]>('public_profiles?select=*');
       const profileMap = new Map(profiles.map(p => [p.id, p]));
       
       return slots.map(slot => ({

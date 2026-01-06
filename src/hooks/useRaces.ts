@@ -39,10 +39,10 @@ export function useRaces() {
         `race_participants?race_id=in.(${raceIds.join(',')})`
       );
       
-      // Fetch profiles for participants
+      // Fetch public profiles for participants (excludes sensitive data like email/phone)
       const userIds = [...new Set(participants.map(p => p.user_id))];
       const profiles = userIds.length > 0 
-        ? await supabaseFetch<Profile[]>(`profiles?id=in.(${userIds.join(',')})`)
+        ? await supabaseFetch<Profile[]>(`public_profiles?id=in.(${userIds.join(',')})`)
         : [];
       const profileMap = new Map(profiles.map(p => [p.id, p]));
       
@@ -72,7 +72,7 @@ export function useRace(raceId: string) {
       
       const userIds = participants.map(p => p.user_id);
       const profiles = userIds.length > 0
-        ? await supabaseFetch<Profile[]>(`profiles?id=in.(${userIds.join(',')})`)
+        ? await supabaseFetch<Profile[]>(`public_profiles?id=in.(${userIds.join(',')})`)
         : [];
       const profileMap = new Map(profiles.map(p => [p.id, p]));
       

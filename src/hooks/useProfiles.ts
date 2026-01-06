@@ -19,26 +19,39 @@ async function supabaseFetch<T>(path: string): Promise<T> {
   return response.json();
 }
 
-// Fetch core roster members (for /men page)
+// Fetch core roster members (for /men page) - uses secure core_roster view
 export function useCoreRoster() {
   return useQuery({
     queryKey: ['profiles', 'core-roster'],
     queryFn: async () => {
-      const profiles = await supabaseFetch<Profile[]>(
-        'profiles?is_core_member=eq.true&order=created_at.asc'
+      // Use the core_roster view which only exposes non-sensitive fields
+      const coreMembers = await supabaseFetch<CoreRosterMember[]>(
+        'core_roster?order=id.asc'
       );
       
-      const photos = await supabaseFetch<MemberPhoto[]>('member_photos?select=*');
-      const photosByUser = photos.reduce((acc, photo) => {
-        if (!acc[photo.user_id]) acc[photo.user_id] = [];
-        acc[photo.user_id].push(photo);
-        return acc;
-      }, {} as Record<string, MemberPhoto[]>);
-      
-      return profiles.map(profile => ({
-        ...profile,
-        photos: photosByUser[profile.id] || [],
-        primary_photo: photosByUser[profile.id]?.find(p => p.is_primary) || photosByUser[profile.id]?.[0] || null,
+      // Transform to ProfileWithPhotos shape for compatibility
+      return coreMembers.map(member => ({
+        id: member.id,
+        full_name: member.full_name,
+        role: member.role,
+        bio: member.bio,
+        mission: member.mission,
+        instagram_handle: member.instagram_handle,
+        email: '', // Not exposed in view
+        phone: null,
+        shirt_size: null,
+        is_admin: false,
+        is_core_member: true,
+        created_at: '',
+        updated_at: '',
+        photos: [],
+        primary_photo: member.primary_photo_url ? { 
+          id: '', 
+          user_id: member.id, 
+          photo_url: member.primary_photo_url, 
+          is_primary: true, 
+          created_at: '' 
+        } : null,
       })) as ProfileWithPhotos[];
     },
   });
