@@ -94,10 +94,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
-        }).then(({ data, error }) => {
+        }).then(async ({ data, error }) => {
           console.log('setSession result:', { hasSession: !!data.session, error });
           if (data.session) {
+            // Set state immediately
+            setSession(data.session);
+            setUser(data.session.user);
+            await fetchProfile(data.session.user.id);
+            setLoading(false);
+            processed = true;
+
+            // Clean URL
             window.history.replaceState(null, '', window.location.pathname);
+          } else if (error) {
+            console.error('setSession error:', error);
+            setLoading(false);
           }
         }).catch(err => {
           console.error('setSession error:', err);
