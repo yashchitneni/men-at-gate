@@ -122,22 +122,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       // No OAuth callback, get existing session
       console.log('No OAuth hash, checking for existing session...');
-      supabase.auth.getSession().then(({ data: { session }, error }) => {
-        console.log('getSession result:', {
-          hasSession: !!session,
-          error: error?.message,
-          user: session?.user?.email
-        });
 
-        if (!processed && !session) {
+      // Add timeout to catch hanging getSession
+      const timeoutId = setTimeout(() => {
+        console.error('getSession timed out after 3 seconds');
+        if (!processed) {
           setLoading(false);
-        } else if (!processed && session) {
-          setSession(session);
-          setUser(session.user);
-          fetchProfile(session.user.id).then(() => setLoading(false));
-          processed = true;
         }
-      });
+      }, 3000);
+
+      supabase.auth.getSession()
+        .then(({ data: { session }, error }) => {
+          clearTimeout(timeoutId);
+          console.log('getSession result:', {
+            hasSession: !!session,
+            error: error?.message,
+            user: session?.user?.email
+          });
+
+          if (!processed && !session) {
+            setLoading(false);
+          } else if (!processed && session) {
+            setSession(session);
+            setUser(session.user);
+            fetchProfile(session.user.id).then(() => setLoading(false));
+            processed = true;
+          }
+        })
+        .catch(err => {
+          clearTimeout(timeoutId);
+          console.error('getSession error:', err);
+          if (!processed) {
+            setLoading(false);
+          }
+        });
     }
 
     return () => subscription.unsubscribe();
