@@ -43,22 +43,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    // Debug logging
     console.log('=== Auth Provider Initializing ===');
     console.log('Current URL:', window.location.href);
     console.log('URL Hash:', window.location.hash);
 
     let processed = false;
 
-    // Listen for auth changes first (this will catch OAuth redirects)
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state change:', event, session?.user?.email);
 
-        if (processed) {
-          console.log('Already processed, skipping...');
-          return;
-        }
+        if (processed) return;
 
         setSession(session);
         setUser(session?.user ?? null);
@@ -74,31 +70,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Clean up URL hash after successful auth
         if (event === 'SIGNED_IN' && window.location.hash.includes('access_token')) {
           console.log('Cleaning up URL hash');
-          window.history.replaceState(null, '', window.location.pathname);
+          setTimeout(() => {
+            window.history.replaceState(null, '', window.location.pathname);
+          }, 100);
         }
       }
     );
 
-    // Force immediate session check - this triggers hash processing
-    console.log('Calling getSession to trigger hash processing...');
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log('getSession result:', {
-        hasSession: !!session,
-        error: error?.message,
-        user: session?.user?.email
-      });
+    // Check if we have tokens in hash - parse and set manually
+    if (window.location.hash.includes('access_token')) {
+      console.log('Found access_token in hash, parsing...');
 
-      if (!processed && !session && !window.location.hash.includes('access_token')) {
-        // No session and no OAuth callback
-        console.log('No session found, setting loading to false');
-        setLoading(false);
+      // Parse hash parameters
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+
+      if (accessToken && refreshToken) {
+        console.log('Setting session with tokens...');
+
+        // Use refreshSession with the refresh token to establish session
+        supabase.auth.refreshSession({ refresh_token: refreshToken })
+          .then(({ data, error }) => {
+            console.log('refreshSession result:', {
+              hasSession: !!data.session,
+              error: error?.message,
+              user: data.session?.user?.email
+            });
+            if (error) {
+              console.error('refreshSession error:', error);
+              setLoading(false);
+            }
+          })
+          .catch(err => {
+            console.error('refreshSession exception:', err);
+            setLoading(false);
+          });
       }
-    }).catch((err) => {
-      console.error('getSession error:', err);
-      if (!processed) {
-        setLoading(false);
-      }
-    });
+    } else {
+      // No OAuth callback, get existing session
+      console.log('No OAuth hash, checking for existing session...');
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
+        console.log('getSession result:', {
+          hasSession: !!session,
+          error: error?.message,
+          user: session?.user?.email
+        });
+
+        if (!processed && !session) {
+          setLoading(false);
+        } else if (!processed && session) {
+          setSession(session);
+          setUser(session.user);
+          fetchProfile(session.user.id).then(() => setLoading(false));
+          processed = true;
+        }
+      });
+    }
 
     return () => subscription.unsubscribe();
   }, []);
