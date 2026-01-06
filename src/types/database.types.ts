@@ -190,6 +190,46 @@ export interface Database {
           status?: string;
         };
       };
+      workout_submissions: {
+        Row: {
+          id: string;
+          slot_id: string;
+          leader_id: string;
+          workout_plan: string;
+          message: string | null;
+          leadership_note: string | null;
+          status: string;
+          submitted_at: string | null;
+          approved_at: string | null;
+          approved_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slot_id: string;
+          leader_id: string;
+          workout_plan: string;
+          message?: string | null;
+          leadership_note?: string | null;
+          status?: string;
+          submitted_at?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          workout_plan?: string;
+          message?: string | null;
+          leadership_note?: string | null;
+          status?: string;
+          submitted_at?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       core_roster: {
@@ -226,6 +266,7 @@ export type Race = Database['public']['Tables']['races']['Row'];
 export type RaceParticipant = Database['public']['Tables']['race_participants']['Row'];
 export type WorkoutSlot = Database['public']['Tables']['workout_slots']['Row'];
 export type WorkoutInterest = Database['public']['Tables']['workout_interest']['Row'];
+export type WorkoutSubmission = Database['public']['Tables']['workout_submissions']['Row'];
 export type CoreRosterMember = Database['public']['Views']['core_roster']['Row'];
 export type UpcomingWorkout = Database['public']['Views']['upcoming_workout']['Row'];
 

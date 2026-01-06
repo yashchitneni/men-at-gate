@@ -14,6 +14,9 @@ import Races from "./pages/Races";
 import RaceSubmit from "./pages/RaceSubmit";
 import Workouts from "./pages/Workouts";
 import AdminWorkouts from "./pages/AdminWorkouts";
+import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
+import WorkoutSubmit from "./pages/WorkoutSubmit";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,7 +38,10 @@ const App = () => (
             <Route path="/races" element={<Races />} />
             <Route path="/races/submit" element={<RaceSubmit />} />
             <Route path="/workouts" element={<Workouts />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="/admin/workouts" element={<AdminWorkouts />} />
+            <Route path="/workout-submit/:slotId" element={<WorkoutSubmit />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

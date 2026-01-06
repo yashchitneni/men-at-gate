@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Calendar, User, Dumbbell, Loader2, Hand, Check } from 'lucide-react';
+import { Calendar, User, Dumbbell, Loader2, Hand, Check, FileEdit, AlertCircle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -185,6 +185,43 @@ export default function Workouts() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Assigned Leader Card - Show if user is assigned to lead */}
+            {allSlots?.some(slot => slot.leader_id === user?.id) && (
+              <Card className="border-accent/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileEdit className="h-5 w-5 text-accent" />
+                    Your Assigned Workout
+                  </CardTitle>
+                  <CardDescription>
+                    You've been selected to lead! Submit your workout plan for review.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {allSlots?.filter(slot => slot.leader_id === user?.id).map(slot => (
+                    <div key={slot.id} className="p-4 bg-accent/10 rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold">
+                            {format(new Date(slot.workout_date), 'EEEE, MMMM d, yyyy')}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Status: {slot.status}
+                          </p>
+                        </div>
+                      </div>
+                      <Button asChild className="w-full bg-accent hover:bg-accent/90">
+                        <Link to={`/workout-submit/${slot.id}`}>
+                          <FileEdit className="mr-2 h-4 w-4" />
+                          Submit Workout Plan
+                        </Link>
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Lead a Workout Card */}
             <Card>

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { WorkoutSlot, WorkoutInterest, Profile } from '@/types/database.types';
+import type { WorkoutSlot, WorkoutInterest, WorkoutSubmission, Profile } from '@/types/database.types';
 
 // Extended types
 type WorkoutSlotWithLeader = WorkoutSlot & {
@@ -285,6 +285,165 @@ export function useDeleteWorkoutSlot() {
         .from('workout_slots')
         .delete()
         .eq('id', slotId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+    },
+  });
+}
+
+// Extended type for submissions with slot info
+type WorkoutSubmissionWithSlot = WorkoutSubmission & {
+  slot: WorkoutSlot | null;
+};
+
+// Fetch submission for a specific slot
+export function useWorkoutSubmission(slotId: string) {
+  return useQuery({
+    queryKey: ['workouts', 'submission', slotId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('workout_submissions')
+        .select('*')
+        .eq('slot_id', slotId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data as WorkoutSubmission | null;
+    },
+    enabled: !!slotId,
+  });
+}
+
+// Fetch my submission for a slot (as leader)
+export function useMyWorkoutSubmission(slotId: string) {
+  return useQuery({
+    queryKey: ['workouts', 'my-submission', slotId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from('workout_submissions')
+        .select('*')
+        .eq('slot_id', slotId)
+        .eq('leader_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data as WorkoutSubmission | null;
+    },
+    enabled: !!slotId,
+  });
+}
+
+// Fetch all submissions (for admin)
+export function useAllWorkoutSubmissions() {
+  return useQuery({
+    queryKey: ['workouts', 'submissions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('workout_submissions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as WorkoutSubmission[];
+    },
+  });
+}
+
+// Create or update submission
+export function useSaveWorkoutSubmission() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      slotId,
+      workoutPlan,
+      message,
+      leadershipNote,
+      status = 'draft',
+    }: {
+      slotId: string;
+      workoutPlan: string;
+      message?: string;
+      leadershipNote?: string;
+      status?: 'draft' | 'submitted';
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Must be logged in');
+
+      // Check if submission exists
+      const { data: existing } = await supabase
+        .from('workout_submissions')
+        .select('id')
+        .eq('slot_id', slotId)
+        .single();
+
+      if (existing) {
+        // Update
+        const { data, error } = await supabase
+          .from('workout_submissions')
+          .update({
+            workout_plan: workoutPlan,
+            message,
+            leadership_note: leadershipNote,
+            status,
+            submitted_at: status === 'submitted' ? new Date().toISOString() : null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      } else {
+        // Insert
+        const { data, error } = await supabase
+          .from('workout_submissions')
+          .insert({
+            slot_id: slotId,
+            leader_id: user.id,
+            workout_plan: workoutPlan,
+            message,
+            leadership_note: leadershipNote,
+            status,
+            submitted_at: status === 'submitted' ? new Date().toISOString() : null,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+    },
+  });
+}
+
+// Admin: Approve submission
+export function useApproveSubmission() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (submissionId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Must be logged in');
+
+      const { error } = await supabase
+        .from('workout_submissions')
+        .update({
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: user.id,
+        })
+        .eq('id', submissionId);
 
       if (error) throw error;
     },

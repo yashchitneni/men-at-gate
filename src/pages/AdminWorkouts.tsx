@@ -6,7 +6,9 @@ import {
   useWorkoutInterest, 
   useCreateWorkoutSlot, 
   useAssignLeader,
-  useDeleteWorkoutSlot 
+  useDeleteWorkoutSlot,
+  useAllWorkoutSubmissions,
+  useApproveSubmission,
 } from '@/hooks/useWorkouts';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
@@ -38,7 +40,10 @@ import {
   User, 
   Loader2, 
   Trash2,
-  UserPlus 
+  UserPlus,
+  FileText,
+  CheckCircle,
+  Eye,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -50,14 +55,18 @@ export default function AdminWorkouts() {
   const { profile, loading: authLoading } = useAuth();
   const { data: slots, isLoading: slotsLoading } = useWorkoutSlots();
   const { data: interests, isLoading: interestsLoading } = useWorkoutInterest();
+  const { data: submissions, isLoading: submissionsLoading } = useAllWorkoutSubmissions();
   const createSlot = useCreateWorkoutSlot();
   const assignLeader = useAssignLeader();
   const deleteSlot = useDeleteWorkoutSlot();
+  const approveSubmission = useApproveSubmission();
   const { toast } = useToast();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [viewSubmissionModalOpen, setViewSubmissionModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
   const [newDate, setNewDate] = useState('');
 
   // Redirect if not admin
@@ -131,6 +140,30 @@ export default function AdminWorkouts() {
   }
 
   const pendingInterests = interests?.filter(i => i.status === 'pending') || [];
+  const pendingSubmissions = submissions?.filter(s => s.status === 'submitted') || [];
+
+  // Get slot info for a submission
+  function getSlotForSubmission(slotId: string) {
+    return slots?.find(s => s.id === slotId);
+  }
+
+  async function handleApproveSubmission(submissionId: string) {
+    try {
+      await approveSubmission.mutateAsync(submissionId);
+      toast({
+        title: 'Submission approved',
+        description: 'The workout plan has been approved.',
+      });
+      setViewSubmissionModalOpen(false);
+      setSelectedSubmission(null);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to approve submission',
+        variant: 'destructive',
+      });
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -325,6 +358,83 @@ export default function AdminWorkouts() {
               </Card>
             </div>
 
+            {/* Workout Submissions */}
+            <Card className="mt-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Workout Submissions
+                  {pendingSubmissions.length > 0 && (
+                    <Badge variant="secondary">{pendingSubmissions.length} pending</Badge>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  Review and approve workout plans from assigned leaders
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {submissionsLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2].map(i => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : submissions?.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    No workout submissions yet.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {submissions?.map(submission => {
+                      const slot = getSlotForSubmission(submission.slot_id);
+                      return (
+                        <div 
+                          key={submission.id} 
+                          className="flex items-center justify-between p-3 border rounded-lg"
+                        >
+                          <div>
+                            <p className="font-medium">
+                              {slot ? format(new Date(slot.workout_date), 'EEE, MMM d, yyyy') : 'Unknown date'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {slot?.leader?.full_name || 'Unknown leader'}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge 
+                              variant={submission.status === 'approved' ? 'default' : submission.status === 'submitted' ? 'secondary' : 'outline'}
+                            >
+                              {submission.status}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedSubmission(submission);
+                                setViewSubmissionModalOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {submission.status === 'submitted' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleApproveSubmission(submission.id)}
+                                disabled={approveSubmission.isPending}
+                              >
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Assign Leader Modal */}
             <Dialog open={assignModalOpen} onOpenChange={setAssignModalOpen}>
               <DialogContent>
@@ -360,6 +470,68 @@ export default function AdminWorkouts() {
                     </div>
                   )}
                 </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* View Submission Modal */}
+            <Dialog open={viewSubmissionModalOpen} onOpenChange={setViewSubmissionModalOpen}>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Workout Submission</DialogTitle>
+                  <DialogDescription>
+                    {selectedSubmission && getSlotForSubmission(selectedSubmission.slot_id) && (
+                      <span>
+                        For {format(new Date(getSlotForSubmission(selectedSubmission.slot_id)!.workout_date), 'EEEE, MMMM d, yyyy')}
+                      </span>
+                    )}
+                  </DialogDescription>
+                </DialogHeader>
+                {selectedSubmission && (
+                  <div className="space-y-6 pt-4">
+                    <div>
+                      <h4 className="font-semibold mb-2">1. The Workout</h4>
+                      <div className="p-3 bg-muted rounded-lg whitespace-pre-wrap text-sm font-mono">
+                        {selectedSubmission.workout_plan}
+                      </div>
+                    </div>
+                    {selectedSubmission.message && (
+                      <div>
+                        <h4 className="font-semibold mb-2">2. The Message</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedSubmission.message}
+                        </p>
+                      </div>
+                    )}
+                    {selectedSubmission.leadership_note && (
+                      <div>
+                        <h4 className="font-semibold mb-2">3. Leadership Approach</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedSubmission.leadership_note}
+                        </p>
+                      </div>
+                    )}
+                    {selectedSubmission.status === 'submitted' && (
+                      <Button
+                        className="w-full bg-green-600 hover:bg-green-700"
+                        onClick={() => handleApproveSubmission(selectedSubmission.id)}
+                        disabled={approveSubmission.isPending}
+                      >
+                        {approveSubmission.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Approve Submission
+                      </Button>
+                    )}
+                    {selectedSubmission.status === 'approved' && (
+                      <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg">
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <span className="text-green-500 font-medium">Approved</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </DialogContent>
             </Dialog>
           </div>
