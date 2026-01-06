@@ -33,7 +33,7 @@ export default function Profile() {
   const { toast } = useToast();
 
   // Debug logging
-  console.log('Profile page state:', {
+  console.log('🔍 Profile page state:', {
     authLoading,
     hasUser: !!user,
     hasProfile: !!profile,
@@ -42,6 +42,16 @@ export default function Profile() {
     racesError: racesError?.message,
     slotsError: slotsError?.message,
   });
+
+  console.log('🔍 Detailed state:', JSON.stringify({
+    authLoading,
+    hasUser: !!user,
+    hasProfile: !!profile,
+    racesLoading,
+    slotsLoading,
+    racesError: racesError?.message,
+    slotsError: slotsError?.message,
+  }, null, 2));
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
