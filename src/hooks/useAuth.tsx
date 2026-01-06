@@ -47,12 +47,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('=== Auth Provider Initializing ===');
     console.log('Current URL:', window.location.href);
     console.log('URL Hash:', window.location.hash);
-    console.log('URL Search:', window.location.search);
+
+    let processed = false;
 
     // Listen for auth changes first (this will catch OAuth redirects)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state change:', event, session?.user?.email);
+
+        if (processed) {
+          console.log('Already processed, skipping...');
+          return;
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -62,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(null);
         }
         setLoading(false);
+        processed = true;
 
         // Clean up URL hash after successful auth
         if (event === 'SIGNED_IN' && window.location.hash.includes('access_token')) {
@@ -71,51 +79,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // Check if we're coming back from OAuth with tokens in the URL
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    const refreshToken = hashParams.get('refresh_token');
+    // Force immediate session check - this triggers hash processing
+    console.log('Calling getSession to trigger hash processing...');
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('getSession result:', {
+        hasSession: !!session,
+        error: error?.message,
+        user: session?.user?.email
+      });
 
-    if (accessToken && refreshToken) {
-      console.log('Found OAuth tokens in URL, setting session...');
-      console.log('Access token:', accessToken.substring(0, 50) + '...');
-      console.log('Refresh token:', refreshToken);
-
-      // Manually set the session from URL tokens
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      }).then(({ data, error }) => {
-        console.log('setSession result:', { session: !!data.session, error, user: data.session?.user?.email });
-        if (error) {
-          console.error('Error setting session:', error);
-          setLoading(false);
-        } else if (data.session) {
-          console.log('Session set successfully!');
-        }
-        // onAuthStateChange will handle the rest
-      }).catch((err) => {
-        console.error('setSession threw error:', err);
+      if (!processed && !session && !window.location.hash.includes('access_token')) {
+        // No session and no OAuth callback
+        console.log('No session found, setting loading to false');
         setLoading(false);
-      });
-    } else {
-      console.log('No OAuth tokens found in URL');
-      console.log('accessToken:', accessToken);
-      console.log('refreshToken:', refreshToken);
-      // No OAuth callback, get existing session
-      supabase.auth.getSession().then(({ data: { session }, error }) => {
-        console.log('getSession result:', { session: !!session, error, user: session?.user?.email });
-
-        // Only set if we don't have a session yet (onAuthStateChange might have fired first)
-        if (!session) {
-          setLoading(false);
-        } else {
-          setSession(session);
-          setUser(session.user);
-          fetchProfile(session.user.id).then(() => setLoading(false));
-        }
-      });
-    }
+      }
+    }).catch((err) => {
+      console.error('getSession error:', err);
+      if (!processed) {
+        setLoading(false);
+      }
+    });
 
     return () => subscription.unsubscribe();
   }, []);
