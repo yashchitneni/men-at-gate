@@ -104,8 +104,8 @@ export function useCreateRace() {
       if (!race.userId) throw new Error('Must be logged in');
 
       console.log('🟢 Attempting to insert race...');
-      // Create the race
-      const { data: raceData, error: raceError } = await supabase
+
+      const insertPromise = supabase
         .from('races')
         .insert({
           race_name: race.race_name,
@@ -118,6 +118,12 @@ export function useCreateRace() {
         })
         .select()
         .single();
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Insert timed out after 5 seconds')), 5000)
+      );
+
+      const { data: raceData, error: raceError } = await Promise.race([insertPromise, timeoutPromise]) as any;
 
       console.log('🟢 Insert race result:', { data: raceData, error: raceError });
       if (raceError) throw raceError;
