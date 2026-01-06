@@ -12,6 +12,17 @@ console.log('Supabase initialization:', {
   keyPrefix: SUPABASE_PUBLISHABLE_KEY?.substring(0, 20) + '...'
 });
 
+// Debug: Log session state
+setTimeout(async () => {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  console.log('📍 Initial session check:', {
+    hasSession: !!session,
+    hasAccessToken: !!session?.access_token,
+    expiresAt: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
+    error: error?.message,
+  });
+}, 1000);
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
