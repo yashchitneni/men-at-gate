@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // Check if we have tokens in hash - parse and set manually
+    // Check if we have tokens in hash - use Supabase's setSession
     if (window.location.hash.includes('access_token')) {
       console.log('Found access_token in hash, parsing...');
 
@@ -87,37 +87,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const accessToken = hashParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token');
-      const expiresIn = hashParams.get('expires_in');
-      const tokenType = hashParams.get('token_type');
 
       if (accessToken && refreshToken) {
-        console.log('Manually storing session in localStorage...');
+        console.log('Setting session via Supabase...');
 
-        // Calculate expiry time
-        const expiresAt = Math.floor(Date.now() / 1000) + parseInt(expiresIn || '3600');
-
-        // Manually construct and store the session object in localStorage
-        // This is what Supabase does internally
-        const storageKey = `sb-${SUPABASE_URL.split('//')[1].split('.')[0]}-auth-token`;
-        const sessionData = {
+        supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
-          expires_in: parseInt(expiresIn || '3600'),
-          expires_at: expiresAt,
-          token_type: tokenType || 'bearer',
-        };
-
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(sessionData));
-          console.log('Session stored in localStorage, reloading page...');
-
-          // Clean URL and reload to let Supabase read from localStorage
-          window.history.replaceState(null, '', window.location.pathname);
-          window.location.reload();
-        } catch (err) {
-          console.error('Failed to store session:', err);
+        }).then(({ data, error }) => {
+          console.log('setSession result:', { hasSession: !!data.session, error });
+          if (data.session) {
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+        }).catch(err => {
+          console.error('setSession error:', err);
           setLoading(false);
-        }
+        });
       }
     } else {
       // No OAuth callback, get existing session
