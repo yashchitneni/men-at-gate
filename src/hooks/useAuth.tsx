@@ -3,6 +3,8 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/types/database.types';
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
@@ -85,27 +87,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const accessToken = hashParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token');
+      const expiresIn = hashParams.get('expires_in');
+      const tokenType = hashParams.get('token_type');
 
       if (accessToken && refreshToken) {
-        console.log('Setting session with tokens...');
+        console.log('Manually storing session in localStorage...');
 
-        // Use refreshSession with the refresh token to establish session
-        supabase.auth.refreshSession({ refresh_token: refreshToken })
-          .then(({ data, error }) => {
-            console.log('refreshSession result:', {
-              hasSession: !!data.session,
-              error: error?.message,
-              user: data.session?.user?.email
-            });
-            if (error) {
-              console.error('refreshSession error:', error);
-              setLoading(false);
-            }
-          })
-          .catch(err => {
-            console.error('refreshSession exception:', err);
-            setLoading(false);
-          });
+        // Calculate expiry time
+        const expiresAt = Math.floor(Date.now() / 1000) + parseInt(expiresIn || '3600');
+
+        // Manually construct and store the session object in localStorage
+        // This is what Supabase does internally
+        const storageKey = `sb-${SUPABASE_URL.split('//')[1].split('.')[0]}-auth-token`;
+        const sessionData = {
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          expires_in: parseInt(expiresIn || '3600'),
+          expires_at: expiresAt,
+          token_type: tokenType || 'bearer',
+        };
+
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(sessionData));
+          console.log('Session stored in localStorage, reloading page...');
+
+          // Clean URL and reload to let Supabase read from localStorage
+          window.history.replaceState(null, '', window.location.pathname);
+          window.location.reload();
+        } catch (err) {
+          console.error('Failed to store session:', err);
+          setLoading(false);
+        }
       }
     } else {
       // No OAuth callback, get existing session
