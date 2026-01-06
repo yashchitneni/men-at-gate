@@ -43,20 +43,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id).then(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // Listen for auth changes
+    // Listen for auth changes first (this will catch OAuth redirects)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -66,8 +56,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(null);
         }
         setLoading(false);
+        
+        // Clean up URL hash after successful auth
+        if (event === 'SIGNED_IN' && window.location.hash.includes('access_token')) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
       }
     );
+
+    // Then get initial session (in case already logged in)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      // Only set if we don't have a session yet (onAuthStateChange might have fired first)
+      if (!session) {
+        setLoading(false);
+      } else {
+        setSession(session);
+        setUser(session.user);
+        fetchProfile(session.user.id).then(() => setLoading(false));
+      }
+    });
 
     return () => subscription.unsubscribe();
   }, []);
