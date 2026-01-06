@@ -43,20 +43,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    // Debug logging
+    console.log('=== Auth Provider Initializing ===');
+    console.log('Current URL:', window.location.href);
+    console.log('URL Hash:', window.location.hash);
+    console.log('URL Search:', window.location.search);
+
     // Listen for auth changes first (this will catch OAuth redirects)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
           await fetchProfile(session.user.id);
         } else {
           setProfile(null);
         }
         setLoading(false);
-        
+
         // Clean up URL hash after successful auth
         if (event === 'SIGNED_IN' && window.location.hash.includes('access_token')) {
           window.history.replaceState(null, '', window.location.pathname);
@@ -65,7 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // Then get initial session (in case already logged in)
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('getSession result:', { session: !!session, error, user: session?.user?.email });
+
       // Only set if we don't have a session yet (onAuthStateChange might have fired first)
       if (!session) {
         setLoading(false);
@@ -90,12 +98,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signInWithGoogle(redirectPath?: string) {
+    const redirectUrl = `${window.location.origin}${redirectPath || window.location.pathname}`;
+    console.log('Google sign in - redirect URL:', redirectUrl);
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}${redirectPath || window.location.pathname}`,
+        redirectTo: redirectUrl,
       },
     });
+
+    console.log('Google OAuth response:', { error });
     return { error };
   }
 
