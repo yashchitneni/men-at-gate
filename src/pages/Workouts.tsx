@@ -72,6 +72,7 @@ export default function Workouts() {
     console.log('🟡 Calling expressInterest mutation...');
     try {
       await expressInterest.mutateAsync({
+        userId: user.id,
         preferredDates: selectedDates.map(d => format(new Date(d), 'MMM d, yyyy')).join(', '),
         notes: notes || undefined,
       });

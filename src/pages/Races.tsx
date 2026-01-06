@@ -54,16 +54,19 @@ export default function Races() {
       setAuthModalOpen(true);
       return;
     }
+    console.log('🟡 handleJoinClick called', { userId: user.id, raceId });
     const options = joinOptions[raceId] || { carpool: false, lodging: false };
-    joinRace.mutate({ 
-      raceId, 
+    joinRace.mutate({
+      userId: user.id,
+      raceId,
       openToCarpool: options.carpool,
       openToSplitLodging: options.lodging,
     });
   }
 
   function handleLeaveClick(raceId: string) {
-    leaveRace.mutate(raceId);
+    if (!user) return;
+    leaveRace.mutate({ userId: user.id, raceId });
   }
 
   function isUserParticipating(race: NonNullable<typeof races>[0]) {

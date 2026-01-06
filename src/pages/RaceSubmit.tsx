@@ -86,8 +86,13 @@ export default function RaceSubmit() {
   });
 
   async function onSubmit(values: FormValues) {
+    if (!user) return;
+
+    console.log('🟡 RaceSubmit onSubmit called', { userId: user.id, raceName: values.race_name });
+
     try {
       await createRace.mutateAsync({
+        userId: user.id,
         race_name: values.race_name,
         race_date: values.race_date,
         location: values.location,

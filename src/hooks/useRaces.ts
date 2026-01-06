@@ -91,6 +91,7 @@ export function useCreateRace() {
 
   return useMutation({
     mutationFn: async (race: {
+      userId: string;
       race_name: string;
       race_date: string;
       location: string;
@@ -98,34 +99,45 @@ export function useCreateRace() {
       registration_url?: string;
       description?: string;
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Must be logged in');
+      console.log('🟢 useCreateRace mutation called', { userId: race.userId, raceName: race.race_name });
 
+      if (!race.userId) throw new Error('Must be logged in');
+
+      console.log('🟢 Attempting to insert race...');
       // Create the race
       const { data: raceData, error: raceError } = await supabase
         .from('races')
         .insert({
-          ...race,
-          submitted_by: user.id,
+          race_name: race.race_name,
+          race_date: race.race_date,
+          location: race.location,
+          distance_type: race.distance_type,
+          registration_url: race.registration_url,
+          description: race.description,
+          submitted_by: race.userId,
         })
         .select()
         .single();
 
+      console.log('🟢 Insert race result:', { data: raceData, error: raceError });
       if (raceError) throw raceError;
 
+      console.log('🟢 Adding creator as participant...');
       // Auto-add creator as participant
       const { error: participantError } = await supabase
         .from('race_participants')
         .insert({
           race_id: raceData.id,
-          user_id: user.id,
+          user_id: race.userId,
         });
 
+      console.log('🟢 Participant insert result:', { error: participantError });
       if (participantError) throw participantError;
 
       return raceData;
     },
     onSuccess: () => {
+      console.log('🟢 useCreateRace success!');
       queryClient.invalidateQueries({ queryKey: ['races'] });
     },
   });
@@ -137,29 +149,28 @@ export function useJoinRace() {
 
   return useMutation({
     mutationFn: async ({
+      userId,
       raceId,
       openToCarpool = false,
       openToSplitLodging = false,
       notes,
     }: {
+      userId: string;
       raceId: string;
       openToCarpool?: boolean;
       openToSplitLodging?: boolean;
       notes?: string;
     }) => {
-      console.log('🟢 useJoinRace mutation called', { raceId, openToCarpool, openToSplitLodging, notes });
+      console.log('🟢 useJoinRace mutation called', { userId, raceId, openToCarpool, openToSplitLodging, notes });
 
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('🟢 Got user:', { hasUser: !!user, userId: user?.id });
-
-      if (!user) throw new Error('Must be logged in');
+      if (!userId) throw new Error('Must be logged in');
 
       console.log('🟢 Attempting to insert race participant...');
       const { error } = await supabase
         .from('race_participants')
         .insert({
           race_id: raceId,
-          user_id: user.id,
+          user_id: userId,
           open_to_carpool: openToCarpool,
           open_to_split_lodging: openToSplitLodging,
           notes,
@@ -180,15 +191,14 @@ export function useLeaveRace() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (raceId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Must be logged in');
+    mutationFn: async ({ userId, raceId }: { userId: string; raceId: string }) => {
+      if (!userId) throw new Error('Must be logged in');
 
       const { error } = await supabase
         .from('race_participants')
         .delete()
         .eq('race_id', raceId)
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
 
       if (error) throw error;
     },
@@ -204,18 +214,19 @@ export function useUpdateParticipation() {
 
   return useMutation({
     mutationFn: async ({
+      userId,
       raceId,
       openToCarpool,
       openToSplitLodging,
       notes,
     }: {
+      userId: string;
       raceId: string;
       openToCarpool?: boolean;
       openToSplitLodging?: boolean;
       notes?: string;
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Must be logged in');
+      if (!userId) throw new Error('Must be logged in');
 
       const { error } = await supabase
         .from('race_participants')
@@ -225,7 +236,7 @@ export function useUpdateParticipation() {
           notes,
         })
         .eq('race_id', raceId)
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
 
       if (error) throw error;
     },

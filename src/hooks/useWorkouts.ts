@@ -126,24 +126,23 @@ export function useExpressInterest() {
 
   return useMutation({
     mutationFn: async ({
+      userId,
       preferredDates,
       notes,
     }: {
+      userId: string;
       preferredDates?: string;
       notes?: string;
     }) => {
-      console.log('🔵 useExpressInterest mutation called', { preferredDates, notes });
+      console.log('🔵 useExpressInterest mutation called', { userId, preferredDates, notes });
 
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('🔵 Got user:', { hasUser: !!user, userId: user?.id });
-
-      if (!user) throw new Error('Must be logged in');
+      if (!userId) throw new Error('Must be logged in');
 
       console.log('🔵 Attempting to insert workout interest...');
       const { data, error } = await supabase
         .from('workout_interest')
         .insert({
-          user_id: user.id,
+          user_id: userId,
           preferred_dates: preferredDates,
           notes,
         })
