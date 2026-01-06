@@ -28,9 +28,20 @@ export default function Profile() {
   const navigate = useNavigate();
   const { user, profile, loading: authLoading, refreshProfile } = useAuth();
   const updateProfile = useUpdateProfile();
-  const { data: races } = useRaces();
-  const { data: workoutSlots } = useWorkoutSlots();
+  const { data: races, isLoading: racesLoading, error: racesError } = useRaces();
+  const { data: workoutSlots, isLoading: slotsLoading, error: slotsError } = useWorkoutSlots();
   const { toast } = useToast();
+
+  // Debug logging
+  console.log('Profile page state:', {
+    authLoading,
+    hasUser: !!user,
+    hasProfile: !!profile,
+    racesLoading,
+    slotsLoading,
+    racesError: racesError?.message,
+    slotsError: slotsError?.message,
+  });
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
