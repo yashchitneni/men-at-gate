@@ -65,24 +65,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Clean up URL hash after successful auth
         if (event === 'SIGNED_IN' && window.location.hash.includes('access_token')) {
+          console.log('Cleaning up URL hash');
           window.history.replaceState(null, '', window.location.pathname);
         }
       }
     );
 
-    // Then get initial session (in case already logged in)
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log('getSession result:', { session: !!session, error, user: session?.user?.email });
+    // Check if we're coming back from OAuth with tokens in the URL
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
 
-      // Only set if we don't have a session yet (onAuthStateChange might have fired first)
-      if (!session) {
-        setLoading(false);
-      } else {
-        setSession(session);
-        setUser(session.user);
-        fetchProfile(session.user.id).then(() => setLoading(false));
-      }
-    });
+    if (accessToken && refreshToken) {
+      console.log('Found OAuth tokens in URL, setting session...');
+      // Manually set the session from URL tokens
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      }).then(({ data, error }) => {
+        console.log('setSession result:', { session: !!data.session, error, user: data.session?.user?.email });
+        if (error) {
+          console.error('Error setting session:', error);
+          setLoading(false);
+        }
+        // onAuthStateChange will handle the rest
+      });
+    } else {
+      // No OAuth callback, get existing session
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
+        console.log('getSession result:', { session: !!session, error, user: session?.user?.email });
+
+        // Only set if we don't have a session yet (onAuthStateChange might have fired first)
+        if (!session) {
+          setLoading(false);
+        } else {
+          setSession(session);
+          setUser(session.user);
+          fetchProfile(session.user.id).then(() => setLoading(false));
+        }
+      });
+    }
 
     return () => subscription.unsubscribe();
   }, []);
