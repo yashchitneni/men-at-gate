@@ -46,8 +46,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     console.log('=== Auth Provider Initializing ===');
-    console.log('Current URL:', window.location.href);
-    console.log('URL Hash:', window.location.hash);
 
     let processed = false;
 
@@ -68,91 +66,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setLoading(false);
         processed = true;
-
-        // Clean up URL hash after successful auth
-        if (event === 'SIGNED_IN' && window.location.hash.includes('access_token')) {
-          console.log('Cleaning up URL hash');
-          setTimeout(() => {
-            window.history.replaceState(null, '', window.location.pathname);
-          }, 100);
-        }
       }
     );
 
-    // Check if we have tokens in hash - use Supabase's setSession
-    if (window.location.hash.includes('access_token')) {
-      console.log('Found access_token in hash, parsing...');
-
-      // Parse hash parameters
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token');
-
-      if (accessToken && refreshToken) {
-        console.log('Setting session via Supabase...');
-
-        supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        }).then(async ({ data, error }) => {
-          console.log('setSession result:', { hasSession: !!data.session, error });
-          if (data.session) {
-            // Set state immediately
-            setSession(data.session);
-            setUser(data.session.user);
-            await fetchProfile(data.session.user.id);
-            setLoading(false);
-            processed = true;
-
-            // Clean URL
-            window.history.replaceState(null, '', window.location.pathname);
-          } else if (error) {
-            console.error('setSession error:', error);
-            setLoading(false);
-          }
-        }).catch(err => {
-          console.error('setSession error:', err);
-          setLoading(false);
+    // Get existing session
+    supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        console.log('getSession result:', {
+          hasSession: !!session,
+          error: error?.message,
+          user: session?.user?.email
         });
-      }
-    } else {
-      // No OAuth callback, get existing session
-      console.log('No OAuth hash, checking for existing session...');
 
-      // Add timeout to catch hanging getSession
-      const timeoutId = setTimeout(() => {
-        console.error('getSession timed out after 3 seconds');
+        if (!processed && !session) {
+          setLoading(false);
+        } else if (!processed && session) {
+          setSession(session);
+          setUser(session.user);
+          fetchProfile(session.user.id).then(() => setLoading(false));
+          processed = true;
+        }
+      })
+      .catch(err => {
+        console.error('getSession error:', err);
         if (!processed) {
           setLoading(false);
         }
-      }, 3000);
-
-      supabase.auth.getSession()
-        .then(({ data: { session }, error }) => {
-          clearTimeout(timeoutId);
-          console.log('getSession result:', {
-            hasSession: !!session,
-            error: error?.message,
-            user: session?.user?.email
-          });
-
-          if (!processed && !session) {
-            setLoading(false);
-          } else if (!processed && session) {
-            setSession(session);
-            setUser(session.user);
-            fetchProfile(session.user.id).then(() => setLoading(false));
-            processed = true;
-          }
-        })
-        .catch(err => {
-          clearTimeout(timeoutId);
-          console.error('getSession error:', err);
-          if (!processed) {
-            setLoading(false);
-          }
-        });
-    }
+      });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -168,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signInWithGoogle(redirectPath?: string) {
-    const redirectUrl = `${window.location.origin}${redirectPath || window.location.pathname}`;
+    const redirectUrl = `${window.location.origin}${redirectPath || '/'}`;
     console.log('Google sign in - redirect URL:', redirectUrl);
 
     const { error } = await supabase.auth.signInWithOAuth({
