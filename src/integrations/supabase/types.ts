@@ -370,6 +370,122 @@ export type Database = {
           },
         ]
       }
+      workout_submissions: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          id: string
+          leader_id: string | null
+          leadership_note: string | null
+          message: string | null
+          slot_id: string | null
+          status: string | null
+          submitted_at: string | null
+          updated_at: string | null
+          workout_plan: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          leader_id?: string | null
+          leadership_note?: string | null
+          message?: string | null
+          slot_id?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          workout_plan: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          leader_id?: string | null
+          leadership_note?: string | null
+          message?: string | null
+          slot_id?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          workout_plan?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_submissions_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: true
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: true
+            referencedRelation: "workout_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       core_roster: {

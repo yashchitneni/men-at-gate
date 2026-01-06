@@ -2,6 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { WorkoutSlot, WorkoutInterest, WorkoutSubmission, Profile } from '@/types/database.types';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
+
 // Extended types
 type WorkoutSlotWithLeader = WorkoutSlot & {
   leader: Profile | null;
@@ -304,7 +307,7 @@ export function useWorkoutSubmission(slotId: string) {
   return useQuery({
     queryKey: ['workouts', 'submission', slotId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('workout_submissions')
         .select('*')
         .eq('slot_id', slotId)
@@ -322,10 +325,10 @@ export function useMyWorkoutSubmission(slotId: string) {
   return useQuery({
     queryKey: ['workouts', 'my-submission', slotId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await db.auth.getUser();
       if (!user) return null;
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('workout_submissions')
         .select('*')
         .eq('slot_id', slotId)
@@ -344,7 +347,7 @@ export function useAllWorkoutSubmissions() {
   return useQuery({
     queryKey: ['workouts', 'submissions'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('workout_submissions')
         .select('*')
         .order('created_at', { ascending: false });
@@ -373,11 +376,11 @@ export function useSaveWorkoutSubmission() {
       leadershipNote?: string;
       status?: 'draft' | 'submitted';
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await db.auth.getUser();
       if (!user) throw new Error('Must be logged in');
 
       // Check if submission exists
-      const { data: existing } = await supabase
+      const { data: existing } = await db
         .from('workout_submissions')
         .select('id')
         .eq('slot_id', slotId)
@@ -385,7 +388,7 @@ export function useSaveWorkoutSubmission() {
 
       if (existing) {
         // Update
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from('workout_submissions')
           .update({
             workout_plan: workoutPlan,
@@ -403,7 +406,7 @@ export function useSaveWorkoutSubmission() {
         return data;
       } else {
         // Insert
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from('workout_submissions')
           .insert({
             slot_id: slotId,
@@ -433,10 +436,10 @@ export function useApproveSubmission() {
 
   return useMutation({
     mutationFn: async (submissionId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await db.auth.getUser();
       if (!user) throw new Error('Must be logged in');
 
-      const { error } = await supabase
+      const { error } = await db
         .from('workout_submissions')
         .update({
           status: 'approved',
