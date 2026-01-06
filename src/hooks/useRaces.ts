@@ -147,9 +147,14 @@ export function useJoinRace() {
       openToSplitLodging?: boolean;
       notes?: string;
     }) => {
+      console.log('🟢 useJoinRace mutation called', { raceId, openToCarpool, openToSplitLodging, notes });
+
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('🟢 Got user:', { hasUser: !!user, userId: user?.id });
+
       if (!user) throw new Error('Must be logged in');
 
+      console.log('🟢 Attempting to insert race participant...');
       const { error } = await supabase
         .from('race_participants')
         .insert({
@@ -160,9 +165,11 @@ export function useJoinRace() {
           notes,
         });
 
+      console.log('🟢 Insert result:', { error });
       if (error) throw error;
     },
     onSuccess: () => {
+      console.log('🟢 useJoinRace success!');
       queryClient.invalidateQueries({ queryKey: ['races'] });
     },
   });

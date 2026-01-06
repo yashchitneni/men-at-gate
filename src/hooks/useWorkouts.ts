@@ -132,9 +132,14 @@ export function useExpressInterest() {
       preferredDates?: string;
       notes?: string;
     }) => {
+      console.log('🔵 useExpressInterest mutation called', { preferredDates, notes });
+
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('🔵 Got user:', { hasUser: !!user, userId: user?.id });
+
       if (!user) throw new Error('Must be logged in');
 
+      console.log('🔵 Attempting to insert workout interest...');
       const { data, error } = await supabase
         .from('workout_interest')
         .insert({
@@ -145,10 +150,12 @@ export function useExpressInterest() {
         .select()
         .single();
 
+      console.log('🔵 Insert result:', { data, error });
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
+      console.log('🔵 useExpressInterest success!');
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
     },
   });
