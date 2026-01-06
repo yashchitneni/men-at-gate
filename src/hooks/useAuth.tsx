@@ -78,6 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (accessToken && refreshToken) {
       console.log('Found OAuth tokens in URL, setting session...');
+      console.log('Access token:', accessToken.substring(0, 50) + '...');
+      console.log('Refresh token:', refreshToken);
+
       // Manually set the session from URL tokens
       supabase.auth.setSession({
         access_token: accessToken,
@@ -87,10 +90,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) {
           console.error('Error setting session:', error);
           setLoading(false);
+        } else if (data.session) {
+          console.log('Session set successfully!');
         }
         // onAuthStateChange will handle the rest
+      }).catch((err) => {
+        console.error('setSession threw error:', err);
+        setLoading(false);
       });
     } else {
+      console.log('No OAuth tokens found in URL');
+      console.log('accessToken:', accessToken);
+      console.log('refreshToken:', refreshToken);
       // No OAuth callback, get existing session
       supabase.auth.getSession().then(({ data: { session }, error }) => {
         console.log('getSession result:', { session: !!session, error, user: session?.user?.email });
