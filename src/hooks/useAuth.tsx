@@ -46,41 +46,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     console.log('=== Auth Provider Initializing ===');
+    console.log('Current URL:', window.location.href);
+    console.log('URL Hash:', window.location.hash);
 
     let processed = false;
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.email);
+        console.log('🔐 Auth state change:', event, session?.user?.email);
 
-        if (processed) return;
+        if (processed) {
+          console.log('Already processed, skipping');
+          return;
+        }
 
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          console.log('Fetching profile for user:', session.user.id);
           await fetchProfile(session.user.id);
         } else {
           setProfile(null);
         }
         setLoading(false);
         processed = true;
+
+        // Clean up hash after OAuth callback
+        if (event === 'SIGNED_IN' && window.location.hash) {
+          console.log('Cleaning up URL hash');
+          window.history.replaceState(null, '', window.location.pathname);
+        }
       }
     );
 
     // Get existing session
+    console.log('Checking for existing session...');
     supabase.auth.getSession()
       .then(({ data: { session }, error }) => {
-        console.log('getSession result:', {
+        console.log('🔐 getSession result:', {
           hasSession: !!session,
           error: error?.message,
           user: session?.user?.email
         });
 
         if (!processed && !session) {
+          console.log('No session found, setting loading false');
           setLoading(false);
         } else if (!processed && session) {
+          console.log('Session found, setting user and fetching profile');
           setSession(session);
           setUser(session.user);
           fetchProfile(session.user.id).then(() => setLoading(false));
