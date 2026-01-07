@@ -49,6 +49,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('Current URL:', window.location.href);
     console.log('URL Hash:', window.location.hash);
 
+    // Check if we've already processed this OAuth callback
+    const hasProcessedOAuth = sessionStorage.getItem('oauth_processed');
+    if (window.location.hash.includes('access_token') && hasProcessedOAuth === 'true') {
+      console.log('OAuth already processed, cleaning hash and skipping');
+      window.history.replaceState(null, '', window.location.pathname);
+      sessionStorage.removeItem('oauth_processed');
+    }
+
     let processed = false;
 
     // Listen for auth changes
@@ -76,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Clean up hash after OAuth callback
         if (event === 'SIGNED_IN' && window.location.hash) {
           console.log('Cleaning up URL hash');
+          sessionStorage.setItem('oauth_processed', 'true');
           window.history.replaceState(null, '', window.location.pathname);
         }
       }
