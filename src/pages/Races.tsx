@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useRaces, useJoinRace, useLeaveRace } from '@/hooks/useRaces';
+import { useRaces, useJoinRace, useLeaveRace, useDeleteRace, useUpdateParticipation } from '@/hooks/useRaces';
 import { AuthModal } from '@/components/AuthModal';
 import { RaceCard, RaceFilters } from '@/components/races';
 import Navigation from '@/components/Navigation';
@@ -10,14 +10,18 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Races() {
   const { user } = useAuth();
   const { data: races, isLoading, error } = useRaces();
   const joinRace = useJoinRace();
   const leaveRace = useLeaveRace();
+  const deleteRace = useDeleteRace();
+  const updateParticipation = useUpdateParticipation();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [distanceFilter, setDistanceFilter] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const distanceTypes = useMemo(() => {
     if (!races) return [];
@@ -47,6 +51,35 @@ export default function Races() {
   const handleLeave = (raceId: string) => {
     if (!user) return;
     leaveRace.mutate({ userId: user.id, raceId });
+  };
+
+  const handleDelete = (raceId: string) => {
+    if (!user) return;
+    deleteRace.mutate(raceId, {
+      onSuccess: () => {
+        toast({
+          title: 'Race deleted',
+          description: 'The race has been removed.',
+        });
+      },
+      onError: () => {
+        toast({
+          title: 'Error',
+          description: 'Failed to delete race.',
+          variant: 'destructive',
+        });
+      },
+    });
+  };
+
+  const handleUpdatePreferences = (raceId: string, options: { carpool: boolean; lodging: boolean }) => {
+    if (!user) return;
+    updateParticipation.mutate({
+      userId: user.id,
+      raceId,
+      openToCarpool: options.carpool,
+      openToSplitLodging: options.lodging,
+    });
   };
 
   return (
@@ -141,8 +174,11 @@ export default function Races() {
                     currentUserId={user?.id}
                     onJoin={handleJoin}
                     onLeave={handleLeave}
+                    onDelete={handleDelete}
+                    onUpdatePreferences={handleUpdatePreferences}
                     isJoining={joinRace.isPending}
                     isLeaving={leaveRace.isPending}
+                    isDeleting={deleteRace.isPending}
                   />
                 ))}
               </div>

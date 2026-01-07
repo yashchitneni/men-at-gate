@@ -7,8 +7,18 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Calendar, MapPin, ExternalLink, Users, ChevronDown, ChevronUp, Instagram, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, ExternalLink, Users, ChevronDown, ChevronUp, Instagram, Loader2, Trash2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { RaceWithParticipants } from '@/types/database.types';
 
 interface RaceCardProps {
@@ -16,8 +26,11 @@ interface RaceCardProps {
   currentUserId?: string;
   onJoin: (raceId: string, options: { distance: string; carpool: boolean; lodging: boolean }) => void;
   onLeave: (raceId: string) => void;
+  onDelete: (raceId: string) => void;
+  onUpdatePreferences: (raceId: string, options: { carpool: boolean; lodging: boolean }) => void;
   isJoining: boolean;
   isLeaving: boolean;
+  isDeleting: boolean;
 }
 
 const distanceColors: Record<string, string> = {
@@ -37,14 +50,17 @@ const distanceColors: Record<string, string> = {
   'Spartan/OCR': 'bg-amber-600',
 };
 
-export function RaceCard({ race, currentUserId, onJoin, onLeave, isJoining, isLeaving }: RaceCardProps) {
+export function RaceCard({ race, currentUserId, onJoin, onLeave, onDelete, onUpdatePreferences, isJoining, isLeaving, isDeleting }: RaceCardProps) {
   const [showAllParticipants, setShowAllParticipants] = useState(false);
   const [selectedDistance, setSelectedDistance] = useState(race.available_distances?.[0] || '');
   const [carpoolChecked, setCarpoolChecked] = useState(false);
   const [lodgingChecked, setLodgingChecked] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const isParticipating = race.participants.some(p => p.user_id === currentUserId);
   const myParticipation = race.participants.find(p => p.user_id === currentUserId);
+  const isCreator = race.submitted_by === currentUserId;
+  const canDelete = isCreator && race.participants.length === 1;
 
   const visibleParticipants = race.participants.slice(0, 5);
   const participantNames = race.participants
@@ -68,6 +84,29 @@ export function RaceCard({ race, currentUserId, onJoin, onLeave, isJoining, isLe
       distance: selectedDistance,
       carpool: carpoolChecked,
       lodging: lodgingChecked,
+    });
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    onDelete(race.id);
+    setShowDeleteDialog(false);
+  };
+
+  const handleCarpoolChange = (checked: boolean) => {
+    onUpdatePreferences(race.id, {
+      carpool: checked,
+      lodging: myParticipation?.open_to_split_lodging || false,
+    });
+  };
+
+  const handleLodgingChange = (checked: boolean) => {
+    onUpdatePreferences(race.id, {
+      carpool: myParticipation?.open_to_carpool || false,
+      lodging: checked,
     });
   };
 
@@ -239,29 +278,45 @@ export function RaceCard({ race, currentUserId, onJoin, onLeave, isJoining, isLe
                 <label className="flex items-center gap-2 cursor-pointer">
                   <Checkbox
                     checked={myParticipation?.open_to_carpool || false}
-                    disabled
+                    onCheckedChange={(checked) => handleCarpoolChange(!!checked)}
                   />
                   <span className="text-sm">Open to carpool</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <Checkbox
                     checked={myParticipation?.open_to_split_lodging || false}
-                    disabled
+                    onCheckedChange={(checked) => handleLodgingChange(!!checked)}
                   />
                   <span className="text-sm">Open to split lodging</span>
                 </label>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onLeave(race.id)}
-                disabled={isLeaving}
-                className="text-xs"
-              >
-                {isLeaving && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                Leave
-              </Button>
+              <div className="flex gap-2">
+                {canDelete ? (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleDeleteClick}
+                    disabled={isDeleting}
+                    className="text-xs"
+                  >
+                    {isDeleting && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Delete Race
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onLeave(race.id)}
+                    disabled={isLeaving}
+                    className="text-xs"
+                  >
+                    {isLeaving && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                    Leave
+                  </Button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -311,6 +366,23 @@ export function RaceCard({ race, currentUserId, onJoin, onLeave, isJoining, isLe
           )}
         </div>
       </CardContent>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Race?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{race.race_name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
