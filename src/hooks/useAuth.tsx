@@ -97,22 +97,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('🔐 getSession result:', {
           hasSession: !!session,
           error: error?.message,
-          user: session?.user?.email
+          user: session?.user?.email,
+          hasAccessToken: !!session?.access_token,
         });
+
+        if (error) {
+          console.error('❌ getSession error:', error);
+        }
 
         if (!processed && !session) {
           console.log('No session found, setting loading false');
           setLoading(false);
         } else if (!processed && session) {
-          console.log('Session found, setting user and fetching profile');
+          console.log('✅ Session found, setting user and fetching profile');
           setSession(session);
           setUser(session.user);
-          fetchProfile(session.user.id).then(() => setLoading(false));
+          fetchProfile(session.user.id)
+            .then(() => {
+              console.log('✅ Profile fetched successfully');
+              setLoading(false);
+            })
+            .catch((err) => {
+              console.error('❌ Profile fetch failed:', err);
+              setLoading(false);
+            });
           processed = true;
         }
       })
       .catch(err => {
-        console.error('getSession error:', err);
+        console.error('❌ getSession threw error:', err);
         if (!processed) {
           setLoading(false);
         }
