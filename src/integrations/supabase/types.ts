@@ -123,6 +123,7 @@ export type Database = {
           open_to_carpool: boolean | null
           open_to_split_lodging: boolean | null
           race_id: string
+          selected_distance: string | null
           user_id: string
         }
         Insert: {
@@ -132,6 +133,7 @@ export type Database = {
           open_to_carpool?: boolean | null
           open_to_split_lodging?: boolean | null
           race_id: string
+          selected_distance?: string | null
           user_id: string
         }
         Update: {
@@ -141,6 +143,7 @@ export type Database = {
           open_to_carpool?: boolean | null
           open_to_split_lodging?: boolean | null
           race_id?: string
+          selected_distance?: string | null
           user_id?: string
         }
         Relationships: [
@@ -183,6 +186,7 @@ export type Database = {
       }
       races: {
         Row: {
+          available_distances: Json | null
           created_at: string
           description: string | null
           distance_type: string
@@ -195,6 +199,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          available_distances?: Json | null
           created_at?: string
           description?: string | null
           distance_type: string
@@ -207,6 +212,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          available_distances?: Json | null
           created_at?: string
           description?: string | null
           distance_type?: string
