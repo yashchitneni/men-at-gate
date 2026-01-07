@@ -85,9 +85,20 @@ export default function Profile() {
   }
 
   // Get user's race participations
-  const myRaces = races?.filter(race => 
+  const myRaces = races?.filter(race =>
     race.participants.some(p => p.user_id === user?.id)
   ) || [];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const upcomingRaces = myRaces.filter(race =>
+    new Date(race.race_date + 'T00:00:00') >= today
+  );
+
+  const pastRaces = myRaces.filter(race =>
+    new Date(race.race_date + 'T00:00:00') < today
+  );
 
   // Get workouts user has led
   const myWorkouts = workoutSlots?.filter(slot => 
@@ -243,25 +254,66 @@ export default function Profile() {
                       My Races
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
                     {myRaces.length === 0 ? (
                       <p className="text-sm text-muted-foreground">No races yet</p>
                     ) : (
-                      <div className="space-y-2">
-                        {myRaces.slice(0, 5).map(race => (
-                          <div key={race.id} className="text-sm">
-                            <p className="font-medium">{race.race_name}</p>
-                            <p className="text-muted-foreground">
-                              {format(new Date(race.race_date), 'MMM d, yyyy')}
+                      <>
+                        {/* Upcoming Races */}
+                        {upcomingRaces.length > 0 && (
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase">
+                              Upcoming
                             </p>
+                            <div className="space-y-2">
+                              {upcomingRaces.map(race => (
+                                <Link
+                                  key={race.id}
+                                  to="/races"
+                                  className="block text-sm hover:bg-accent/5 p-2 -mx-2 rounded transition-colors"
+                                >
+                                  <p className="font-medium">{race.race_name}</p>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span>{format(new Date(race.race_date + 'T00:00:00'), 'MMM d, yyyy')}</span>
+                                    <span>•</span>
+                                    <span>{race.participants.length} going</span>
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
                           </div>
-                        ))}
-                        {myRaces.length > 5 && (
-                          <p className="text-sm text-muted-foreground">
-                            +{myRaces.length - 5} more
-                          </p>
                         )}
-                      </div>
+
+                        {/* Past Races */}
+                        {pastRaces.length > 0 && (
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase">
+                              Past
+                            </p>
+                            <div className="space-y-2">
+                              {pastRaces.slice(0, 3).map(race => (
+                                <Link
+                                  key={race.id}
+                                  to="/races"
+                                  className="block text-sm hover:bg-accent/5 p-2 -mx-2 rounded transition-colors opacity-60"
+                                >
+                                  <p className="font-medium">{race.race_name}</p>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span>{format(new Date(race.race_date + 'T00:00:00'), 'MMM d, yyyy')}</span>
+                                    <span>•</span>
+                                    <span>{race.participants.length} went</span>
+                                  </div>
+                                </Link>
+                              ))}
+                              {pastRaces.length > 3 && (
+                                <p className="text-xs text-muted-foreground pl-2">
+                                  +{pastRaces.length - 3} more past races
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </CardContent>
                 </Card>

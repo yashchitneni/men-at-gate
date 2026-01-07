@@ -38,6 +38,8 @@ const formSchema = z.object({
   distance_type: z.string().min(1, 'Distance type is required'),
   registration_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   description: z.string().max(500).optional(),
+  open_to_carpool: z.boolean().default(false),
+  open_to_split_lodging: z.boolean().default(false),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -82,6 +84,8 @@ export default function RaceSubmit() {
       distance_type: '',
       registration_url: '',
       description: '',
+      open_to_carpool: false,
+      open_to_split_lodging: false,
     },
   });
 
@@ -97,6 +101,8 @@ export default function RaceSubmit() {
         distance_type: values.distance_type,
         registration_url: values.registration_url || undefined,
         description: values.description || undefined,
+        open_to_carpool: values.open_to_carpool,
+        open_to_split_lodging: values.open_to_split_lodging,
       });
       toast({
         title: 'Race submitted!',
@@ -248,6 +254,48 @@ export default function RaceSubmit() {
                         </FormItem>
                       )}
                     />
+
+                    <div className="space-y-4 pt-2">
+                      <div className="text-sm font-medium">
+                        I'm open to: <span className="text-muted-foreground font-normal">(optional)</span>
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="open_to_carpool"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal cursor-pointer">
+                              Carpool with other brothers
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="open_to_split_lodging"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal cursor-pointer">
+                              Split lodging costs
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
                     <Button
                       type="submit"

@@ -98,6 +98,8 @@ export function useCreateRace() {
       distance_type: string;
       registration_url?: string;
       description?: string;
+      open_to_carpool?: boolean;
+      open_to_split_lodging?: boolean;
     }) => {
       if (!race.userId) throw new Error('Must be logged in');
 
@@ -122,6 +124,8 @@ export function useCreateRace() {
         .insert({
           race_id: raceData.id,
           user_id: race.userId,
+          open_to_carpool: race.open_to_carpool || false,
+          open_to_split_lodging: race.open_to_split_lodging || false,
         });
       if (participantError) throw participantError;
 
