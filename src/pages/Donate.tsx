@@ -167,11 +167,9 @@ const Donate = () => {
                     <ScrollReveal>
                         <div className="max-w-4xl mx-auto text-center">
                             <blockquote className="text-2xl md:text-3xl font-light italic mb-8">
-                                "This program didn't just get me in shape. It gave me a reason to wake up early,
-                                a group of brothers to rely on, and a renewed sense of purpose. I'm a better father
-                                and husband because of it."
+                                "Making friends has always been easy, however, developing greater value and intention behind relationships for purpose of lifting up myself and other men around me with the support of MITA has been a critical and impactful element in my life since moving to Austin. I've met others who share similar passions, visions, ideas, etc, and, foundationally we all want to become greater men."
                             </blockquote>
-                            <cite className="not-italic font-bold text-lg">— James T., Austin Chapter</cite>
+                            <cite className="not-italic font-bold text-lg">— Kevin Kurz</cite>
                         </div>
                     </ScrollReveal>
                 </div>
