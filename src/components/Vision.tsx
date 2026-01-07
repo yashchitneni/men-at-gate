@@ -1,27 +1,20 @@
 import { Button } from "@/components/ui/button";
 import ScrollReveal from "@/components/ScrollReveal";
-
 const Vision = () => {
-  const initiatives = [
-    {
-      year: "EXPANSION",
-      title: "New Communities",
-      description: "Bringing the arena to cities across the nation. Creating local chapters where men can gather, train, and grow together in person."
-    },
-    {
-      year: "DIGITAL",
-      title: "Online Platform",
-      description: "Providing nationwide access through virtual challenges, resources, and a digital community for men who can't join us physically."
-    },
-    {
-      year: "LEGACY",
-      title: "Mentorship Program",
-      description: "Pairing experienced members with new recruits. Ensuring every man has a guide on his journey through the arena."
-    }
-  ];
-
-  return (
-    <section className="py-24 bg-subtle-gradient relative overflow-hidden">
+  const initiatives = [{
+    year: "EXPANSION",
+    title: "New Communities",
+    description: "Bringing the arena to cities across the nation. Creating local chapters where men can gather, train, and grow together in person."
+  }, {
+    year: "DIGITAL",
+    title: "Online Platform",
+    description: "Providing nationwide access through virtual challenges, resources, and a digital community for men who can't join us physically."
+  }, {
+    year: "LEGACY",
+    title: "Mentorship Program",
+    description: "Pairing experienced members with new recruits. Ensuring every man has a guide on his journey through the arena."
+  }];
+  return <section className="py-24 bg-subtle-gradient relative overflow-hidden">
       <div className="container px-4 relative z-10">
         <div className="max-w-5xl mx-auto">
           <ScrollReveal>
@@ -37,8 +30,7 @@ const Vision = () => {
             {/* Connecting Line (Desktop) */}
             <div className="hidden md:block absolute top-12 left-0 right-0 h-0.5 bg-border -z-10" />
 
-            {initiatives.map((initiative, index) => (
-              <ScrollReveal key={index} delay={index * 200} animation="slide-up">
+            {initiatives.map((initiative, index) => <ScrollReveal key={index} delay={index * 200} animation="slide-up">
                 <div className="bg-background p-8 border border-border relative h-full group hover:border-accent transition-colors duration-300">
                   {/* Timeline Dot */}
                   <div className="w-4 h-4 bg-accent rounded-full absolute -top-2 left-1/2 -translate-x-1/2 hidden md:block ring-4 ring-background" />
@@ -51,8 +43,7 @@ const Vision = () => {
                     {initiative.description}
                   </p>
                 </div>
-              </ScrollReveal>
-            ))}
+              </ScrollReveal>)}
           </div>
 
           <ScrollReveal delay={600}>
@@ -67,7 +58,7 @@ const Vision = () => {
                 </p>
                 <div className="flex justify-center">
                   <Button size="lg" asChild className="bg-accent text-foreground hover:bg-accent/90 font-bold uppercase tracking-widest px-8 py-6 h-auto rounded-none">
-                    <a href="#">Donate Now</a>
+                    
                   </Button>
                 </div>
               </div>
@@ -75,8 +66,6 @@ const Vision = () => {
           </ScrollReveal>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Vision;
