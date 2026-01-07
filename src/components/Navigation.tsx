@@ -63,9 +63,7 @@ const Navigation = () => {
               Workouts
             </Link>
             
-            <Link to="/donate" className="text-sm font-medium text-white hover:text-accent transition-colors uppercase tracking-wider">
-              Donate
-            </Link>
+            
             {user ? <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="font-bold uppercase tracking-wider">
