@@ -51,16 +51,12 @@ export default function Workouts() {
   }
 
   async function handleExpressInterest() {
-    console.log('🟡 handleExpressInterest called', { hasUser: !!user, selectedDates: selectedDates.length });
-
     if (!user) {
-      console.log('🟡 No user, opening auth modal');
       setAuthModalOpen(true);
       return;
     }
 
     if (selectedDates.length === 0) {
-      console.log('🟡 No dates selected');
       toast({
         title: 'Select at least one date',
         description: 'Please pick which dates you\'re available.',
@@ -69,14 +65,12 @@ export default function Workouts() {
       return;
     }
 
-    console.log('🟡 Calling expressInterest mutation...');
     try {
       await expressInterest.mutateAsync({
         userId: user.id,
         preferredDates: selectedDates.map(d => format(new Date(d), 'MMM d, yyyy')).join(', '),
         notes: notes || undefined,
       });
-      console.log('🟡 Mutation completed successfully');
       toast({
         title: "You're on the list!",
         description: "A leader will reach out to schedule you.",
@@ -85,7 +79,6 @@ export default function Workouts() {
       setSelectedDates([]);
       setNotes('');
     } catch (error) {
-      console.error('🟡 Mutation error:', error);
       toast({
         title: 'Error',
         description: 'Failed to submit. Please try again.',

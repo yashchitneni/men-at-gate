@@ -99,13 +99,9 @@ export function useCreateRace() {
       registration_url?: string;
       description?: string;
     }) => {
-      console.log('🟢 useCreateRace mutation called', { userId: race.userId, raceName: race.race_name });
-
       if (!race.userId) throw new Error('Must be logged in');
 
-      console.log('🟢 Attempting to insert race...');
-
-      const insertPromise = supabase
+      const { data: raceData, error: raceError } = await supabase
         .from('races')
         .insert({
           race_name: race.race_name,
@@ -119,31 +115,19 @@ export function useCreateRace() {
         .select()
         .single();
 
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Insert timed out after 5 seconds')), 5000)
-      );
-
-      const { data: raceData, error: raceError } = await Promise.race([insertPromise, timeoutPromise]) as any;
-
-      console.log('🟢 Insert race result:', { data: raceData, error: raceError });
       if (raceError) throw raceError;
 
-      console.log('🟢 Adding creator as participant...');
-      // Auto-add creator as participant
       const { error: participantError } = await supabase
         .from('race_participants')
         .insert({
           race_id: raceData.id,
           user_id: race.userId,
         });
-
-      console.log('🟢 Participant insert result:', { error: participantError });
       if (participantError) throw participantError;
 
       return raceData;
     },
     onSuccess: () => {
-      console.log('🟢 useCreateRace success!');
       queryClient.invalidateQueries({ queryKey: ['races'] });
     },
   });
@@ -167,11 +151,8 @@ export function useJoinRace() {
       openToSplitLodging?: boolean;
       notes?: string;
     }) => {
-      console.log('🟢 useJoinRace mutation called', { userId, raceId, openToCarpool, openToSplitLodging, notes });
-
       if (!userId) throw new Error('Must be logged in');
 
-      console.log('🟢 Attempting to insert race participant...');
       const { error } = await supabase
         .from('race_participants')
         .insert({
@@ -181,12 +162,9 @@ export function useJoinRace() {
           open_to_split_lodging: openToSplitLodging,
           notes,
         });
-
-      console.log('🟢 Insert result:', { error });
       if (error) throw error;
     },
     onSuccess: () => {
-      console.log('🟢 useJoinRace success!');
       queryClient.invalidateQueries({ queryKey: ['races'] });
     },
   });

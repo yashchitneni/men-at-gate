@@ -54,7 +54,6 @@ export default function Races() {
       setAuthModalOpen(true);
       return;
     }
-    console.log('🟡 handleJoinClick called', { userId: user.id, raceId });
     const options = joinOptions[raceId] || { carpool: false, lodging: false };
     joinRace.mutate({
       userId: user.id,

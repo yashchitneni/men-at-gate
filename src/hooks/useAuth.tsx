@@ -45,14 +45,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    console.log('=== Auth Provider Initializing ===');
-    console.log('Current URL:', window.location.href);
-    console.log('URL Hash:', window.location.hash);
-
     // Check if we've already processed this OAuth callback
     const hasProcessedOAuth = sessionStorage.getItem('oauth_processed');
     if (window.location.hash.includes('access_token') && hasProcessedOAuth === 'true') {
-      console.log('OAuth already processed, cleaning hash and skipping');
       window.history.replaceState(null, '', window.location.pathname);
       sessionStorage.removeItem('oauth_processed');
     }
@@ -62,18 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔐 Auth state change:', event, session?.user?.email);
-
-        if (processed) {
-          console.log('Already processed, skipping');
-          return;
-        }
+        if (processed) return;
 
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          console.log('Fetching profile for user:', session.user.id);
           await fetchProfile(session.user.id);
         } else {
           setProfile(null);
@@ -83,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Clean up hash after OAuth callback
         if (event === 'SIGNED_IN' && window.location.hash) {
-          console.log('Cleaning up URL hash');
           sessionStorage.setItem('oauth_processed', 'true');
           window.history.replaceState(null, '', window.location.pathname);
         }
@@ -91,41 +79,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // Get existing session
-    console.log('Checking for existing session...');
     supabase.auth.getSession()
-      .then(({ data: { session }, error }) => {
-        console.log('🔐 getSession result:', {
-          hasSession: !!session,
-          error: error?.message,
-          user: session?.user?.email,
-          hasAccessToken: !!session?.access_token,
-        });
-
-        if (error) {
-          console.error('❌ getSession error:', error);
-        }
-
+      .then(({ data: { session } }) => {
         if (!processed && !session) {
-          console.log('No session found, setting loading false');
           setLoading(false);
         } else if (!processed && session) {
-          console.log('✅ Session found, setting user and fetching profile');
           setSession(session);
           setUser(session.user);
-          fetchProfile(session.user.id)
-            .then(() => {
-              console.log('✅ Profile fetched successfully');
-              setLoading(false);
-            })
-            .catch((err) => {
-              console.error('❌ Profile fetch failed:', err);
-              setLoading(false);
-            });
+          fetchProfile(session.user.id).then(() => setLoading(false));
           processed = true;
         }
       })
-      .catch(err => {
-        console.error('❌ getSession threw error:', err);
+      .catch(() => {
         if (!processed) {
           setLoading(false);
         }

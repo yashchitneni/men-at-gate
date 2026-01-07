@@ -134,13 +134,9 @@ export function useExpressInterest() {
       preferredDates?: string;
       notes?: string;
     }) => {
-      console.log('🔵 useExpressInterest mutation called', { userId, preferredDates, notes });
-
       if (!userId) throw new Error('Must be logged in');
 
-      console.log('🔵 Attempting to insert workout interest...');
-
-      const insertPromise = supabase
+      const { data, error } = await supabase
         .from('workout_interest')
         .insert({
           user_id: userId,
@@ -149,19 +145,10 @@ export function useExpressInterest() {
         })
         .select()
         .single();
-
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Insert timed out after 5 seconds')), 5000)
-      );
-
-      const { data, error } = await Promise.race([insertPromise, timeoutPromise]) as any;
-
-      console.log('🔵 Insert result:', { data, error });
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      console.log('🔵 useExpressInterest success!');
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
     },
   });

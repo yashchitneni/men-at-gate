@@ -5,23 +5,6 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// Debug: Check if env vars are loaded
-console.log('Supabase initialization:', {
-  url: SUPABASE_URL,
-  hasKey: !!SUPABASE_PUBLISHABLE_KEY,
-  keyPrefix: SUPABASE_PUBLISHABLE_KEY?.substring(0, 20) + '...'
-});
-
-// Debug: Log session state
-setTimeout(async () => {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  console.log('📍 Initial session check:', {
-    hasSession: !!session,
-    hasAccessToken: !!session?.access_token,
-    expiresAt: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
-    error: error?.message,
-  });
-}, 1000);
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
