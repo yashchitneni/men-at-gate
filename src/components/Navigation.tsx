@@ -45,12 +45,19 @@ const Navigation = () => {
   return <nav className="fixed top-0 left-0 right-0 z-50 bg-[#1a1a1a] backdrop-blur-sm">
       <div className="container px-4">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
             <Link to="/" onClick={() => window.scrollTo({
             top: 0,
             behavior: 'smooth'
-          })} className="text-xl font-bold text-white hover:text-white/80 transition-colors">
-              Men in the Arena
+          })} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <img 
+                src="/favicon.jpg" 
+                alt="Men in the Arena" 
+                className="h-10 w-10 rounded-sm object-contain"
+              />
+              <span className="text-xl font-bold text-white">
+                Men in the Arena
+              </span>
             </Link>
           </div>
 
