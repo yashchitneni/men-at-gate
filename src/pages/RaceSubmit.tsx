@@ -9,6 +9,7 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -36,6 +37,8 @@ const formSchema = z.object({
   race_date: z.string().min(1, 'Date is required'),
   location: z.string().min(2, 'Location is required'),
   distance_type: z.string().min(1, 'Distance type is required'),
+  available_distances: z.array(z.string()).min(1, 'Select at least one distance'),
+  selected_distance: z.string().min(1, 'Please select your distance'),
   registration_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   description: z.string().max(500).optional(),
   open_to_carpool: z.boolean().default(false),
@@ -82,6 +85,8 @@ export default function RaceSubmit() {
       race_date: '',
       location: '',
       distance_type: '',
+      available_distances: [],
+      selected_distance: '',
       registration_url: '',
       description: '',
       open_to_carpool: false,
@@ -99,6 +104,8 @@ export default function RaceSubmit() {
         race_date: values.race_date,
         location: values.location,
         distance_type: values.distance_type,
+        available_distances: values.available_distances,
+        selected_distance: values.selected_distance,
         registration_url: values.registration_url || undefined,
         description: values.description || undefined,
         open_to_carpool: values.open_to_carpool,
@@ -249,6 +256,85 @@ export default function RaceSubmit() {
                           </FormControl>
                           <FormDescription>
                             Max 500 characters
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="available_distances"
+                      render={() => (
+                        <FormItem>
+                          <div className="mb-4">
+                            <FormLabel className="text-base">Available Distances *</FormLabel>
+                            <FormDescription>
+                              Select all race distances available at this event
+                            </FormDescription>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {distanceTypes.map((distance) => (
+                              <FormField
+                                key={distance}
+                                control={form.control}
+                                name="available_distances"
+                                render={({ field }) => (
+                                  <FormItem
+                                    key={distance}
+                                    className="flex items-start space-x-3 space-y-0"
+                                  >
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(distance)}
+                                        onCheckedChange={(checked) => {
+                                          const current = field.value || [];
+                                          const updated = checked
+                                            ? [...current, distance]
+                                            : current.filter((val) => val !== distance);
+                                          field.onChange(updated);
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormLabel className="font-normal cursor-pointer text-sm">
+                                      {distance}
+                                    </FormLabel>
+                                  </FormItem>
+                                )}
+                              />
+                            ))}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="selected_distance"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Which distance are you running? *</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={!form.watch('available_distances')?.length}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select your distance" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {(form.watch('available_distances') || []).map((distance) => (
+                                <SelectItem key={distance} value={distance}>
+                                  {distance}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Choose the distance you'll be running from the available options
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

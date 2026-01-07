@@ -96,6 +96,8 @@ export function useCreateRace() {
       race_date: string;
       location: string;
       distance_type: string;
+      available_distances: string[];
+      selected_distance?: string;
       registration_url?: string;
       description?: string;
       open_to_carpool?: boolean;
@@ -110,6 +112,7 @@ export function useCreateRace() {
           race_date: race.race_date,
           location: race.location,
           distance_type: race.distance_type,
+          available_distances: race.available_distances,
           registration_url: race.registration_url,
           description: race.description,
           submitted_by: race.userId,
@@ -124,6 +127,7 @@ export function useCreateRace() {
         .insert({
           race_id: raceData.id,
           user_id: race.userId,
+          selected_distance: race.selected_distance || null,
           open_to_carpool: race.open_to_carpool || false,
           open_to_split_lodging: race.open_to_split_lodging || false,
         });
@@ -145,12 +149,14 @@ export function useJoinRace() {
     mutationFn: async ({
       userId,
       raceId,
+      selectedDistance,
       openToCarpool = false,
       openToSplitLodging = false,
       notes,
     }: {
       userId: string;
       raceId: string;
+      selectedDistance?: string;
       openToCarpool?: boolean;
       openToSplitLodging?: boolean;
       notes?: string;
@@ -162,6 +168,7 @@ export function useJoinRace() {
         .insert({
           race_id: raceId,
           user_id: userId,
+          selected_distance: selectedDistance || null,
           open_to_carpool: openToCarpool,
           open_to_split_lodging: openToSplitLodging,
           notes,

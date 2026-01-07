@@ -30,7 +30,7 @@ export default function Races() {
     return races.filter(r => r.distance_type === distanceFilter);
   }, [races, distanceFilter]);
 
-  const handleJoin = (raceId: string, options: { carpool: boolean; lodging: boolean }) => {
+  const handleJoin = (raceId: string, options: { distance: string; carpool: boolean; lodging: boolean }) => {
     if (!user) {
       setAuthModalOpen(true);
       return;
@@ -38,6 +38,7 @@ export default function Races() {
     joinRace.mutate({
       userId: user.id,
       raceId,
+      selectedDistance: options.distance,
       openToCarpool: options.carpool,
       openToSplitLodging: options.lodging,
     });

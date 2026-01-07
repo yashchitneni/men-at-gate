@@ -81,6 +81,7 @@ export interface Database {
           race_date: string;
           location: string;
           distance_type: string;
+          available_distances: string[];
           registration_url: string | null;
           description: string | null;
           submitted_by: string | null;
@@ -93,6 +94,7 @@ export interface Database {
           race_date: string;
           location: string;
           distance_type: string;
+          available_distances?: string[];
           registration_url?: string | null;
           description?: string | null;
           submitted_by?: string | null;
@@ -104,6 +106,7 @@ export interface Database {
           race_date?: string;
           location?: string;
           distance_type?: string;
+          available_distances?: string[];
           registration_url?: string | null;
           description?: string | null;
           updated_at?: string;
@@ -114,6 +117,7 @@ export interface Database {
           id: string;
           race_id: string;
           user_id: string;
+          selected_distance: string | null;
           open_to_carpool: boolean;
           open_to_split_lodging: boolean;
           notes: string | null;
@@ -123,12 +127,14 @@ export interface Database {
           id?: string;
           race_id: string;
           user_id: string;
+          selected_distance?: string | null;
           open_to_carpool?: boolean;
           open_to_split_lodging?: boolean;
           notes?: string | null;
           created_at?: string;
         };
         Update: {
+          selected_distance?: string | null;
           open_to_carpool?: boolean;
           open_to_split_lodging?: boolean;
           notes?: string | null;

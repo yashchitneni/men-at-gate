@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { Calendar, MapPin, ExternalLink, Users, ChevronDown, ChevronUp, Instagram, Loader2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { RaceWithParticipants } from '@/types/database.types';
@@ -12,7 +14,7 @@ import type { RaceWithParticipants } from '@/types/database.types';
 interface RaceCardProps {
   race: RaceWithParticipants;
   currentUserId?: string;
-  onJoin: (raceId: string, options: { carpool: boolean; lodging: boolean }) => void;
+  onJoin: (raceId: string, options: { distance: string; carpool: boolean; lodging: boolean }) => void;
   onLeave: (raceId: string) => void;
   isJoining: boolean;
   isLeaving: boolean;
@@ -37,6 +39,7 @@ const distanceColors: Record<string, string> = {
 
 export function RaceCard({ race, currentUserId, onJoin, onLeave, isJoining, isLeaving }: RaceCardProps) {
   const [showAllParticipants, setShowAllParticipants] = useState(false);
+  const [selectedDistance, setSelectedDistance] = useState(race.available_distances?.[0] || '');
   const [carpoolChecked, setCarpoolChecked] = useState(false);
   const [lodgingChecked, setLodgingChecked] = useState(false);
 
@@ -50,10 +53,19 @@ export function RaceCard({ race, currentUserId, onJoin, onLeave, isJoining, isLe
     .join(' · ');
   const remainingCount = Math.max(0, race.participants.length - 4);
 
-  const badgeColor = distanceColors[race.distance_type] || 'bg-gray-500';
+  const availableDistances = race.available_distances?.length > 0 ? race.available_distances : [race.distance_type];
+
+  const participantsByDistance = race.participants.reduce((acc, p) => {
+    const distance = p.selected_distance || 'Not specified';
+    if (!acc[distance]) acc[distance] = [];
+    acc[distance].push(p);
+    return acc;
+  }, {} as Record<string, typeof race.participants>);
 
   const handleJoinClick = () => {
+    if (!selectedDistance) return;
     onJoin(race.id, {
+      distance: selectedDistance,
       carpool: carpoolChecked,
       lodging: lodgingChecked,
     });
@@ -65,9 +77,16 @@ export function RaceCard({ race, currentUserId, onJoin, onLeave, isJoining, isLe
         <div className="flex justify-between items-start gap-4">
           <div className="flex-1 min-w-0">
             <CardTitle className="text-xl mb-2 break-words">{race.race_name}</CardTitle>
-            <Badge className={`${badgeColor} text-white border-0`}>
-              {race.distance_type}
-            </Badge>
+            <div className="flex flex-wrap gap-2">
+              {availableDistances.map((distance) => {
+                const badgeColor = distanceColors[distance] || 'bg-gray-500';
+                return (
+                  <Badge key={distance} className={`${badgeColor} text-white border-0`}>
+                    {distance}
+                  </Badge>
+                );
+              })}
+            </div>
           </div>
           {race.registration_url && (
             <Button variant="ghost" size="icon" asChild className="shrink-0">
@@ -153,35 +172,44 @@ export function RaceCard({ race, currentUserId, onJoin, onLeave, isJoining, isLe
                 </CollapsibleTrigger>
 
                 <CollapsibleContent className="mt-3">
-                  <div className="space-y-2">
-                    {race.participants.map((p) => (
-                      <div key={p.id} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <Avatar className="h-8 w-8 shrink-0">
-                            <AvatarFallback className="text-xs">
-                              {p.profile?.full_name?.charAt(0) || '?'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium truncate">
-                              {p.profile?.full_name || 'Anonymous'}
-                            </p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              {p.open_to_carpool && <span>🚗 Carpool</span>}
-                              {p.open_to_split_lodging && <span>🏠 Lodging</span>}
+                  <div className="space-y-4">
+                    {Object.entries(participantsByDistance).map(([distance, participants]) => (
+                      <div key={distance}>
+                        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase">
+                          {distance} ({participants.length})
+                        </p>
+                        <div className="space-y-2">
+                          {participants.map((p) => (
+                            <div key={p.id} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <Avatar className="h-8 w-8 shrink-0">
+                                  <AvatarFallback className="text-xs">
+                                    {p.profile?.full_name?.charAt(0) || '?'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium truncate">
+                                    {p.profile?.full_name || 'Anonymous'}
+                                  </p>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    {p.open_to_carpool && <span>🚗 Carpool</span>}
+                                    {p.open_to_split_lodging && <span>🏠 Lodging</span>}
+                                  </div>
+                                </div>
+                              </div>
+                              {p.profile?.instagram_handle && (
+                                <a
+                                  href={`https://instagram.com/${p.profile.instagram_handle.replace('@', '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-muted-foreground hover:text-accent transition-colors shrink-0"
+                                >
+                                  <Instagram className="h-4 w-4" />
+                                </a>
+                              )}
                             </div>
-                          </div>
+                          ))}
                         </div>
-                        {p.profile?.instagram_handle && (
-                          <a
-                            href={`https://instagram.com/${p.profile.instagram_handle.replace('@', '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-muted-foreground hover:text-accent transition-colors shrink-0"
-                          >
-                            <Instagram className="h-4 w-4" />
-                          </a>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -195,9 +223,16 @@ export function RaceCard({ race, currentUserId, onJoin, onLeave, isJoining, isLe
         <div className="pt-4 border-t">
           {isParticipating ? (
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-green-600 font-medium">
-                <span className="text-lg">✓</span>
-                You're going
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm text-green-600 font-medium">
+                  <span className="text-lg">✓</span>
+                  You're going
+                </div>
+                {myParticipation?.selected_distance && (
+                  <p className="text-xs text-muted-foreground ml-6">
+                    Running: {myParticipation.selected_distance}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -230,10 +265,26 @@ export function RaceCard({ race, currentUserId, onJoin, onLeave, isJoining, isLe
             </div>
           ) : (
             <div className="space-y-3">
+              {availableDistances.length > 1 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Which distance are you running?</Label>
+                  <RadioGroup value={selectedDistance} onValueChange={setSelectedDistance}>
+                    {availableDistances.map((distance) => (
+                      <div key={distance} className="flex items-center space-x-2">
+                        <RadioGroupItem value={distance} id={`distance-${distance}`} />
+                        <Label htmlFor={`distance-${distance}`} className="font-normal cursor-pointer">
+                          {distance}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+              )}
+
               <Button
                 className="w-full bg-accent hover:bg-accent/90"
                 onClick={handleJoinClick}
-                disabled={isJoining}
+                disabled={isJoining || !selectedDistance}
               >
                 {isJoining && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 I'm Going!
