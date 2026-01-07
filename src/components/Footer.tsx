@@ -6,6 +6,11 @@ const Footer = () => {
     <footer className="bg-primary text-primary-foreground py-16">
       <div className="container px-4">
         <div className="max-w-4xl mx-auto text-center">
+          <img 
+            src="/favicon.jpg" 
+            alt="Men in the Arena Logo" 
+            className="h-16 w-auto mx-auto mb-6"
+          />
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Step In?</h2>
           <p className="text-lg mb-8 text-primary-foreground/90">
             The arena is waiting. Join us for your first workout and discover what you're capable of.
