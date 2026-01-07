@@ -174,7 +174,7 @@ export default function Races() {
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="h-4 w-4" />
-                            {format(new Date(race.race_date), 'EEEE, MMMM d, yyyy')}
+                            {format(new Date(race.race_date + 'T00:00:00'), 'EEEE, MMMM d, yyyy')}
                           </div>
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <MapPin className="h-4 w-4" />
