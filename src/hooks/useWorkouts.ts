@@ -493,3 +493,46 @@ export function useRequestSubmissionChanges() {
     },
   });
 }
+
+// Extended type for slot with submission
+type WorkoutSlotWithSubmission = WorkoutSlot & {
+  submission: WorkoutSubmission | null;
+};
+
+// Fetch my assigned workout slots with submission data
+export function useMyAssignedWorkouts() {
+  return useQuery({
+    queryKey: ['workouts', 'my-assigned'],
+    queryFn: async () => {
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) return [];
+
+      const { data: slots, error: slotsError } = await db
+        .from('workout_slots')
+        .select('*')
+        .eq('leader_id', user.id)
+        .order('workout_date', { ascending: true });
+
+      if (slotsError) throw slotsError;
+      if (!slots || slots.length === 0) return [];
+
+      // Fetch submissions for these slots
+      const slotIds = slots.map(s => s.id);
+      const { data: submissions } = await db
+        .from('workout_submissions')
+        .select('*')
+        .in('slot_id', slotIds);
+
+      // Create a map of submissions by slot_id
+      const submissionMap = new Map(
+        (submissions || []).map(sub => [sub.slot_id, sub])
+      );
+
+      // Combine slots with their submissions
+      return slots.map(slot => ({
+        ...slot,
+        submission: submissionMap.get(slot.id) || null,
+      })) as WorkoutSlotWithSubmission[];
+    },
+  });
+}

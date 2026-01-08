@@ -124,7 +124,7 @@ export default function WorkoutSubmit() {
                     {slot && (
                       <CardDescription className="flex items-center gap-2 mt-2">
                         <Calendar className="h-4 w-4" />
-                        {format(new Date(slot.workout_date), 'EEEE, MMMM d, yyyy')}
+                        {format(new Date(slot.workout_date + 'T12:00:00'), 'EEEE, MMMM d, yyyy')}
                       </CardDescription>
                     )}
                   </div>

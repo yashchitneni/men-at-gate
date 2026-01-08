@@ -278,7 +278,7 @@ export default function AdminWorkouts() {
                           <div className="flex items-center gap-3">
                             <div>
                               <p className="font-medium">
-                                {format(new Date(slot.workout_date), 'EEE, MMM d, yyyy')}
+                                {format(new Date(slot.workout_date + 'T12:00:00'), 'EEE, MMM d, yyyy')}
                               </p>
                               {slot.leader ? (
                                 <p className="text-sm text-muted-foreground">
@@ -423,7 +423,7 @@ export default function AdminWorkouts() {
                         >
                           <div>
                             <p className="font-medium">
-                              {slot ? format(new Date(slot.workout_date), 'EEE, MMM d, yyyy') : 'Unknown date'}
+                              {slot ? format(new Date(slot.workout_date + 'T12:00:00'), 'EEE, MMM d, yyyy') : 'Unknown date'}
                             </p>
                             <p className="text-sm text-muted-foreground">
                               {slot?.leader?.full_name || 'Unknown leader'}
@@ -515,7 +515,7 @@ export default function AdminWorkouts() {
                   <DialogDescription>
                     {selectedSubmission && getSlotForSubmission(selectedSubmission.slot_id) && (
                       <span>
-                        For {format(new Date(getSlotForSubmission(selectedSubmission.slot_id)!.workout_date), 'EEEE, MMMM d, yyyy')}
+                        For {format(new Date(getSlotForSubmission(selectedSubmission.slot_id)!.workout_date + 'T12:00:00'), 'EEEE, MMMM d, yyyy')}
                       </span>
                     )}
                   </DialogDescription>
