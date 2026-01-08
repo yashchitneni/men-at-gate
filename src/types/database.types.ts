@@ -208,6 +208,10 @@ export interface Database {
           submitted_at: string | null;
           approved_at: string | null;
           approved_by: string | null;
+          admin_feedback: string | null;
+          feedback_requested_at: string | null;
+          feedback_requested_by: string | null;
+          last_submitted_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -222,6 +226,10 @@ export interface Database {
           submitted_at?: string | null;
           approved_at?: string | null;
           approved_by?: string | null;
+          admin_feedback?: string | null;
+          feedback_requested_at?: string | null;
+          feedback_requested_by?: string | null;
+          last_submitted_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -233,6 +241,10 @@ export interface Database {
           submitted_at?: string | null;
           approved_at?: string | null;
           approved_by?: string | null;
+          admin_feedback?: string | null;
+          feedback_requested_at?: string | null;
+          feedback_requested_by?: string | null;
+          last_submitted_at?: string | null;
           updated_at?: string;
         };
       };

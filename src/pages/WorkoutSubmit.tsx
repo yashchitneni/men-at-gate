@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save, Send, Calendar, CheckCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Send, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function WorkoutSubmit() {
@@ -102,6 +102,7 @@ export default function WorkoutSubmit() {
 
   const isApproved = existingSubmission?.status === 'approved';
   const isSubmitted = existingSubmission?.status === 'submitted';
+  const changesRequested = existingSubmission?.status === 'changes_requested';
 
   return (
     <div className="min-h-screen bg-background">
@@ -128,8 +129,15 @@ export default function WorkoutSubmit() {
                     )}
                   </div>
                   {existingSubmission && (
-                    <Badge variant={isApproved ? 'default' : isSubmitted ? 'secondary' : 'outline'}>
-                      {isApproved ? 'Approved' : isSubmitted ? 'Submitted' : 'Draft'}
+                    <Badge
+                      variant={
+                        isApproved ? 'default' :
+                        isSubmitted ? 'secondary' :
+                        changesRequested ? 'destructive' :
+                        'outline'
+                      }
+                    >
+                      {isApproved ? 'Approved' : isSubmitted ? 'Submitted' : changesRequested ? 'Changes Requested' : 'Draft'}
                     </Badge>
                   )}
                 </div>
@@ -140,6 +148,20 @@ export default function WorkoutSubmit() {
                     <CheckCircle className="h-5 w-5 text-green-500" />
                     <p className="text-sm text-green-500 font-medium">
                       Your workout has been approved! You're all set.
+                    </p>
+                  </div>
+                )}
+
+                {changesRequested && existingSubmission?.admin_feedback && (
+                  <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg space-y-2">
+                    <div className="flex items-center gap-3">
+                      <AlertCircle className="h-5 w-5 text-yellow-700" />
+                      <p className="text-sm text-yellow-700 font-semibold">
+                        Admin has requested changes
+                      </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {existingSubmission.admin_feedback}
                     </p>
                   </div>
                 )}
@@ -179,7 +201,7 @@ COOLDOWN (10 min)
                     value={workoutPlan}
                     onChange={(e) => setWorkoutPlan(e.target.value)}
                     className="min-h-[250px] font-mono text-sm"
-                    disabled={isApproved}
+                    disabled={isApproved || isSubmitted}
                   />
                 </div>
 
@@ -198,7 +220,7 @@ COOLDOWN (10 min)
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     className="min-h-[100px]"
-                    disabled={isApproved}
+                    disabled={isApproved || isSubmitted}
                   />
                 </div>
 
@@ -217,7 +239,7 @@ COOLDOWN (10 min)
                     value={leadershipNote}
                     onChange={(e) => setLeadershipNote(e.target.value)}
                     className="min-h-[80px]"
-                    disabled={isApproved}
+                    disabled={isApproved || isSubmitted}
                   />
                 </div>
 
@@ -246,7 +268,7 @@ COOLDOWN (10 min)
                       ) : (
                         <Send className="mr-2 h-4 w-4" />
                       )}
-                      Submit for Review
+                      {changesRequested ? 'Resubmit for Review' : 'Submit for Review'}
                     </Button>
                   </div>
                 )}

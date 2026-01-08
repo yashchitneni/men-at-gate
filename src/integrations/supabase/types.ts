@@ -378,10 +378,14 @@ export type Database = {
       }
       workout_submissions: {
         Row: {
+          admin_feedback: string | null
           approved_at: string | null
           approved_by: string | null
           created_at: string | null
+          feedback_requested_at: string | null
+          feedback_requested_by: string | null
           id: string
+          last_submitted_at: string | null
           leader_id: string | null
           leadership_note: string | null
           message: string | null
@@ -392,10 +396,14 @@ export type Database = {
           workout_plan: string
         }
         Insert: {
+          admin_feedback?: string | null
           approved_at?: string | null
           approved_by?: string | null
           created_at?: string | null
+          feedback_requested_at?: string | null
+          feedback_requested_by?: string | null
           id?: string
+          last_submitted_at?: string | null
           leader_id?: string | null
           leadership_note?: string | null
           message?: string | null
@@ -406,10 +414,14 @@ export type Database = {
           workout_plan: string
         }
         Update: {
+          admin_feedback?: string | null
           approved_at?: string | null
           approved_by?: string | null
           created_at?: string | null
+          feedback_requested_at?: string | null
+          feedback_requested_by?: string | null
           id?: string
+          last_submitted_at?: string | null
           leader_id?: string | null
           leadership_note?: string | null
           message?: string | null

@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { 
-  useWorkoutSlots, 
-  useWorkoutInterest, 
-  useCreateWorkoutSlot, 
+import {
+  useWorkoutSlots,
+  useWorkoutInterest,
+  useCreateWorkoutSlot,
   useAssignLeader,
   useDeleteWorkoutSlot,
   useAllWorkoutSubmissions,
   useApproveSubmission,
+  useRequestSubmissionChanges,
 } from '@/hooks/useWorkouts';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -60,6 +62,7 @@ export default function AdminWorkouts() {
   const assignLeader = useAssignLeader();
   const deleteSlot = useDeleteWorkoutSlot();
   const approveSubmission = useApproveSubmission();
+  const requestChanges = useRequestSubmissionChanges();
   const { toast } = useToast();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -68,6 +71,7 @@ export default function AdminWorkouts() {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
   const [newDate, setNewDate] = useState('');
+  const [adminFeedback, setAdminFeedback] = useState('');
 
   // Redirect if not admin
   useEffect(() => {
@@ -156,10 +160,35 @@ export default function AdminWorkouts() {
       });
       setViewSubmissionModalOpen(false);
       setSelectedSubmission(null);
+      setAdminFeedback('');
     } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to approve submission',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  async function handleRequestChanges() {
+    if (!selectedSubmission || !adminFeedback.trim()) return;
+
+    try {
+      await requestChanges.mutateAsync({
+        submissionId: selectedSubmission.id,
+        feedback: adminFeedback,
+      });
+      toast({
+        title: 'Changes requested',
+        description: 'The leader will be notified to revise their submission.',
+      });
+      setViewSubmissionModalOpen(false);
+      setSelectedSubmission(null);
+      setAdminFeedback('');
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to request changes',
         variant: 'destructive',
       });
     }
@@ -401,10 +430,15 @@ export default function AdminWorkouts() {
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge 
-                              variant={submission.status === 'approved' ? 'default' : submission.status === 'submitted' ? 'secondary' : 'outline'}
+                            <Badge
+                              variant={
+                                submission.status === 'approved' ? 'default' :
+                                submission.status === 'submitted' ? 'secondary' :
+                                submission.status === 'changes_requested' ? 'destructive' :
+                                'outline'
+                              }
                             >
-                              {submission.status}
+                              {submission.status === 'changes_requested' ? 'changes requested' : submission.status}
                             </Badge>
                             <Button
                               variant="ghost"
@@ -488,6 +522,14 @@ export default function AdminWorkouts() {
                 </DialogHeader>
                 {selectedSubmission && (
                   <div className="space-y-6 pt-4">
+                    {selectedSubmission.admin_feedback && (
+                      <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                        <h4 className="font-semibold mb-2 text-yellow-700">Admin Feedback</h4>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {selectedSubmission.admin_feedback}
+                        </p>
+                      </div>
+                    )}
                     <div>
                       <h4 className="font-semibold mb-2">1. The Workout</h4>
                       <div className="p-3 bg-muted rounded-lg whitespace-pre-wrap text-sm font-mono">
@@ -511,23 +553,53 @@ export default function AdminWorkouts() {
                       </div>
                     )}
                     {selectedSubmission.status === 'submitted' && (
-                      <Button
-                        className="w-full bg-green-600 hover:bg-green-700"
-                        onClick={() => handleApproveSubmission(selectedSubmission.id)}
-                        disabled={approveSubmission.isPending}
-                      >
-                        {approveSubmission.isPending ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                        )}
-                        Approve Submission
-                      </Button>
+                      <>
+                        <div className="space-y-3 pt-4 border-t">
+                          <Label htmlFor="admin-feedback">Request Changes (Optional)</Label>
+                          <Textarea
+                            id="admin-feedback"
+                            placeholder="Provide feedback on what needs to be revised..."
+                            value={adminFeedback}
+                            onChange={(e) => setAdminFeedback(e.target.value)}
+                            rows={4}
+                          />
+                        </div>
+                        <div className="flex gap-3">
+                          <Button
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                            onClick={() => handleApproveSubmission(selectedSubmission.id)}
+                            disabled={approveSubmission.isPending}
+                          >
+                            {approveSubmission.isPending ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                            )}
+                            Approve
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={handleRequestChanges}
+                            disabled={requestChanges.isPending || !adminFeedback.trim()}
+                          >
+                            {requestChanges.isPending && (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            Request Changes
+                          </Button>
+                        </div>
+                      </>
                     )}
                     {selectedSubmission.status === 'approved' && (
                       <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg">
                         <CheckCircle className="h-5 w-5 text-green-500" />
                         <span className="text-green-500 font-medium">Approved</span>
+                      </div>
+                    )}
+                    {selectedSubmission.status === 'changes_requested' && (
+                      <div className="flex items-center gap-2 p-3 bg-yellow-500/10 rounded-lg">
+                        <span className="text-yellow-700 font-medium">Waiting for leader to revise</span>
                       </div>
                     )}
                   </div>

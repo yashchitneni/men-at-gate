@@ -388,6 +388,7 @@ export function useSaveWorkoutSubmission() {
 
       if (existing) {
         // Update
+        const now = new Date().toISOString();
         const { data, error } = await db
           .from('workout_submissions')
           .update({
@@ -395,8 +396,9 @@ export function useSaveWorkoutSubmission() {
             message,
             leadership_note: leadershipNote,
             status,
-            submitted_at: status === 'submitted' ? new Date().toISOString() : null,
-            updated_at: new Date().toISOString(),
+            submitted_at: status === 'submitted' ? now : null,
+            last_submitted_at: status === 'submitted' ? now : undefined,
+            updated_at: now,
           })
           .eq('id', existing.id)
           .select()
@@ -406,6 +408,7 @@ export function useSaveWorkoutSubmission() {
         return data;
       } else {
         // Insert
+        const now = new Date().toISOString();
         const { data, error } = await db
           .from('workout_submissions')
           .insert({
@@ -415,7 +418,8 @@ export function useSaveWorkoutSubmission() {
             message,
             leadership_note: leadershipNote,
             status,
-            submitted_at: status === 'submitted' ? new Date().toISOString() : null,
+            submitted_at: status === 'submitted' ? now : null,
+            last_submitted_at: status === 'submitted' ? now : null,
           })
           .select()
           .single();
@@ -445,6 +449,40 @@ export function useApproveSubmission() {
           status: 'approved',
           approved_at: new Date().toISOString(),
           approved_by: user.id,
+        })
+        .eq('id', submissionId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+    },
+  });
+}
+
+// Admin: Request changes on submission
+export function useRequestSubmissionChanges() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      submissionId,
+      feedback,
+    }: {
+      submissionId: string;
+      feedback: string;
+    }) => {
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) throw new Error('Must be logged in');
+
+      const { error } = await db
+        .from('workout_submissions')
+        .update({
+          status: 'changes_requested',
+          admin_feedback: feedback,
+          feedback_requested_at: new Date().toISOString(),
+          feedback_requested_by: user.id,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', submissionId);
 
