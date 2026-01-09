@@ -47,6 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    // Check for OAuth hash and wait for Supabase to process it
+    const hasOAuthHash = window.location.hash.includes('access_token');
+
+    if (hasOAuthHash) {
+      console.log('OAuth callback detected, waiting for Supabase to process...');
+    }
+
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -67,37 +74,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
         }
 
-        // Clean up URL hash after OAuth
+        // Clean up URL hash after successful sign in
         if (event === 'SIGNED_IN' && window.location.hash) {
+          console.log('Cleaning up OAuth hash from URL');
           window.history.replaceState(null, '', window.location.pathname);
         }
       }
     );
 
-    // Initialize session
-    supabase.auth.getSession()
-      .then(({ data: { session } }) => {
-        console.log('Initial session:', session?.user?.id);
+    // Initialize session - delay slightly if OAuth hash present to let Supabase process it
+    const initSession = async () => {
+      // If OAuth hash is present, wait a bit for Supabase to process it
+      if (hasOAuthHash) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
 
-        if (!mounted) return;
+      const { data: { session }, error } = await supabase.auth.getSession();
 
-        setSession(session);
-        setUser(session?.user ?? null);
+      console.log('Initial session check:', session?.user?.id, error);
 
-        if (session?.user) {
-          fetchProfile(session.user.id).then(() => {
-            if (mounted) setLoading(false);
-          });
-        } else {
-          if (mounted) setLoading(false);
-        }
-      })
-      .catch((error) => {
+      if (!mounted) return;
+
+      if (error) {
         console.error('Session initialization error:', error);
-        if (mounted) {
-          setLoading(false);
-        }
-      });
+        if (mounted) setLoading(false);
+        return;
+      }
+
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        await fetchProfile(session.user.id);
+        if (mounted) setLoading(false);
+      } else {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    initSession();
 
     return () => {
       mounted = false;
