@@ -22,6 +22,7 @@ async function supabaseFetch<T>(path: string): Promise<T> {
     headers: {
       'apikey': anonKey,
       'Authorization': `Bearer ${anonKey}`,
+      'Accept': 'application/json',
     },
   });
   if (!response.ok) {
