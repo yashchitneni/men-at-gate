@@ -107,6 +107,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         await fetchProfile(session.user.id);
         if (mounted) setLoading(false);
+
+        // Failsafe: Clean up hash if Supabase didn't do it
+        if (window.location.hash.includes('access_token')) {
+          console.log('Manually cleaning up OAuth hash (failsafe)');
+          window.history.replaceState(null, '', window.location.pathname);
+        }
       } else {
         if (mounted) setLoading(false);
       }
