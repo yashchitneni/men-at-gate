@@ -45,19 +45,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    // Check if we've already processed this OAuth callback
-    const hasProcessedOAuth = sessionStorage.getItem('oauth_processed');
-    if (window.location.hash.includes('access_token') && hasProcessedOAuth === 'true') {
-      window.history.replaceState(null, '', window.location.pathname);
-      sessionStorage.removeItem('oauth_processed');
-    }
-
-    let processed = false;
+    let mounted = true;
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (processed) return;
+        console.log('Auth state changed:', event, session?.user?.id);
+
+        if (!mounted) return;
 
         setSession(session);
         setUser(session?.user ?? null);
@@ -67,36 +62,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setProfile(null);
         }
-        setLoading(false);
-        processed = true;
 
-        // Clean up hash after OAuth callback
+        if (mounted) {
+          setLoading(false);
+        }
+
+        // Clean up URL hash after OAuth
         if (event === 'SIGNED_IN' && window.location.hash) {
-          sessionStorage.setItem('oauth_processed', 'true');
           window.history.replaceState(null, '', window.location.pathname);
         }
       }
     );
 
-    // Get existing session
+    // Initialize session
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
-        if (!processed && !session) {
-          setLoading(false);
-        } else if (!processed && session) {
-          setSession(session);
-          setUser(session.user);
-          fetchProfile(session.user.id).then(() => setLoading(false));
-          processed = true;
+        console.log('Initial session:', session?.user?.id);
+
+        if (!mounted) return;
+
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          fetchProfile(session.user.id).then(() => {
+            if (mounted) setLoading(false);
+          });
+        } else {
+          if (mounted) setLoading(false);
         }
       })
-      .catch(() => {
-        if (!processed) {
+      .catch((error) => {
+        console.error('Session initialization error:', error);
+        if (mounted) {
           setLoading(false);
         }
       });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function signInWithEmail(email: string, redirectPath?: string) {
