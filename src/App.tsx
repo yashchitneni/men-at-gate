@@ -14,6 +14,7 @@ import Races from "./pages/Races";
 import RaceSubmit from "./pages/RaceSubmit";
 import Workouts from "./pages/Workouts";
 import AdminWorkouts from "./pages/AdminWorkouts";
+import AdminMembers from "./pages/AdminMembers";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import WorkoutSubmit from "./pages/WorkoutSubmit";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/workouts" element={<AdminWorkouts />} />
+            <Route path="/admin/members" element={<AdminMembers />} />
             <Route path="/workout-submit/:slotId" element={<WorkoutSubmit />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

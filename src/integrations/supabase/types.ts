@@ -77,6 +77,7 @@ export type Database = {
           instagram_handle: string | null
           is_admin: boolean | null
           is_core_member: boolean | null
+          is_super_admin: boolean | null
           mission: string | null
           phone: string | null
           role: string | null
@@ -92,6 +93,7 @@ export type Database = {
           instagram_handle?: string | null
           is_admin?: boolean | null
           is_core_member?: boolean | null
+          is_super_admin?: boolean | null
           mission?: string | null
           phone?: string | null
           role?: string | null
@@ -107,6 +109,7 @@ export type Database = {
           instagram_handle?: string | null
           is_admin?: boolean | null
           is_core_member?: boolean | null
+          is_super_admin?: boolean | null
           mission?: string | null
           phone?: string | null
           role?: string | null

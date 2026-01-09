@@ -18,6 +18,7 @@ export interface Database {
           instagram_handle: string | null;
           shirt_size: string | null;
           is_admin: boolean;
+          is_super_admin: boolean;
           is_core_member: boolean;
           role: string | null;
           bio: string | null;
@@ -33,6 +34,7 @@ export interface Database {
           instagram_handle?: string | null;
           shirt_size?: string | null;
           is_admin?: boolean;
+          is_super_admin?: boolean;
           is_core_member?: boolean;
           role?: string | null;
           bio?: string | null;
@@ -47,6 +49,7 @@ export interface Database {
           instagram_handle?: string | null;
           shirt_size?: string | null;
           is_admin?: boolean;
+          is_super_admin?: boolean;
           is_core_member?: boolean;
           role?: string | null;
           bio?: string | null;
