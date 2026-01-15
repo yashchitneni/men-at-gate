@@ -246,6 +246,41 @@ export function useAssignLeader() {
   });
 }
 
+export function useUnassignLeader() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (slotId: string) => {
+      const { data: slot, error: fetchError } = await supabase
+        .from('workout_slots')
+        .select('leader_id')
+        .eq('id', slotId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      const leaderId = slot?.leader_id;
+
+      const { error: updateError } = await supabase
+        .from('workout_slots')
+        .update({ leader_id: null, status: 'open' })
+        .eq('id', slotId);
+
+      if (updateError) throw updateError;
+
+      if (leaderId) {
+        await supabase
+          .from('workout_interest')
+          .update({ status: 'pending' })
+          .eq('user_id', leaderId)
+          .eq('status', 'assigned');
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+    },
+  });
+}
+
 // Admin: Update workout slot
 export function useUpdateWorkoutSlot() {
   const queryClient = useQueryClient();

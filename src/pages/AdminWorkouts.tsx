@@ -10,6 +10,7 @@ import {
   useAllWorkoutSubmissions,
   useApproveSubmission,
   useRequestSubmissionChanges,
+  useUnassignLeader,
 } from '@/hooks/useWorkouts';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,12 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -46,6 +53,9 @@ import {
   FileText,
   CheckCircle,
   Eye,
+  MoreVertical,
+  ArrowRightLeft,
+  UserMinus,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -61,6 +71,7 @@ export default function AdminWorkouts() {
   const createSlot = useCreateWorkoutSlot();
   const assignLeader = useAssignLeader();
   const deleteSlot = useDeleteWorkoutSlot();
+  const unassignLeader = useUnassignLeader();
   const approveSubmission = useApproveSubmission();
   const requestChanges = useRequestSubmissionChanges();
   const { toast } = useToast();
@@ -72,6 +83,8 @@ export default function AdminWorkouts() {
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
   const [newDate, setNewDate] = useState('');
   const [adminFeedback, setAdminFeedback] = useState('');
+  const [assignInterestModalOpen, setAssignInterestModalOpen] = useState(false);
+  const [selectedInterest, setSelectedInterest] = useState<typeof pendingInterests[number] | null>(null);
 
   // Redirect if not admin
   useEffect(() => {
@@ -135,6 +148,59 @@ export default function AdminWorkouts() {
     }
   }
 
+  async function handleSwapLeader(slotId: string) {
+    try {
+      await unassignLeader.mutateAsync(slotId);
+      setSelectedSlot(slotId);
+      setAssignModalOpen(true);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to unassign leader',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  async function handleUnassignLeader(slotId: string) {
+    try {
+      await unassignLeader.mutateAsync(slotId);
+      toast({
+        title: 'Leader unassigned',
+        description: 'The workout slot is now open.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to unassign leader',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  async function handleAssignInterestToSlot(slotId: string) {
+    if (!selectedInterest) return;
+
+    try {
+      await assignLeader.mutateAsync({
+        slotId,
+        leaderId: selectedInterest.user_id,
+      });
+      toast({
+        title: 'Leader assigned',
+        description: `${selectedInterest.profile?.full_name || 'Leader'} has been assigned to the workout.`,
+      });
+      setAssignInterestModalOpen(false);
+      setSelectedInterest(null);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to assign leader',
+        variant: 'destructive',
+      });
+    }
+  }
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -145,6 +211,7 @@ export default function AdminWorkouts() {
 
   const pendingInterests = interests?.filter(i => i.status === 'pending') || [];
   const pendingSubmissions = submissions?.filter(s => s.status === 'submitted') || [];
+  const openSlots = slots?.filter(s => s.status === 'open' && !s.leader) || [];
 
   // Get slot info for a submission
   function getSlotForSubmission(slotId: string) {
@@ -293,26 +360,53 @@ export default function AdminWorkouts() {
                             <Badge variant={slot.status === 'assigned' ? 'default' : 'secondary'}>
                               {slot.status}
                             </Badge>
-                            {!slot.leader && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedSlot(slot.id);
-                                  setAssignModalOpen(true);
-                                }}
-                              >
-                                <UserPlus className="h-4 w-4" />
-                              </Button>
+                            {slot.leader ? (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleSwapLeader(slot.id)}>
+                                    <ArrowRightLeft className="h-4 w-4 mr-2" />
+                                    Swap Leader
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleUnassignLeader(slot.id)}>
+                                    <UserMinus className="h-4 w-4 mr-2" />
+                                    Unassign
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteSlot(slot.id)}
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedSlot(slot.id);
+                                    setAssignModalOpen(true);
+                                  }}
+                                >
+                                  <UserPlus className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteSlot(slot.id)}
+                                  disabled={deleteSlot.isPending}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </>
                             )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteSlot(slot.id)}
-                              disabled={deleteSlot.isPending}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
                           </div>
                         </div>
                       ))}
@@ -353,20 +447,33 @@ export default function AdminWorkouts() {
                           key={interest.id} 
                           className="p-3 border rounded-lg space-y-2"
                         >
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                              <AvatarFallback>
-                                {interest.profile?.full_name?.charAt(0) || '?'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">
-                                {interest.profile?.full_name || interest.profile?.email}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Submitted {format(new Date(interest.created_at), 'MMM d, yyyy')}
-                              </p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarFallback>
+                                  {interest.profile?.full_name?.charAt(0) || '?'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">
+                                  {interest.profile?.full_name || interest.profile?.email}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Submitted {format(new Date(interest.created_at), 'MMM d, yyyy')}
+                                </p>
+                              </div>
                             </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedInterest(interest);
+                                setAssignInterestModalOpen(true);
+                              }}
+                            >
+                              <UserPlus className="h-4 w-4 mr-1" />
+                              Assign
+                            </Button>
                           </div>
                           {interest.preferred_dates && (
                             <p className="text-sm">
@@ -499,6 +606,42 @@ export default function AdminWorkouts() {
                             </AvatarFallback>
                           </Avatar>
                           {interest.profile?.full_name || interest.profile?.email}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Assign Interest to Slot Modal */}
+            <Dialog open={assignInterestModalOpen} onOpenChange={setAssignInterestModalOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Assign to Workout Slot</DialogTitle>
+                  <DialogDescription>
+                    {selectedInterest && (
+                      <>Assign {selectedInterest.profile?.full_name || 'this person'} to a workout slot.</>
+                    )}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  {openSlots.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4">
+                      No open workout slots available.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {openSlots.map(slot => (
+                        <Button
+                          key={slot.id}
+                          variant="outline"
+                          className="w-full justify-start"
+                          onClick={() => handleAssignInterestToSlot(slot.id)}
+                          disabled={assignLeader.isPending}
+                        >
+                          <Calendar className="h-4 w-4 mr-2" />
+                          {format(new Date(slot.workout_date + 'T12:00:00'), 'EEE, MMM d, yyyy')}
                         </Button>
                       ))}
                     </div>
