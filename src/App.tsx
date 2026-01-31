@@ -22,6 +22,7 @@ import WorkoutSubmit from "./pages/WorkoutSubmit";
 import MemberProfile from "./pages/MemberProfile";
 import Leaderboard from "./pages/Leaderboard";
 import WorkoutArchive from "./pages/WorkoutArchive";
+import ChapterLanding from "./pages/ChapterLanding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/men" element={<Men />} />
             <Route path="/men/:id" element={<MemberProfile />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/chapters/:slug" element={<ChapterLanding />} />
             <Route path="/races" element={<Races />} />
             <Route path="/races/submit" element={<RaceSubmit />} />
             <Route path="/workouts" element={<Workouts />} />
