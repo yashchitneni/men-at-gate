@@ -21,6 +21,7 @@ import Admin from "./pages/Admin";
 import WorkoutSubmit from "./pages/WorkoutSubmit";
 import MemberProfile from "./pages/MemberProfile";
 import Leaderboard from "./pages/Leaderboard";
+import WorkoutArchive from "./pages/WorkoutArchive";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/races" element={<Races />} />
             <Route path="/races/submit" element={<RaceSubmit />} />
             <Route path="/workouts" element={<Workouts />} />
+            <Route path="/workouts/archive" element={<WorkoutArchive />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/workouts" element={<AdminWorkouts />} />
