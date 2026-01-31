@@ -8,6 +8,7 @@ import Impact from "@/components/Impact";
 import GetInvolved from "@/components/GetInvolved";
 /* Events removed per feedback */
 /* Testimonials not shown on homepage per preference */
+import FeaturedMember from "@/components/FeaturedMember";
 import Vision from "@/components/Vision";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
@@ -23,6 +24,7 @@ const Index = () => {
       <Story />
       <Impact />
       <GetInvolved />
+      <FeaturedMember />
       {/* <Events /> removed */}
       <Vision />
       <FAQ />
