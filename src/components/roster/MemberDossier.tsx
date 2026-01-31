@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Instagram, Linkedin, Twitter } from "lucide-react";
+import { Instagram, Linkedin, Twitter, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Member } from "@/data/members";
 import { Button } from "@/components/ui/button";
 
@@ -116,6 +117,14 @@ const MemberDossier = ({ member }: MemberDossierProps) => {
                   </Button>
                 )}
               </div>
+
+              {/* View Full Profile */}
+              <Button asChild variant="outline" className="mt-4 border-accent text-accent hover:bg-accent hover:text-accent-foreground">
+                <Link to={`/men/${member.id}`}>
+                  View Full Profile
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </div>
 
             {/* Decorative Elements */}

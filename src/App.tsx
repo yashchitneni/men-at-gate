@@ -19,6 +19,7 @@ import AdminMembers from "./pages/AdminMembers";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import WorkoutSubmit from "./pages/WorkoutSubmit";
+import MemberProfile from "./pages/MemberProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/donate-challenge" element={<DonateChallenge />} />
             <Route path="/donate" element={<Donate />} />
             <Route path="/men" element={<Men />} />
+            <Route path="/men/:id" element={<MemberProfile />} />
             <Route path="/races" element={<Races />} />
             <Route path="/races/submit" element={<RaceSubmit />} />
             <Route path="/workouts" element={<Workouts />} />
