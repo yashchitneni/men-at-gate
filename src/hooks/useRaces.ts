@@ -2,22 +2,46 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Race, RaceParticipant, Profile, RaceWithParticipants } from '@/types/database.types';
 
+const SUPABASE_URL = 'https://prursaeokvkulphtskdn.supabase.co';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydXJzYWVva3ZrdWxwaHRza2RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NTYwOTIsImV4cCI6MjA4MzEzMjA5Mn0.Lqku85Nn1jKfomnrtMFpJ20z7wH70JgiMWYBN4iNP-Q';
+
 // Helper for direct fetch (workaround for Supabase client issue)
-async function supabaseFetch<T>(path: string): Promise<T> {
-  const url = `https://prursaeokvkulphtskdn.supabase.co/rest/v1/${path}`;
-  const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydXJzYWVva3ZrdWxwaHRza2RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NTYwOTIsImV4cCI6MjA4MzEzMjA5Mn0.Lqku85Nn1jKfomnrtMFpJ20z7wH70JgiMWYBN4iNP-Q';
+async function supabaseFetch<T>(path: string, options?: {
+  method?: string;
+  body?: unknown;
+  token?: string;
+  prefer?: string;
+}): Promise<T> {
+  const url = `${SUPABASE_URL}/rest/v1/${path}`;
+  const authToken = options?.token || ANON_KEY;
+  const headers: Record<string, string> = {
+    'apikey': ANON_KEY,
+    'Authorization': `Bearer ${authToken}`,
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+  if (options?.prefer) {
+    headers['Prefer'] = options.prefer;
+  }
   const response = await fetch(url, {
-    headers: {
-      'apikey': anonKey,
-      'Authorization': `Bearer ${anonKey}`,
-      'Accept': 'application/json',
-    },
+    method: options?.method || 'GET',
+    headers,
+    body: options?.body ? JSON.stringify(options.body) : undefined,
   });
   if (!response.ok) {
     const err = await response.json();
-    throw new Error(err.message || 'Fetch failed');
+    throw new Error(err.message || err.details || 'Fetch failed');
   }
-  return response.json();
+  const text = await response.text();
+  return text ? JSON.parse(text) : (undefined as T);
+}
+
+async function getAccessToken(): Promise<string> {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) {
+    throw new Error('Not authenticated. Please sign in and try again.');
+  }
+  return session.access_token;
 }
 
 // Fetch all upcoming races with participants
@@ -106,33 +130,40 @@ export function useCreateRace() {
     }) => {
       if (!race.userId) throw new Error('Must be logged in');
 
-      const { data: raceData, error: raceError } = await supabase
-        .from('races')
-        .insert({
+      const token = await getAccessToken();
+
+      // Create race using direct fetch with user's JWT (bypasses Supabase client issues)
+      const [raceData] = await supabaseFetch<Race[]>('races', {
+        method: 'POST',
+        body: {
           race_name: race.race_name,
           race_date: race.race_date,
           location: race.location,
           distance_type: race.distance_type,
           available_distances: race.available_distances,
-          registration_url: race.registration_url,
-          description: race.description,
+          registration_url: race.registration_url || null,
+          description: race.description || null,
           submitted_by: race.userId,
-        })
-        .select()
-        .single();
+        },
+        token,
+        prefer: 'return=representation',
+      });
 
-      if (raceError) throw raceError;
+      if (!raceData) throw new Error('Failed to create race');
 
-      const { error: participantError } = await supabase
-        .from('race_participants')
-        .insert({
+      // Add creator as first participant
+      await supabaseFetch('race_participants', {
+        method: 'POST',
+        body: {
           race_id: raceData.id,
           user_id: race.userId,
           selected_distance: race.selected_distance || null,
           open_to_carpool: race.open_to_carpool || false,
           open_to_split_lodging: race.open_to_split_lodging || false,
-        });
-      if (participantError) throw participantError;
+        },
+        token,
+        prefer: 'return=minimal',
+      });
 
       return raceData;
     },
@@ -164,17 +195,20 @@ export function useJoinRace() {
     }) => {
       if (!userId) throw new Error('Must be logged in');
 
-      const { error } = await supabase
-        .from('race_participants')
-        .insert({
+      const token = await getAccessToken();
+      await supabaseFetch('race_participants', {
+        method: 'POST',
+        body: {
           race_id: raceId,
           user_id: userId,
           selected_distance: selectedDistance || null,
           open_to_carpool: openToCarpool,
           open_to_split_lodging: openToSplitLodging,
-          notes,
-        });
-      if (error) throw error;
+          notes: notes || null,
+        },
+        token,
+        prefer: 'return=minimal',
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['races'] });
@@ -190,13 +224,11 @@ export function useLeaveRace() {
     mutationFn: async ({ userId, raceId }: { userId: string; raceId: string }) => {
       if (!userId) throw new Error('Must be logged in');
 
-      const { error } = await supabase
-        .from('race_participants')
-        .delete()
-        .eq('race_id', raceId)
-        .eq('user_id', userId);
-
-      if (error) throw error;
+      const token = await getAccessToken();
+      await supabaseFetch(`race_participants?race_id=eq.${raceId}&user_id=eq.${userId}`, {
+        method: 'DELETE',
+        token,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['races'] });
@@ -224,17 +256,17 @@ export function useUpdateParticipation() {
     }) => {
       if (!userId) throw new Error('Must be logged in');
 
-      const { error } = await supabase
-        .from('race_participants')
-        .update({
+      const token = await getAccessToken();
+      await supabaseFetch(`race_participants?race_id=eq.${raceId}&user_id=eq.${userId}`, {
+        method: 'PATCH',
+        body: {
           open_to_carpool: openToCarpool,
           open_to_split_lodging: openToSplitLodging,
-          notes,
-        })
-        .eq('race_id', raceId)
-        .eq('user_id', userId);
-
-      if (error) throw error;
+          notes: notes || null,
+        },
+        token,
+        prefer: 'return=minimal',
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['races'] });
@@ -248,12 +280,11 @@ export function useDeleteRace() {
 
   return useMutation({
     mutationFn: async (raceId: string) => {
-      const { error } = await supabase
-        .from('races')
-        .delete()
-        .eq('id', raceId);
-
-      if (error) throw error;
+      const token = await getAccessToken();
+      await supabaseFetch(`races?id=eq.${raceId}`, {
+        method: 'DELETE',
+        token,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['races'] });
