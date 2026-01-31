@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-typecheck-test:
+    name: Lint, Typecheck & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type Check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  # Preview deploy on PRs (Vercel handles this if connected)
+  # Uncomment when Vercel project is set up:
+  # preview:
+  #   name: Preview Deploy
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'pull_request'
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: amondnet/vercel-action@v25
+  #       with:
+  #         vercel-token: ${{ secrets.VERCEL_TOKEN }}
+  #         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+  #         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
