@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Race, RaceParticipant, Profile, RaceWithParticipants } from '@/types/database.types';
+import { captureError } from '@/lib/error-reporting';
 
 // Helper for direct fetch (workaround for Supabase client issue)
 async function supabaseFetch<T>(path: string): Promise<T> {
@@ -139,6 +140,9 @@ export function useCreateRace() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['races'] });
     },
+    onError: (error) => {
+      captureError(error, { hook: 'useCreateRace' });
+    },
   });
 }
 
@@ -179,6 +183,9 @@ export function useJoinRace() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['races'] });
     },
+    onError: (error) => {
+      captureError(error, { hook: 'useJoinRace' });
+    },
   });
 }
 
@@ -200,6 +207,9 @@ export function useLeaveRace() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['races'] });
+    },
+    onError: (error) => {
+      captureError(error, { hook: 'useLeaveRace' });
     },
   });
 }
@@ -239,6 +249,9 @@ export function useUpdateParticipation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['races'] });
     },
+    onError: (error) => {
+      captureError(error, { hook: 'useUpdateParticipation' });
+    },
   });
 }
 
@@ -257,6 +270,9 @@ export function useDeleteRace() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['races'] });
+    },
+    onError: (error) => {
+      captureError(error, { hook: 'useDeleteRace' });
     },
   });
 }

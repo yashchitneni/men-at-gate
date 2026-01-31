@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import { AppErrorBoundary, RouteErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Calendar from "./pages/Calendar";
 import DonateChallenge from "./pages/DonateChallenge";
@@ -23,34 +24,36 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AuthProvider>
-        <OnboardingModal />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/donate-challenge" element={<DonateChallenge />} />
-            <Route path="/donate" element={<Donate />} />
-            <Route path="/men" element={<Men />} />
-            <Route path="/races" element={<Races />} />
-            <Route path="/races/submit" element={<RaceSubmit />} />
-            <Route path="/workouts" element={<Workouts />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/admin/workouts" element={<AdminWorkouts />} />
-            <Route path="/admin/members" element={<AdminMembers />} />
-            <Route path="/workout-submit/:slotId" element={<WorkoutSubmit />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <AppErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <AuthProvider>
+          <OnboardingModal />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<RouteErrorBoundary><Index /></RouteErrorBoundary>} />
+              <Route path="/calendar" element={<RouteErrorBoundary><Calendar /></RouteErrorBoundary>} />
+              <Route path="/donate-challenge" element={<RouteErrorBoundary><DonateChallenge /></RouteErrorBoundary>} />
+              <Route path="/donate" element={<RouteErrorBoundary><Donate /></RouteErrorBoundary>} />
+              <Route path="/men" element={<RouteErrorBoundary><Men /></RouteErrorBoundary>} />
+              <Route path="/races" element={<RouteErrorBoundary><Races /></RouteErrorBoundary>} />
+              <Route path="/races/submit" element={<RouteErrorBoundary><RaceSubmit /></RouteErrorBoundary>} />
+              <Route path="/workouts" element={<RouteErrorBoundary><Workouts /></RouteErrorBoundary>} />
+              <Route path="/profile" element={<RouteErrorBoundary><Profile /></RouteErrorBoundary>} />
+              <Route path="/admin" element={<RouteErrorBoundary><Admin /></RouteErrorBoundary>} />
+              <Route path="/admin/workouts" element={<RouteErrorBoundary><AdminWorkouts /></RouteErrorBoundary>} />
+              <Route path="/admin/members" element={<RouteErrorBoundary><AdminMembers /></RouteErrorBoundary>} />
+              <Route path="/workout-submit/:slotId" element={<RouteErrorBoundary><WorkoutSubmit /></RouteErrorBoundary>} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </AppErrorBoundary>
 );
 
 export default App;

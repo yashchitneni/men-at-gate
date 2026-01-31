@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/types/database.types';
+import { captureError, setUserContext } from '@/lib/error-reporting';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -32,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (error) {
-      console.error('Error fetching profile:', error);
+      captureError(error, { context: 'fetchProfile', userId });
     } else {
       setProfile(data);
     }
@@ -65,8 +66,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          setUserContext({ id: session.user.id, email: session.user.email });
           await fetchProfile(session.user.id);
         } else {
+          setUserContext(null);
           setProfile(null);
         }
 
@@ -96,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
 
       if (error) {
-        console.error('Session initialization error:', error);
+        captureError(error, { context: 'sessionInit' });
         if (mounted) setLoading(false);
         return;
       }

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { WorkoutSlot, WorkoutInterest, WorkoutSubmission, Profile } from '@/types/database.types';
+import { captureError } from '@/lib/error-reporting';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
@@ -152,6 +153,9 @@ export function useExpressInterest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
     },
+    onError: (error) => {
+      captureError(error, { hook: 'useExpressInterest' });
+    },
   });
 }
 
@@ -170,6 +174,9 @@ export function useCancelInterest() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
+    },
+    onError: (error) => {
+      captureError(error, { hook: 'useCancelInterest' });
     },
   });
 }
@@ -208,6 +215,9 @@ export function useCreateWorkoutSlot() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
     },
+    onError: (error) => {
+      captureError(error, { hook: 'useCreateWorkoutSlot' });
+    },
   });
 }
 
@@ -242,6 +252,9 @@ export function useAssignLeader() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
+    },
+    onError: (error) => {
+      captureError(error, { hook: 'useAssignLeader' });
     },
   });
 }
@@ -278,6 +291,9 @@ export function useUnassignLeader() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
     },
+    onError: (error) => {
+      captureError(error, { hook: 'useUnassignLeader' });
+    },
   });
 }
 
@@ -311,6 +327,9 @@ export function useUpdateWorkoutSlot() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
     },
+    onError: (error) => {
+      captureError(error, { hook: 'useUpdateWorkoutSlot' });
+    },
   });
 }
 
@@ -329,6 +348,9 @@ export function useDeleteWorkoutSlot() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
+    },
+    onError: (error) => {
+      captureError(error, { hook: 'useDeleteWorkoutSlot' });
     },
   });
 }
@@ -467,6 +489,9 @@ export function useSaveWorkoutSubmission() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
     },
+    onError: (error) => {
+      captureError(error, { hook: 'useSaveWorkoutSubmission' });
+    },
   });
 }
 
@@ -492,6 +517,9 @@ export function useApproveSubmission() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
+    },
+    onError: (error) => {
+      captureError(error, { hook: 'useApproveSubmission' });
     },
   });
 }
@@ -526,6 +554,9 @@ export function useRequestSubmissionChanges() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts'] });
+    },
+    onError: (error) => {
+      captureError(error, { hook: 'useRequestSubmissionChanges' });
     },
   });
 }

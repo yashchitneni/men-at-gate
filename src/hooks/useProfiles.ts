@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile, MemberPhoto, ProfileWithPhotos, CoreRosterMember } from '@/types/database.types';
+import { captureError } from '@/lib/error-reporting';
 
 // Helper for direct fetch
 async function supabaseFetch<T>(path: string): Promise<T> {
@@ -139,6 +140,9 @@ export function useUpdateProfile() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
     },
+    onError: (error) => {
+      captureError(error, { hook: 'useUpdateProfile' });
+    },
   });
 }
 
@@ -164,6 +168,9 @@ export function useToggleCoreMember() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
     },
+    onError: (error) => {
+      captureError(error, { hook: 'useToggleCoreMember' });
+    },
   });
 }
 
@@ -188,6 +195,9 @@ export function useToggleAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
+    },
+    onError: (error) => {
+      captureError(error, { hook: 'useToggleAdmin' });
     },
   });
 }
@@ -237,6 +247,9 @@ export function useUploadPhoto() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
     },
+    onError: (error) => {
+      captureError(error, { hook: 'useUploadPhoto' });
+    },
   });
 }
 
@@ -256,6 +269,9 @@ export function useSetPrimaryPhoto() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
     },
+    onError: (error) => {
+      captureError(error, { hook: 'useSetPrimaryPhoto' });
+    },
   });
 }
 
@@ -274,6 +290,9 @@ export function useDeletePhoto() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
+    },
+    onError: (error) => {
+      captureError(error, { hook: 'useDeletePhoto' });
     },
   });
 }
