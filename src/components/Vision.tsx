@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import ScrollReveal from "@/components/ScrollReveal";
+import { Link } from "react-router-dom";
 const Vision = () => {
   const initiatives = [{
     year: "EXPANSION",
@@ -58,7 +59,7 @@ const Vision = () => {
                 </p>
                 <div className="flex justify-center">
                   <Button size="lg" asChild className="bg-accent text-foreground hover:bg-accent/90 font-bold uppercase tracking-widest px-8 py-6 h-auto rounded-none">
-                    
+                    <Link to="/donate">Donate Now</Link>
                   </Button>
                 </div>
               </div>

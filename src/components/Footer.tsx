@@ -1,16 +1,23 @@
 import { Button } from "@/components/ui/button";
-import { Mail, Instagram, Facebook } from "lucide-react";
+import { Mail, Instagram } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
+  const scrollToGetInvolved = () => {
+    const section = document.getElementById("get-involved");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <footer className="bg-primary text-primary-foreground py-16">
       <div className="container px-4">
         <div className="max-w-4xl mx-auto text-center">
           <Link to="/">
-            <img 
-              src="/favicon.jpg" 
-              alt="Men in the Arena Logo" 
+            <img
+              src="/favicon.jpg"
+              alt="Men in the Arena Logo"
               className="h-16 w-auto mx-auto mb-6 hover:opacity-80 transition-opacity cursor-pointer"
             />
           </Link>
@@ -18,23 +25,21 @@ const Footer = () => {
           <p className="text-lg mb-8 text-primary-foreground/90">
             The arena is waiting. Join us for your first workout and discover what you're capable of.
           </p>
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             className="bg-accent hover:bg-accent/90 text-accent-foreground mb-12"
+            onClick={scrollToGetInvolved}
           >
             Join Now
           </Button>
 
           <div className="border-t border-primary-foreground/20 pt-8">
             <div className="flex justify-center gap-6 mb-6">
-              <a href="mailto:contact@meninthearena.com" className="hover:text-accent transition-colors">
+              <a href="mailto:contact@meninthearena.org" className="hover:text-accent transition-colors">
                 <Mail className="w-6 h-6" />
               </a>
-              <a href="#" className="hover:text-accent transition-colors">
+              <a href="https://instagram.com/meninthearena_" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors">
                 <Instagram className="w-6 h-6" />
-              </a>
-              <a href="#" className="hover:text-accent transition-colors">
-                <Facebook className="w-6 h-6" />
               </a>
             </div>
             <p className="text-sm text-primary-foreground/70">
