@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import { SentryErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Calendar from "./pages/Calendar";
 import DonateChallenge from "./pages/DonateChallenge";
@@ -30,6 +31,7 @@ const App = () => (
       <AuthProvider>
         <OnboardingModal />
         <BrowserRouter>
+          <SentryErrorBoundary>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/calendar" element={<Calendar />} />
@@ -47,6 +49,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </SentryErrorBoundary>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
