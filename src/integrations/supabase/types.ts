@@ -14,6 +14,303 @@ export type Database = {
   }
   public: {
     Tables: {
+      badges: {
+        Row: {
+          created_at: string
+          criteria_type: string
+          criteria_value: number
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          criteria_type: string
+          criteria_value?: number
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          criteria_type?: string
+          criteria_value?: number
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      challenge_entries: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          entry_date: string
+          id: string
+          notes: string | null
+          user_id: string
+          value: number
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          user_id: string
+          value?: number
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_entries_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
+      challenge_participants: {
+        Row: {
+          challenge_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          challenge_type: string
+          chapter_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string
+          id: string
+          is_active: boolean | null
+          metric: string | null
+          name: string
+          start_date: string
+          target_value: number | null
+        }
+        Insert: {
+          challenge_type?: string
+          chapter_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date: string
+          id?: string
+          is_active?: boolean | null
+          metric?: string | null
+          name: string
+          start_date: string
+          target_value?: number | null
+        }
+        Update: {
+          challenge_type?: string
+          chapter_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string
+          id?: string
+          is_active?: boolean | null
+          metric?: string | null
+          name?: string
+          start_date?: string
+          target_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenges_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
+      chapters: {
+        Row: {
+          city: string
+          created_at: string
+          description: string | null
+          founded_date: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          primary_color: string | null
+          slug: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          description?: string | null
+          founded_date?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          primary_color?: string | null
+          slug: string
+          state: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          description?: string | null
+          founded_date?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          primary_color?: string | null
+          slug?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       member_photos: {
         Row: {
           created_at: string
@@ -48,6 +345,13 @@ export type Database = {
             foreignKeyName: "member_photos_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_photos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -67,56 +371,148 @@ export type Database = {
           },
         ]
       }
+      points_log: {
+        Row: {
+          created_at: string
+          id: string
+          points: number
+          reason: string
+          reference_id: string | null
+          reference_type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points: number
+          reason: string
+          reference_id?: string | null
+          reference_type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points?: number
+          reason?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "points_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "points_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "points_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "points_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "points_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           bio: string | null
+          chapter_id: string | null
           created_at: string
           email: string
           full_name: string | null
           id: string
           instagram_handle: string | null
           is_admin: boolean | null
+          is_chapter_admin: boolean | null
           is_core_member: boolean | null
+          is_featured: boolean | null
           is_super_admin: boolean | null
           mission: string | null
           phone: string | null
           role: string | null
           shirt_size: string | null
+          strava_url: string | null
+          twitter_handle: string | null
           updated_at: string
+          why_i_joined: string | null
         }
         Insert: {
           bio?: string | null
+          chapter_id?: string | null
           created_at?: string
           email: string
           full_name?: string | null
           id: string
           instagram_handle?: string | null
           is_admin?: boolean | null
+          is_chapter_admin?: boolean | null
           is_core_member?: boolean | null
+          is_featured?: boolean | null
           is_super_admin?: boolean | null
           mission?: string | null
           phone?: string | null
           role?: string | null
           shirt_size?: string | null
+          strava_url?: string | null
+          twitter_handle?: string | null
           updated_at?: string
+          why_i_joined?: string | null
         }
         Update: {
           bio?: string | null
+          chapter_id?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
           instagram_handle?: string | null
           is_admin?: boolean | null
+          is_chapter_admin?: boolean | null
           is_core_member?: boolean | null
+          is_featured?: boolean | null
           is_super_admin?: boolean | null
           mission?: string | null
           phone?: string | null
           role?: string | null
           shirt_size?: string | null
+          strava_url?: string | null
+          twitter_handle?: string | null
           updated_at?: string
+          why_i_joined?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       race_participants: {
         Row: {
@@ -168,6 +564,13 @@ export type Database = {
             foreignKeyName: "race_participants_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "race_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -190,6 +593,7 @@ export type Database = {
       races: {
         Row: {
           available_distances: Json | null
+          chapter_id: string | null
           created_at: string
           description: string | null
           distance_type: string
@@ -203,6 +607,7 @@ export type Database = {
         }
         Insert: {
           available_distances?: Json | null
+          chapter_id?: string | null
           created_at?: string
           description?: string | null
           distance_type: string
@@ -216,6 +621,7 @@ export type Database = {
         }
         Update: {
           available_distances?: Json | null
+          chapter_id?: string | null
           created_at?: string
           description?: string | null
           distance_type?: string
@@ -229,10 +635,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "races_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "races_submitted_by_fkey"
             columns: ["submitted_by"]
             isOneToOne: false
             referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "races_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
             referencedColumns: ["id"]
           },
           {
@@ -252,6 +672,179 @@ export type Database = {
           {
             foreignKeyName: "races_submitted_by_fkey"
             columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
+      user_badges: {
+        Row: {
+          badge_id: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
+      workout_attendance: {
+        Row: {
+          checked_in_by: string | null
+          created_at: string
+          id: string
+          slot_id: string
+          user_id: string
+        }
+        Insert: {
+          checked_in_by?: string | null
+          created_at?: string
+          id?: string
+          slot_id: string
+          user_id: string
+        }
+        Update: {
+          checked_in_by?: string | null
+          created_at?: string
+          id?: string
+          slot_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_attendance_checked_in_by_fkey"
+            columns: ["checked_in_by"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_checked_in_by_fkey"
+            columns: ["checked_in_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_checked_in_by_fkey"
+            columns: ["checked_in_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_checked_in_by_fkey"
+            columns: ["checked_in_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_checked_in_by_fkey"
+            columns: ["checked_in_by"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "workout_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "upcoming_workout"
             referencedColumns: ["leader_id"]
@@ -295,6 +888,13 @@ export type Database = {
             foreignKeyName: "workout_interest_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_interest_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -314,46 +914,143 @@ export type Database = {
           },
         ]
       }
+      workout_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          rating: number
+          slot_id: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          slot_id: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          slot_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_ratings_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_ratings_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "workout_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
       workout_slots: {
         Row: {
+          chapter_id: string | null
           created_at: string
           description: string | null
           id: string
           leader_id: string | null
           reminder_sent: boolean | null
           status: string | null
+          template_id: string | null
           theme: string | null
           updated_at: string
           workout_date: string
         }
         Insert: {
+          chapter_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
           leader_id?: string | null
           reminder_sent?: boolean | null
           status?: string | null
+          template_id?: string | null
           theme?: string | null
           updated_at?: string
           workout_date: string
         }
         Update: {
+          chapter_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
           leader_id?: string | null
           reminder_sent?: boolean | null
           status?: string | null
+          template_id?: string | null
           theme?: string | null
           updated_at?: string
           workout_date?: string
         }
         Relationships: [
           {
+            foreignKeyName: "workout_slots_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "workout_slots_leader_id_fkey"
             columns: ["leader_id"]
             isOneToOne: false
             referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_slots_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
             referencedColumns: ["id"]
           },
           {
@@ -376,6 +1073,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "upcoming_workout"
             referencedColumns: ["leader_id"]
+          },
+          {
+            foreignKeyName: "workout_slots_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "workout_templates"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -446,6 +1150,13 @@ export type Database = {
             foreignKeyName: "workout_submissions_approved_by_fkey"
             columns: ["approved_by"]
             isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -464,10 +1175,52 @@ export type Database = {
             referencedColumns: ["leader_id"]
           },
           {
+            foreignKeyName: "workout_submissions_feedback_requested_by_fkey"
+            columns: ["feedback_requested_by"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_feedback_requested_by_fkey"
+            columns: ["feedback_requested_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_feedback_requested_by_fkey"
+            columns: ["feedback_requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_feedback_requested_by_fkey"
+            columns: ["feedback_requested_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_feedback_requested_by_fkey"
+            columns: ["feedback_requested_by"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+          {
             foreignKeyName: "workout_submissions_leader_id_fkey"
             columns: ["leader_id"]
             isOneToOne: false
             referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
             referencedColumns: ["id"]
           },
           {
@@ -507,6 +1260,78 @@ export type Database = {
           },
         ]
       }
+      workout_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          default_duration_min: number | null
+          description: string | null
+          exercises: Json | null
+          format: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          default_duration_min?: number | null
+          description?: string | null
+          exercises?: Json | null
+          format?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          default_duration_min?: number | null
+          description?: string | null
+          exercises?: Json | null
+          format?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
     }
     Views: {
       core_roster: {
@@ -518,6 +1343,15 @@ export type Database = {
           mission: string | null
           primary_photo_url: string | null
           role: string | null
+        }
+        Relationships: []
+      }
+      leaderboard: {
+        Row: {
+          activities_count: number | null
+          full_name: string | null
+          id: string | null
+          total_points: number | null
         }
         Relationships: []
       }
