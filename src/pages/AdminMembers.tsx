@@ -73,7 +73,7 @@ export default function AdminMembers() {
         onError(error) {
           toast({
             title: 'Error updating core member status',
-            description: error.message ?? 'Please try again.',
+            description: error instanceof Error ? error.message : 'Please try again.',
             variant: 'destructive',
           });
         },
@@ -108,10 +108,10 @@ export default function AdminMembers() {
       });
       setAdminDialogOpen(false);
       setPendingAdminTarget(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Error updating admin access',
-        description: error.message ?? 'Please try again.',
+        description: error instanceof Error ? error.message : 'Please try again.',
         variant: 'destructive',
       });
     }
