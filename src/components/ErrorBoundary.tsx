@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react';
-import { useRouteError, isRouteError } from 'react-router-dom';
+import { useRouteError } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 
