@@ -62,6 +62,16 @@ import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { useEffect } from 'react';
 
+interface WorkoutSubmission {
+  id: string;
+  slot_id: string;
+  workout_plan: string;
+  message?: string | null;
+  leadership_note?: string | null;
+  admin_feedback?: string | null;
+  status: string;
+}
+
 export default function AdminWorkouts() {
   const navigate = useNavigate();
   const { profile, loading: authLoading } = useAuth();
@@ -80,7 +90,7 @@ export default function AdminWorkouts() {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [viewSubmissionModalOpen, setViewSubmissionModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [selectedSubmission, setSelectedSubmission] = useState<Record<string, unknown> | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<WorkoutSubmission | null>(null);
   const [newDate, setNewDate] = useState('');
   const [adminFeedback, setAdminFeedback] = useState('');
   const [assignInterestModalOpen, setAssignInterestModalOpen] = useState(false);
