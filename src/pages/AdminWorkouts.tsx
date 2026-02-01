@@ -80,7 +80,7 @@ export default function AdminWorkouts() {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [viewSubmissionModalOpen, setViewSubmissionModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<Record<string, unknown> | null>(null);
   const [newDate, setNewDate] = useState('');
   const [adminFeedback, setAdminFeedback] = useState('');
   const [assignInterestModalOpen, setAssignInterestModalOpen] = useState(false);
@@ -104,10 +104,10 @@ export default function AdminWorkouts() {
       });
       setCreateModalOpen(false);
       setNewDate('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create slot',
+        description: error instanceof Error ? error.message : 'Failed to create slot',
         variant: 'destructive',
       });
     }
