@@ -14,6 +14,11 @@ const Navigation = () => {
     profile,
     signOut
   } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -92,7 +97,9 @@ const Navigation = () => {
                       </Link>
                     </DropdownMenuItem>}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()}>
+                  <DropdownMenuItem onSelect={() => {
+                    void handleSignOut();
+                  }}>
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
                   </DropdownMenuItem>
@@ -125,7 +132,7 @@ const Navigation = () => {
               Donate
             </Link>
             {user ? <Button variant="outline" className="w-full" onClick={() => {
-          signOut();
+          void handleSignOut();
           setIsOpen(false);
         }}>
                 <LogOut className="h-4 w-4 mr-2" />
