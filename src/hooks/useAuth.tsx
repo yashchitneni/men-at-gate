@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/types/database.types';
@@ -23,18 +23,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const latestUserIdRef = useRef<string | null>(null);
+
+  const clearAuthState = () => {
+    latestUserIdRef.current = null;
+    setUser(null);
+    setProfile(null);
+    setSession(null);
+  };
+
+  const setAuthState = (nextSession: Session | null) => {
+    const nextUser = nextSession?.user ?? null;
+    latestUserIdRef.current = nextUser?.id ?? null;
+    setSession(nextSession);
+    setUser(nextUser);
+  };
 
   async function fetchProfile(userId: string) {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-    if (error) {
+      if (error) {
+        console.error('Error fetching profile:', error);
+        if (latestUserIdRef.current === userId) {
+          setProfile(null);
+        }
+        return null;
+      }
+
+      if (latestUserIdRef.current !== userId) {
+        return null;
+      }
+
+      setProfile(data ?? null);
+      return data ?? null;
+    } catch (error) {
       console.error('Error fetching profile:', error);
-    } else {
-      setProfile(data);
+      if (latestUserIdRef.current === userId) {
+        setProfile(null);
+      }
+      return null;
     }
   }
 
@@ -61,17 +93,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!mounted) return;
 
-        setSession(session);
-        setUser(session?.user ?? null);
+        try {
+          setAuthState(session);
 
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        } else {
+          if (session?.user) {
+            await fetchProfile(session.user.id);
+          } else {
+            setProfile(null);
+          }
+        } catch (error) {
+          console.error('Auth state change error:', error);
           setProfile(null);
-        }
-
-        if (mounted) {
-          setLoading(false);
+        } finally {
+          if (mounted) {
+            setLoading(false);
+          }
         }
 
         // Clean up URL hash after successful sign in
@@ -89,7 +125,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      const { data: { session }, error } = await supabase.auth.getSession();
+      let session: Session | null = null;
+      let error: Error | null = null;
+
+      try {
+        const result = await supabase.auth.getSession();
+        session = result.data.session;
+        error = result.error;
+      } catch (err) {
+        error = err as Error;
+      }
 
       console.log('Initial session check:', session?.user?.id, error);
 
@@ -97,23 +142,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('Session initialization error:', error);
+        clearAuthState();
         if (mounted) setLoading(false);
         return;
       }
 
-      setSession(session);
-      setUser(session?.user ?? null);
+      try {
+        setAuthState(session);
 
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-        if (mounted) setLoading(false);
+        if (session?.user) {
+          await fetchProfile(session.user.id);
 
-        // Failsafe: Clean up hash if Supabase didn't do it
-        if (window.location.hash.includes('access_token')) {
-          console.log('Manually cleaning up OAuth hash (failsafe)');
-          window.history.replaceState(null, '', window.location.pathname);
+          // Failsafe: Clean up hash if Supabase didn't do it
+          if (window.location.hash.includes('access_token')) {
+            console.log('Manually cleaning up OAuth hash (failsafe)');
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+        } else {
+          setProfile(null);
         }
-      } else {
+      } catch (err) {
+        console.error('Session initialization error:', err);
+        clearAuthState();
+      } finally {
         if (mounted) setLoading(false);
       }
     };
@@ -152,10 +203,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    setSession(null);
+    try {
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) {
+        console.error('Error signing out:', error);
+      }
+    } catch (error) {
+      console.error('Error signing out:', error);
+    } finally {
+      clearAuthState();
+      setLoading(false);
+    }
   }
 
   return (
