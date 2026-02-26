@@ -139,7 +139,7 @@ export default function MarathonRuckEvent() {
 
             <div className="text-center">
               <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                <a href="mailto:contact@meninthearena.com?subject=Marathon%20Ruck%20Sponsorship">
+                <a href="mailto:community@meninthearena.co?subject=Marathon%20Ruck%20Sponsorship">
                   Request Sponsorship Kit
                 </a>
               </Button>
