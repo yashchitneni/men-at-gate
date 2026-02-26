@@ -349,7 +349,7 @@ async function writeIngestionRun(
 }
 
 async function loadEventMappings(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   provider: string,
   externalEventIds: string[],
 ): Promise<Map<string, string>> {
