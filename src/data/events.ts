@@ -5,7 +5,7 @@ import { buildTrackedUrl } from "@/lib/url";
 export const MARATHON_RUCK_SLUG = "marathon-ruck";
 
 export const SWEATPALS_DEFAULT_URL =
-  import.meta.env.VITE_MARATHON_RUCK_SWEATPALS_URL || "https://www.sweatpals.com/";
+  import.meta.env.VITE_MARATHON_RUCK_SWEATPALS_URL || "https://events.sweatpals.com/4ce3b4ef";
 
 export const MARATHON_RUCK_UTM = {
   utm_source: "men-at-gate",

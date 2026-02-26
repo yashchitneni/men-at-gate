@@ -98,6 +98,20 @@ export type Database = {
             foreignKeyName: "challenge_entries_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -156,6 +170,20 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
             referencedColumns: ["id"]
           },
           {
@@ -250,6 +278,20 @@ export type Database = {
             foreignKeyName: "challenges_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -263,6 +305,448 @@ export type Database = {
           {
             foreignKeyName: "challenges_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
+      chapters: {
+        Row: {
+          city: string
+          created_at: string
+          description: string | null
+          founded_date: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          primary_color: string | null
+          slug: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          description?: string | null
+          founded_date?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          primary_color?: string | null
+          slug: string
+          state: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          description?: string | null
+          founded_date?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          primary_color?: string | null
+          slug?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      event_attendance_facts: {
+        Row: {
+          created_at: string
+          dedupe_key: string
+          event_id: string | null
+          external_event_id: string
+          external_member_id: string | null
+          id: string
+          member_id: string | null
+          provider: string
+          raw_external_event_id: string | null
+          source: string
+          status: Database["public"]["Enums"]["event_attendance_status"]
+          status_at: string
+        }
+        Insert: {
+          created_at?: string
+          dedupe_key: string
+          event_id?: string | null
+          external_event_id: string
+          external_member_id?: string | null
+          id?: string
+          member_id?: string | null
+          provider?: string
+          raw_external_event_id?: string | null
+          source?: string
+          status: Database["public"]["Enums"]["event_attendance_status"]
+          status_at: string
+        }
+        Update: {
+          created_at?: string
+          dedupe_key?: string
+          event_id?: string | null
+          external_event_id?: string
+          external_member_id?: string | null
+          id?: string
+          member_id?: string | null
+          provider?: string
+          raw_external_event_id?: string | null
+          source?: string
+          status?: Database["public"]["Enums"]["event_attendance_status"]
+          status_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_attendance_facts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "featured_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_raw_external_event_id_fkey"
+            columns: ["raw_external_event_id"]
+            isOneToOne: false
+            referencedRelation: "external_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_rollups: {
+        Row: {
+          cancelled_count: number
+          checked_in_count: number
+          claimed_count: number
+          event_id: string | null
+          external_event_id: string
+          last_activity_at: string | null
+          momentum_score: number
+          provider: string
+          ticketed_count: number
+          updated_at: string
+          waitlisted_count: number
+        }
+        Insert: {
+          cancelled_count?: number
+          checked_in_count?: number
+          claimed_count?: number
+          event_id?: string | null
+          external_event_id: string
+          last_activity_at?: string | null
+          momentum_score?: number
+          provider?: string
+          ticketed_count?: number
+          updated_at?: string
+          waitlisted_count?: number
+        }
+        Update: {
+          cancelled_count?: number
+          checked_in_count?: number
+          claimed_count?: number
+          event_id?: string | null
+          external_event_id?: string
+          last_activity_at?: string | null
+          momentum_score?: number
+          provider?: string
+          ticketed_count?: number
+          updated_at?: string
+          waitlisted_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_rollups_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "featured_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_event_mappings: {
+        Row: {
+          created_at: string
+          external_event_id: string
+          external_event_name: string | null
+          featured_event_id: string
+          id: string
+          is_active: boolean
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          external_event_id: string
+          external_event_name?: string | null
+          featured_event_id: string
+          id?: string
+          is_active?: boolean
+          provider?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          external_event_id?: string
+          external_event_name?: string | null
+          featured_event_id?: string
+          id?: string
+          is_active?: boolean
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_event_mappings_featured_event_id_fkey"
+            columns: ["featured_event_id"]
+            isOneToOne: false
+            referencedRelation: "featured_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_events: {
+        Row: {
+          created_at: string
+          dedupe_key: string
+          event_id: string | null
+          event_type: string
+          external_event_id: string
+          external_member_id: string | null
+          id: string
+          ingested_at: string
+          member_id: string | null
+          occurred_at: string
+          payload_json: Json
+          provider: string
+          sync_error: string | null
+        }
+        Insert: {
+          created_at?: string
+          dedupe_key: string
+          event_id?: string | null
+          event_type: string
+          external_event_id: string
+          external_member_id?: string | null
+          id?: string
+          ingested_at?: string
+          member_id?: string | null
+          occurred_at: string
+          payload_json?: Json
+          provider: string
+          sync_error?: string | null
+        }
+        Update: {
+          created_at?: string
+          dedupe_key?: string
+          event_id?: string | null
+          event_type?: string
+          external_event_id?: string
+          external_member_id?: string | null
+          id?: string
+          ingested_at?: string
+          member_id?: string | null
+          occurred_at?: string
+          payload_json?: Json
+          provider?: string
+          sync_error?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "featured_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_events_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_events_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_events_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_events_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_events_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_events_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_events_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
+      external_member_identities: {
+        Row: {
+          auto_linked: boolean
+          created_at: string
+          display_name: string | null
+          email: string | null
+          external_member_id: string
+          id: string
+          last_seen_at: string
+          linked_at: string | null
+          phone: string | null
+          profile_id: string | null
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          auto_linked?: boolean
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          external_member_id: string
+          id?: string
+          last_seen_at?: string
+          linked_at?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          provider?: string
+          updated_at?: string
+        }
+        Update: {
+          auto_linked?: boolean
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          external_member_id?: string
+          id?: string
+          last_seen_at?: string
+          linked_at?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_member_identities_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_member_identities_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_member_identities_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_member_identities_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_member_identities_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_member_identities_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_member_identities_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "upcoming_workout"
             referencedColumns: ["leader_id"]
@@ -332,47 +816,142 @@ export type Database = {
         }
         Relationships: []
       }
-      chapters: {
+      integration_ingestion_runs: {
         Row: {
-          city: string
+          action: string
           created_at: string
-          description: string | null
-          founded_date: string | null
+          error_count: number
+          errors: Json
+          event_count: number
           id: string
-          logo_url: string | null
-          name: string
-          primary_color: string | null
-          slug: string
-          state: string
-          updated_at: string
+          identity_updates: number
+          inserted_attendance_facts: number
+          inserted_external_events: number
+          provider: string
+          result_payload: Json
+          status: string
+          triggered_by: string
+          unmapped_events: number
         }
         Insert: {
-          city: string
+          action: string
           created_at?: string
-          description?: string | null
-          founded_date?: string | null
+          error_count?: number
+          errors?: Json
+          event_count?: number
           id?: string
-          logo_url?: string | null
-          name: string
-          primary_color?: string | null
-          slug: string
-          state: string
-          updated_at?: string
+          identity_updates?: number
+          inserted_attendance_facts?: number
+          inserted_external_events?: number
+          provider: string
+          result_payload?: Json
+          status: string
+          triggered_by: string
+          unmapped_events?: number
         }
         Update: {
-          city?: string
+          action?: string
           created_at?: string
-          description?: string | null
-          founded_date?: string | null
+          error_count?: number
+          errors?: Json
+          event_count?: number
           id?: string
-          logo_url?: string | null
-          name?: string
-          primary_color?: string | null
-          slug?: string
-          state?: string
-          updated_at?: string
+          identity_updates?: number
+          inserted_attendance_facts?: number
+          inserted_external_events?: number
+          provider?: string
+          result_payload?: Json
+          status?: string
+          triggered_by?: string
+          unmapped_events?: number
         }
         Relationships: []
+      }
+      member_activity_rollups: {
+        Row: {
+          events_attended_30d: number
+          events_attended_90d: number
+          events_attended_all_time: number
+          last_event_attended_at: string | null
+          member_id: string
+          races_joined_30d: number
+          updated_at: string
+          workouts_attended_30d: number
+          workouts_led_30d: number
+        }
+        Insert: {
+          events_attended_30d?: number
+          events_attended_90d?: number
+          events_attended_all_time?: number
+          last_event_attended_at?: string | null
+          member_id: string
+          races_joined_30d?: number
+          updated_at?: string
+          workouts_attended_30d?: number
+          workouts_led_30d?: number
+        }
+        Update: {
+          events_attended_30d?: number
+          events_attended_90d?: number
+          events_attended_all_time?: number
+          last_event_attended_at?: string | null
+          member_id?: string
+          races_joined_30d?: number
+          updated_at?: string
+          workouts_attended_30d?: number
+          workouts_led_30d?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_activity_rollups_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_activity_rollups_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_activity_rollups_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_activity_rollups_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_activity_rollups_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_activity_rollups_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_activity_rollups_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
       }
       member_photos: {
         Row: {
@@ -409,6 +988,20 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_photos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_photos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
             referencedColumns: ["id"]
           },
           {
@@ -475,6 +1068,20 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "points_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "points_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
             referencedColumns: ["id"]
           },
           {
@@ -613,6 +1220,13 @@ export type Database = {
             foreignKeyName: "race_participants_race_id_fkey"
             columns: ["race_id"]
             isOneToOne: false
+            referencedRelation: "public_race_counts"
+            referencedColumns: ["race_id"]
+          },
+          {
+            foreignKeyName: "race_participants_race_id_fkey"
+            columns: ["race_id"]
+            isOneToOne: false
             referencedRelation: "races"
             referencedColumns: ["id"]
           },
@@ -628,6 +1242,20 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "race_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "race_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
             referencedColumns: ["id"]
           },
           {
@@ -722,6 +1350,20 @@ export type Database = {
             foreignKeyName: "races_submitted_by_fkey"
             columns: ["submitted_by"]
             isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "races_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "races_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -780,6 +1422,20 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
             referencedColumns: ["id"]
           },
           {
@@ -846,6 +1502,20 @@ export type Database = {
             foreignKeyName: "workout_attendance_checked_in_by_fkey"
             columns: ["checked_in_by"]
             isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_checked_in_by_fkey"
+            columns: ["checked_in_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_checked_in_by_fkey"
+            columns: ["checked_in_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -889,6 +1559,20 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_attendance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
             referencedColumns: ["id"]
           },
           {
@@ -952,6 +1636,20 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_interest_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_interest_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
             referencedColumns: ["id"]
           },
           {
@@ -1029,6 +1727,20 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
             referencedColumns: ["id"]
           },
           {
@@ -1114,6 +1826,20 @@ export type Database = {
             columns: ["leader_id"]
             isOneToOne: false
             referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_slots_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_slots_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
             referencedColumns: ["id"]
           },
           {
@@ -1220,6 +1946,20 @@ export type Database = {
             foreignKeyName: "workout_submissions_approved_by_fkey"
             columns: ["approved_by"]
             isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1255,6 +1995,20 @@ export type Database = {
             foreignKeyName: "workout_submissions_feedback_requested_by_fkey"
             columns: ["feedback_requested_by"]
             isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_feedback_requested_by_fkey"
+            columns: ["feedback_requested_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_feedback_requested_by_fkey"
+            columns: ["feedback_requested_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1284,6 +2038,20 @@ export type Database = {
             columns: ["leader_id"]
             isOneToOne: false
             referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
             referencedColumns: ["id"]
           },
           {
@@ -1376,6 +2144,20 @@ export type Database = {
             foreignKeyName: "workout_templates_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1397,6 +2179,15 @@ export type Database = {
       }
     }
     Views: {
+      community_activity_summary: {
+        Row: {
+          attendees_7d: number | null
+          racers_month: number | null
+          workouts_attended_30d: number | null
+          workouts_led_30d: number | null
+        }
+        Relationships: []
+      }
       core_roster: {
         Row: {
           bio: string | null
@@ -1409,12 +2200,101 @@ export type Database = {
         }
         Relationships: []
       }
+      event_attendance_current: {
+        Row: {
+          created_at: string | null
+          event_id: string | null
+          external_event_id: string | null
+          external_member_id: string | null
+          member_id: string | null
+          participant_key: string | null
+          provider: string | null
+          status: Database["public"]["Enums"]["event_attendance_status"] | null
+          status_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_attendance_facts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "featured_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_facts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
       leaderboard: {
         Row: {
           activities_count: number | null
           full_name: string | null
           id: string | null
           total_points: number | null
+        }
+        Relationships: []
+      }
+      leaderboard_attendance_30d: {
+        Row: {
+          attendance_count: number | null
+          event_checkins_count: number | null
+          full_name: string | null
+          id: string | null
+          workout_attendance_count: number | null
+        }
+        Relationships: []
+      }
+      leaderboard_workout_leaders_90d: {
+        Row: {
+          full_name: string | null
+          id: string | null
+          workouts_led: number | null
         }
         Relationships: []
       }
@@ -1448,6 +2328,16 @@ export type Database = {
         }
         Relationships: []
       }
+      public_race_counts: {
+        Row: {
+          location: string | null
+          participant_count: number | null
+          race_date: string | null
+          race_id: string | null
+          race_name: string | null
+        }
+        Relationships: []
+      }
       upcoming_workout: {
         Row: {
           description: string | null
@@ -1463,10 +2353,17 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      refresh_event_rollups: { Args: never; Returns: undefined }
+      refresh_member_activity_rollups: { Args: never; Returns: undefined }
+      refresh_member_event_rollups: { Args: never; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      event_attendance_status:
+        | "ticketed"
+        | "claimed"
+        | "checked_in"
+        | "waitlisted"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1593,6 +2490,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      event_attendance_status: [
+        "ticketed",
+        "claimed",
+        "checked_in",
+        "waitlisted",
+        "cancelled",
+      ],
+    },
   },
 } as const

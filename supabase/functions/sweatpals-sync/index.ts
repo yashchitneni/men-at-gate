@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
+import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
+
+// deno-lint-ignore no-explicit-any
+type AnySupabaseClient = SupabaseClient<any, any, any>;
 
 type AuthMode = "sync_secret" | "admin_jwt";
 type AttendanceStatus = "ticketed" | "claimed" | "checked_in" | "waitlisted" | "cancelled";
@@ -279,7 +282,7 @@ function extractEventName(payload: Record<string, unknown>): string | null {
 
 async function resolveAuth(
   req: Request,
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
 ): Promise<AuthResultOk | AuthResultFail> {
   const syncSecret = Deno.env.get("SWEATPALS_SYNC_SECRET");
   const providedSyncSecret = req.headers.get("x-sync-secret");
@@ -321,7 +324,7 @@ async function resolveAuth(
 }
 
 async function writeIngestionRun(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   run: IngestionRunInput,
 ): Promise<void> {
   const payload = {
@@ -346,7 +349,7 @@ async function writeIngestionRun(
 }
 
 async function loadEventMappings(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   provider: string,
   externalEventIds: string[],
 ): Promise<Map<string, string>> {
@@ -371,7 +374,7 @@ async function loadEventMappings(
 }
 
 async function loadExistingIdentities(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   provider: string,
   externalMemberIds: string[],
 ): Promise<Map<string, { profile_id: string | null; linked_at: string | null }>> {
@@ -397,7 +400,7 @@ async function loadExistingIdentities(
 }
 
 async function findProfilesByEmail(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   emails: string[],
 ): Promise<Map<string, string>> {
   const results = new Map<string, string>();
@@ -448,7 +451,7 @@ function mergeIdentityRows(rows: ExternalIdentityRow[]): ExternalIdentityRow[] {
 }
 
 async function ingestEvents(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   rawEvents: RawEvent[],
   dryRun: boolean,
 ): Promise<IngestionResult> {
@@ -592,7 +595,7 @@ async function ingestEvents(
   if (mergedIdentities.length > 0) {
     const identityUpsert = await supabase
       .from("external_member_identities")
-      .upsert(mergedIdentities, { onConflict: "provider,external_member_id" })
+      .upsert(mergedIdentities as unknown as Record<string, unknown>[], { onConflict: "provider,external_member_id" })
       .select("id");
 
     if (identityUpsert.error) throw identityUpsert.error;
