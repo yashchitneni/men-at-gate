@@ -374,7 +374,7 @@ async function loadEventMappings(
 }
 
 async function loadExistingIdentities(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   provider: string,
   externalMemberIds: string[],
 ): Promise<Map<string, { profile_id: string | null; linked_at: string | null }>> {
