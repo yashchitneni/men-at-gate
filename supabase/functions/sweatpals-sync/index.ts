@@ -400,7 +400,7 @@ async function loadExistingIdentities(
 }
 
 async function findProfilesByEmail(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   emails: string[],
 ): Promise<Map<string, string>> {
   const results = new Map<string, string>();
