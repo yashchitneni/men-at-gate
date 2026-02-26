@@ -68,6 +68,9 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
+            <Link to="/events" className="text-sm font-medium text-white hover:text-accent transition-colors uppercase tracking-wider">
+              Events
+            </Link>
             <Link to="/races" className="text-sm font-medium text-white hover:text-accent transition-colors uppercase tracking-wider">
               Races
             </Link>
@@ -119,6 +122,9 @@ const Navigation = () => {
 
         {/* Mobile Menu */}
         {isOpen && <div className="md:hidden absolute top-full left-0 w-full bg-background/95 backdrop-blur-md border-b border-border p-4 flex flex-col gap-4 animate-fade-in">
+            <Link to="/events" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
+              Events
+            </Link>
             <Link to="/races" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
               Races
             </Link>

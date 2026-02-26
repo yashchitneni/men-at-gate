@@ -20,10 +20,10 @@ const GetInvolved = () => {
     },
     {
       number: "03",
-      title: "Next Initiative",
-      description: "Be first to join our next big challenge or service project. Details coming soon.",
-      cta: "Stay Tuned",
-      link: "/#"
+      title: "Featured Event",
+      description: "See our current flagship event, get details, and lock in your spot.",
+      cta: "View Events",
+      link: "/events"
     }
   ];
 

@@ -7,5 +7,6 @@ describe('Navigation', () => {
     render(<Navigation />)
     // Should have key nav items
     expect(screen.getByText(/MEN IN THE ARENA/i)).toBeInTheDocument()
+    expect(screen.getByText(/Events/i)).toBeInTheDocument()
   })
 })

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { WorkoutSlot, WorkoutInterest, WorkoutSubmission, Profile } from '@/types/database.types';
+import { supabaseRestFetch } from '@/lib/supabaseHttp';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
@@ -14,24 +15,6 @@ type WorkoutInterestWithProfile = WorkoutInterest & {
   profile: Profile;
 };
 
-// Helper for direct fetch
-async function supabaseFetch<T>(path: string): Promise<T> {
-  const url = `https://prursaeokvkulphtskdn.supabase.co/rest/v1/${path}`;
-  const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydXJzYWVva3ZrdWxwaHRza2RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NTYwOTIsImV4cCI6MjA4MzEzMjA5Mn0.Lqku85Nn1jKfomnrtMFpJ20z7wH70JgiMWYBN4iNP-Q';
-  const response = await fetch(url, {
-    headers: {
-      'apikey': anonKey,
-      'Authorization': `Bearer ${anonKey}`,
-      'Accept': 'application/json',
-    },
-  });
-  if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err.message || 'Fetch failed');
-  }
-  return response.json();
-}
-
 // Fetch upcoming workout (next one)
 export function useUpcomingWorkout() {
   return useQuery({
@@ -39,7 +22,7 @@ export function useUpcomingWorkout() {
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
       
-      const data = await supabaseFetch<WorkoutSlot[]>(
+      const data = await supabaseRestFetch<WorkoutSlot[]>(
         `workout_slots?select=*&workout_date=gte.${today}&order=workout_date.asc&limit=1`
       );
       
@@ -49,7 +32,7 @@ export function useUpcomingWorkout() {
       const slot = data[0];
       let leader = null;
       if (slot.leader_id) {
-        const leaders = await supabaseFetch<Profile[]>(
+        const leaders = await supabaseRestFetch<Profile[]>(
           `public_profiles?id=eq.${slot.leader_id}`
         );
         leader = leaders[0] || null;
@@ -65,12 +48,12 @@ export function useWorkoutSlots() {
   return useQuery({
     queryKey: ['workouts', 'slots'],
     queryFn: async () => {
-      const slots = await supabaseFetch<WorkoutSlot[]>(
+      const slots = await supabaseRestFetch<WorkoutSlot[]>(
         'workout_slots?select=*&order=workout_date.asc'
       );
       
       // Fetch all public profiles to join (excludes sensitive data)
-      const profiles = await supabaseFetch<Profile[]>('public_profiles?select=*');
+      const profiles = await supabaseRestFetch<Profile[]>('public_profiles?select=*');
       const profileMap = new Map(profiles.map(p => [p.id, p]));
       
       return slots.map(slot => ({

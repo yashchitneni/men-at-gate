@@ -1,38 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-
-const SUPABASE_URL = 'https://prursaeokvkulphtskdn.supabase.co';
-const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydXJzYWVva3ZrdWxwaHRza2RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NTYwOTIsImV4cCI6MjA4MzEzMjA5Mn0.Lqku85Nn1jKfomnrtMFpJ20z7wH70JgiMWYBN4iNP-Q';
-
-async function supabaseFetch<T>(path: string, options?: {
-  method?: string; body?: unknown; token?: string; prefer?: string;
-}): Promise<T> {
-  const authToken = options?.token || ANON_KEY;
-  const headers: Record<string, string> = {
-    'apikey': ANON_KEY,
-    'Authorization': `Bearer ${authToken}`,
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-  };
-  if (options?.prefer) headers['Prefer'] = options.prefer;
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    method: options?.method || 'GET',
-    headers,
-    body: options?.body ? JSON.stringify(options.body) : undefined,
-  });
-  if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err.message || 'Fetch failed');
-  }
-  const text = await response.text();
-  return text ? JSON.parse(text) : (undefined as T);
-}
-
-async function getToken(): Promise<string> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error('Not authenticated');
-  return session.access_token;
-}
+import { getCurrentAccessToken, supabaseRestFetch } from '@/lib/supabaseHttp';
 
 export interface Challenge {
   id: string;
@@ -61,7 +28,7 @@ export function useChallenges() {
     queryKey: ['challenges'],
     queryFn: async (): Promise<Challenge[]> => {
       try {
-        return await supabaseFetch<Challenge[]>('challenges?order=start_date.desc');
+        return await supabaseRestFetch<Challenge[]>('challenges?order=start_date.desc');
       } catch {
         return [];
       }
@@ -73,7 +40,7 @@ export function useChallenge(id: string) {
   return useQuery({
     queryKey: ['challenges', id],
     queryFn: async () => {
-      const [challenge] = await supabaseFetch<Challenge[]>(`challenges?id=eq.${id}`);
+      const [challenge] = await supabaseRestFetch<Challenge[]>(`challenges?id=eq.${id}`);
       return challenge || null;
     },
     enabled: !!id,
@@ -85,7 +52,7 @@ export function useChallengeEntries(challengeId: string) {
     queryKey: ['challenge-entries', challengeId],
     queryFn: async (): Promise<ChallengeEntry[]> => {
       try {
-        return await supabaseFetch<ChallengeEntry[]>(
+        return await supabaseRestFetch<ChallengeEntry[]>(
           `challenge_entries?challenge_id=eq.${challengeId}&order=entry_date.desc`
         );
       } catch {
@@ -100,8 +67,8 @@ export function useJoinChallenge() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ challengeId, userId }: { challengeId: string; userId: string }) => {
-      const token = await getToken();
-      await supabaseFetch('challenge_participants', {
+      const token = await getCurrentAccessToken();
+      await supabaseRestFetch('challenge_participants', {
         method: 'POST',
         body: { challenge_id: challengeId, user_id: userId },
         token,
@@ -118,8 +85,8 @@ export function useLogEntry() {
     mutationFn: async (entry: {
       challengeId: string; userId: string; value: number; notes?: string; date?: string;
     }) => {
-      const token = await getToken();
-      await supabaseFetch('challenge_entries', {
+      const token = await getCurrentAccessToken();
+      await supabaseRestFetch('challenge_entries', {
         method: 'POST',
         body: {
           challenge_id: entry.challengeId,

@@ -24,6 +24,10 @@ import Leaderboard from "./pages/Leaderboard";
 import WorkoutArchive from "./pages/WorkoutArchive";
 import ChapterLanding from "./pages/ChapterLanding";
 import Challenges from "./pages/Challenges";
+import EventsIndex from "./pages/EventsIndex";
+import MarathonRuckEvent from "./pages/MarathonRuckEvent";
+import AdminFeaturedEvents from "./pages/AdminFeaturedEvents";
+import AdminSweatpalsIntegration from "./pages/AdminSweatpalsIntegration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +51,8 @@ const App = () => (
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/chapters/:slug" element={<ChapterLanding />} />
             <Route path="/challenges" element={<Challenges />} />
+            <Route path="/events" element={<EventsIndex />} />
+            <Route path="/events/marathon-ruck" element={<MarathonRuckEvent />} />
             <Route path="/races" element={<Races />} />
             <Route path="/races/submit" element={<RaceSubmit />} />
             <Route path="/workouts" element={<Workouts />} />
@@ -55,6 +61,8 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/workouts" element={<AdminWorkouts />} />
             <Route path="/admin/members" element={<AdminMembers />} />
+            <Route path="/admin/events" element={<AdminFeaturedEvents />} />
+            <Route path="/admin/integrations/sweatpals" element={<AdminSweatpalsIntegration />} />
             <Route path="/workout-submit/:slotId" element={<WorkoutSubmit />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

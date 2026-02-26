@@ -269,6 +269,69 @@ export type Database = {
           },
         ]
       }
+      featured_events: {
+        Row: {
+          badge_text: string | null
+          created_at: string
+          end_at: string | null
+          event_date_text: string | null
+          event_path: string
+          hero_cta_label: string | null
+          hero_cta_url: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          priority: number
+          registration_url: string | null
+          slug: string
+          start_at: string | null
+          subtitle: string | null
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          badge_text?: string | null
+          created_at?: string
+          end_at?: string | null
+          event_date_text?: string | null
+          event_path: string
+          hero_cta_label?: string | null
+          hero_cta_url: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          priority?: number
+          registration_url?: string | null
+          slug: string
+          start_at?: string | null
+          subtitle?: string | null
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          badge_text?: string | null
+          created_at?: string
+          end_at?: string | null
+          event_date_text?: string | null
+          event_path?: string
+          hero_cta_label?: string | null
+          hero_cta_url?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          priority?: number
+          registration_url?: string | null
+          slug?: string
+          start_at?: string | null
+          subtitle?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chapters: {
         Row: {
           city: string

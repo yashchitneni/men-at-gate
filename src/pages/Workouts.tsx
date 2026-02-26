@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUpcomingWorkout, useWorkoutSlots, useMyWorkoutInterest, useExpressInterest, useCancelInterest, useMyAssignedWorkouts } from '@/hooks/useWorkouts';
+import { useAttendanceLeaderboard, useWorkoutLeaderLeaderboard } from '@/hooks/useCommunityInsights';
 import { AuthModal } from '@/components/AuthModal';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
@@ -19,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Calendar, User, Dumbbell, Loader2, Hand, Check, FileEdit, AlertCircle, Clock } from 'lucide-react';
+import { Calendar, User, Dumbbell, Loader2, Hand, Check, FileEdit, AlertCircle, Clock, Trophy, Flame } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
@@ -32,6 +33,8 @@ export default function Workouts() {
   const { data: allSlots } = useWorkoutSlots();
   const { data: myAssignedWorkouts } = useMyAssignedWorkouts();
   const { data: myInterest } = useMyWorkoutInterest();
+  const { data: attendanceLeaders = [] } = useAttendanceLeaderboard(5);
+  const { data: workoutLeaders = [] } = useWorkoutLeaderLeaderboard(5);
   const expressInterest = useExpressInterest();
   const cancelInterest = useCancelInterest();
   const { toast } = useToast();
@@ -282,6 +285,64 @@ export default function Workouts() {
                 </CardContent>
               </Card>
             )}
+
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-accent" />
+                    Top Workout Leaders (90d)
+                  </CardTitle>
+                  <CardDescription>
+                    Brothers consistently stepping up to lead.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {workoutLeaders.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No workout leadership data yet.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {workoutLeaders.map((leader, index) => (
+                        <div key={leader.id} className="flex items-center justify-between">
+                          <Link to={`/men/${leader.id}`} className="text-sm font-medium hover:text-accent transition-colors">
+                            {index + 1}. {leader.full_name || 'Anonymous'}
+                          </Link>
+                          <Badge variant="secondary">{leader.workouts_led} led</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Flame className="h-5 w-5 text-accent" />
+                    Most Consistent Attendees (30d)
+                  </CardTitle>
+                  <CardDescription>
+                    Members showing up the most across workouts and events.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {attendanceLeaders.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No attendance data yet.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {attendanceLeaders.map((leader, index) => (
+                        <div key={leader.id} className="flex items-center justify-between">
+                          <Link to={`/men/${leader.id}`} className="text-sm font-medium hover:text-accent transition-colors">
+                            {index + 1}. {leader.full_name || 'Anonymous'}
+                          </Link>
+                          <Badge variant="secondary">{leader.attendance_count} check-ins</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Lead a Workout Card */}
             <Card>

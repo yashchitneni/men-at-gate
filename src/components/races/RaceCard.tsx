@@ -24,6 +24,8 @@ import type { RaceWithParticipants } from '@/types/database.types';
 interface RaceCardProps {
   race: RaceWithParticipants;
   currentUserId?: string;
+  showParticipantIdentities?: boolean;
+  onRequireAuth?: () => void;
   onJoin: (raceId: string, options: { distance: string; carpool: boolean; lodging: boolean }) => void;
   onLeave: (raceId: string) => void;
   onDelete: (raceId: string) => void;
@@ -50,7 +52,19 @@ const distanceColors: Record<string, string> = {
   'Spartan/OCR': 'bg-amber-600',
 };
 
-export function RaceCard({ race, currentUserId, onJoin, onLeave, onDelete, onUpdatePreferences, isJoining, isLeaving, isDeleting }: RaceCardProps) {
+export function RaceCard({
+  race,
+  currentUserId,
+  showParticipantIdentities = false,
+  onRequireAuth,
+  onJoin,
+  onLeave,
+  onDelete,
+  onUpdatePreferences,
+  isJoining,
+  isLeaving,
+  isDeleting,
+}: RaceCardProps) {
   const [showAllParticipants, setShowAllParticipants] = useState(false);
   const [selectedDistance, setSelectedDistance] = useState(race.available_distances?.[0] || '');
   const [carpoolChecked, setCarpoolChecked] = useState(false);
@@ -168,92 +182,111 @@ export function RaceCard({ race, currentUserId, onJoin, onLeave, onDelete, onUpd
 
           {race.participants.length > 0 && (
             <>
-              {/* Avatar Stack */}
-              <div className="flex items-center gap-3 mb-3">
-                <div className="flex -space-x-2">
-                  {visibleParticipants.map((p) => (
-                    <Avatar key={p.id} className="h-8 w-8 border-2 border-background">
-                      <AvatarFallback className="text-xs bg-accent text-accent-foreground">
-                        {p.profile?.full_name?.charAt(0) || '?'}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                </div>
-                {race.participants.length > 5 && (
-                  <span className="text-sm text-muted-foreground">
-                    +{race.participants.length - 5} more
-                  </span>
-                )}
-              </div>
-
-              {/* Participant Names */}
-              <div className="text-sm text-muted-foreground mb-2">
-                {participantNames}
-                {remainingCount > 0 && ` + ${remainingCount} more`}
-              </div>
-
-              {/* Expandable Full List */}
-              <Collapsible open={showAllParticipants} onOpenChange={setShowAllParticipants}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
-                    {showAllParticipants ? (
-                      <>
-                        <ChevronUp className="h-3 w-3 mr-1" />
-                        Hide details
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="h-3 w-3 mr-1" />
-                        Show all
-                      </>
+              {showParticipantIdentities ? (
+                <>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex -space-x-2">
+                      {visibleParticipants.map((p) => (
+                        <Avatar key={p.id} className="h-8 w-8 border-2 border-background">
+                          <AvatarFallback className="text-xs bg-accent text-accent-foreground">
+                            {p.profile?.full_name?.charAt(0) || '?'}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                    </div>
+                    {race.participants.length > 5 && (
+                      <span className="text-sm text-muted-foreground">
+                        +{race.participants.length - 5} more
+                      </span>
                     )}
-                  </Button>
-                </CollapsibleTrigger>
+                  </div>
 
-                <CollapsibleContent className="mt-3">
-                  <div className="space-y-4">
-                    {Object.entries(participantsByDistance).map(([distance, participants]) => (
-                      <div key={distance}>
-                        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase">
-                          {distance} ({participants.length})
-                        </p>
-                        <div className="space-y-2">
-                          {participants.map((p) => (
-                            <div key={p.id} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <Avatar className="h-8 w-8 shrink-0">
-                                  <AvatarFallback className="text-xs">
-                                    {p.profile?.full_name?.charAt(0) || '?'}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium truncate">
-                                    {p.profile?.full_name || 'Anonymous'}
-                                  </p>
-                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    {p.open_to_carpool && <span>🚗 Carpool</span>}
-                                    {p.open_to_split_lodging && <span>🏠 Lodging</span>}
+                  <div className="text-sm text-muted-foreground mb-2">
+                    {participantNames}
+                    {remainingCount > 0 && ` + ${remainingCount} more`}
+                  </div>
+
+                  <Collapsible open={showAllParticipants} onOpenChange={setShowAllParticipants}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
+                        {showAllParticipants ? (
+                          <>
+                            <ChevronUp className="h-3 w-3 mr-1" />
+                            Hide details
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="h-3 w-3 mr-1" />
+                            Show all
+                          </>
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent className="mt-3">
+                      <div className="space-y-4">
+                        {Object.entries(participantsByDistance).map(([distance, participants]) => (
+                          <div key={distance}>
+                            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase">
+                              {distance} ({participants.length})
+                            </p>
+                            <div className="space-y-2">
+                              {participants.map((p) => (
+                                <div key={p.id} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
+                                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <Avatar className="h-8 w-8 shrink-0">
+                                      <AvatarFallback className="text-xs">
+                                        {p.profile?.full_name?.charAt(0) || '?'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-sm font-medium truncate">
+                                        {p.profile?.full_name || 'Anonymous'}
+                                      </p>
+                                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        {p.open_to_carpool && <span>🚗 Carpool</span>}
+                                        {p.open_to_split_lodging && <span>🏠 Lodging</span>}
+                                      </div>
+                                    </div>
                                   </div>
+                                  {p.profile?.instagram_handle && (
+                                    <a
+                                      href={`https://instagram.com/${p.profile.instagram_handle.replace('@', '')}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-muted-foreground hover:text-accent transition-colors shrink-0"
+                                    >
+                                      <Instagram className="h-4 w-4" />
+                                    </a>
+                                  )}
                                 </div>
-                              </div>
-                              {p.profile?.instagram_handle && (
-                                <a
-                                  href={`https://instagram.com/${p.profile.instagram_handle.replace('@', '')}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-muted-foreground hover:text-accent transition-colors shrink-0"
-                                >
-                                  <Instagram className="h-4 w-4" />
-                                </a>
-                              )}
+                              ))}
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Log in to see who is racing and coordinate rides/lodging.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(participantsByDistance).map(([distance, participants]) => (
+                      <Badge key={distance} variant="secondary">
+                        {distance}: {participants.length}
+                      </Badge>
                     ))}
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
+                  {!currentUserId && onRequireAuth && (
+                    <Button variant="outline" size="sm" onClick={onRequireAuth}>
+                      Sign in to See Who's Going
+                    </Button>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>

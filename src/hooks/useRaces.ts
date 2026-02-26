@@ -1,48 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import type { Race, RaceParticipant, Profile, RaceWithParticipants } from '@/types/database.types';
-
-const SUPABASE_URL = 'https://prursaeokvkulphtskdn.supabase.co';
-const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydXJzYWVva3ZrdWxwaHRza2RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NTYwOTIsImV4cCI6MjA4MzEzMjA5Mn0.Lqku85Nn1jKfomnrtMFpJ20z7wH70JgiMWYBN4iNP-Q';
-
-// Helper for direct fetch (workaround for Supabase client issue)
-async function supabaseFetch<T>(path: string, options?: {
-  method?: string;
-  body?: unknown;
-  token?: string;
-  prefer?: string;
-}): Promise<T> {
-  const url = `${SUPABASE_URL}/rest/v1/${path}`;
-  const authToken = options?.token || ANON_KEY;
-  const headers: Record<string, string> = {
-    'apikey': ANON_KEY,
-    'Authorization': `Bearer ${authToken}`,
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-  };
-  if (options?.prefer) {
-    headers['Prefer'] = options.prefer;
-  }
-  const response = await fetch(url, {
-    method: options?.method || 'GET',
-    headers,
-    body: options?.body ? JSON.stringify(options.body) : undefined,
-  });
-  if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err.message || err.details || 'Fetch failed');
-  }
-  const text = await response.text();
-  return text ? JSON.parse(text) : (undefined as T);
-}
-
-async function getAccessToken(): Promise<string> {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  if (error || !session?.access_token) {
-    throw new Error('Not authenticated. Please sign in and try again.');
-  }
-  return session.access_token;
-}
+import { getCurrentAccessToken, supabaseRestFetch } from '@/lib/supabaseHttp';
 
 // Fetch all upcoming races with participants
 export function useRaces() {
@@ -52,7 +10,7 @@ export function useRaces() {
       const today = new Date().toISOString().split('T')[0];
       
       // Fetch races
-      const races = await supabaseFetch<Race[]>(
+      const races = await supabaseRestFetch<Race[]>(
         `races?select=*&race_date=gte.${today}&order=race_date.asc`
       );
       
@@ -60,14 +18,14 @@ export function useRaces() {
       
       // Fetch all participants for these races
       const raceIds = races.map(r => r.id);
-      const participants = await supabaseFetch<RaceParticipant[]>(
+      const participants = await supabaseRestFetch<RaceParticipant[]>(
         `race_participants?race_id=in.(${raceIds.join(',')})`
       );
       
       // Fetch public profiles for participants (excludes sensitive data like email/phone)
       const userIds = [...new Set(participants.map(p => p.user_id))];
       const profiles = userIds.length > 0 
-        ? await supabaseFetch<Profile[]>(`public_profiles?id=in.(${userIds.join(',')})`)
+        ? await supabaseRestFetch<Profile[]>(`public_profiles?id=in.(${userIds.join(',')})`)
         : [];
       const profileMap = new Map(profiles.map(p => [p.id, p]));
       
@@ -87,17 +45,17 @@ export function useRace(raceId: string) {
   return useQuery({
     queryKey: ['races', raceId],
     queryFn: async (): Promise<RaceWithParticipants> => {
-      const races = await supabaseFetch<Race[]>(`races?id=eq.${raceId}`);
+      const races = await supabaseRestFetch<Race[]>(`races?id=eq.${raceId}`);
       if (!races.length) throw new Error('Race not found');
       const race = races[0];
       
-      const participants = await supabaseFetch<RaceParticipant[]>(
+      const participants = await supabaseRestFetch<RaceParticipant[]>(
         `race_participants?race_id=eq.${raceId}`
       );
       
       const userIds = participants.map(p => p.user_id);
       const profiles = userIds.length > 0
-        ? await supabaseFetch<Profile[]>(`public_profiles?id=in.(${userIds.join(',')})`)
+        ? await supabaseRestFetch<Profile[]>(`public_profiles?id=in.(${userIds.join(',')})`)
         : [];
       const profileMap = new Map(profiles.map(p => [p.id, p]));
       
@@ -130,10 +88,10 @@ export function useCreateRace() {
     }) => {
       if (!race.userId) throw new Error('Must be logged in');
 
-      const token = await getAccessToken();
+      const token = await getCurrentAccessToken();
 
       // Create race using direct fetch with user's JWT (bypasses Supabase client issues)
-      const [raceData] = await supabaseFetch<Race[]>('races', {
+      const [raceData] = await supabaseRestFetch<Race[]>('races', {
         method: 'POST',
         body: {
           race_name: race.race_name,
@@ -152,7 +110,7 @@ export function useCreateRace() {
       if (!raceData) throw new Error('Failed to create race');
 
       // Add creator as first participant
-      await supabaseFetch('race_participants', {
+      await supabaseRestFetch('race_participants', {
         method: 'POST',
         body: {
           race_id: raceData.id,
@@ -195,8 +153,8 @@ export function useJoinRace() {
     }) => {
       if (!userId) throw new Error('Must be logged in');
 
-      const token = await getAccessToken();
-      await supabaseFetch('race_participants', {
+      const token = await getCurrentAccessToken();
+      await supabaseRestFetch('race_participants', {
         method: 'POST',
         body: {
           race_id: raceId,
@@ -224,8 +182,8 @@ export function useLeaveRace() {
     mutationFn: async ({ userId, raceId }: { userId: string; raceId: string }) => {
       if (!userId) throw new Error('Must be logged in');
 
-      const token = await getAccessToken();
-      await supabaseFetch(`race_participants?race_id=eq.${raceId}&user_id=eq.${userId}`, {
+      const token = await getCurrentAccessToken();
+      await supabaseRestFetch(`race_participants?race_id=eq.${raceId}&user_id=eq.${userId}`, {
         method: 'DELETE',
         token,
       });
@@ -256,8 +214,8 @@ export function useUpdateParticipation() {
     }) => {
       if (!userId) throw new Error('Must be logged in');
 
-      const token = await getAccessToken();
-      await supabaseFetch(`race_participants?race_id=eq.${raceId}&user_id=eq.${userId}`, {
+      const token = await getCurrentAccessToken();
+      await supabaseRestFetch(`race_participants?race_id=eq.${raceId}&user_id=eq.${userId}`, {
         method: 'PATCH',
         body: {
           open_to_carpool: openToCarpool,
@@ -280,8 +238,8 @@ export function useDeleteRace() {
 
   return useMutation({
     mutationFn: async (raceId: string) => {
-      const token = await getAccessToken();
-      await supabaseFetch(`races?id=eq.${raceId}`, {
+      const token = await getCurrentAccessToken();
+      await supabaseRestFetch(`races?id=eq.${raceId}`, {
         method: 'DELETE',
         token,
       });

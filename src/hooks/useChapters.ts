@@ -1,19 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-
-const SUPABASE_URL = 'https://prursaeokvkulphtskdn.supabase.co';
-const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydXJzYWVva3ZrdWxwaHRza2RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NTYwOTIsImV4cCI6MjA4MzEzMjA5Mn0.Lqku85Nn1jKfomnrtMFpJ20z7wH70JgiMWYBN4iNP-Q';
-
-async function supabaseFetch<T>(path: string): Promise<T> {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    headers: {
-      'apikey': ANON_KEY,
-      'Authorization': `Bearer ${ANON_KEY}`,
-      'Accept': 'application/json',
-    },
-  });
-  if (!response.ok) throw new Error('Fetch failed');
-  return response.json();
-}
+import { supabaseRestFetch } from '@/lib/supabaseHttp';
 
 export interface Chapter {
   id: string;
@@ -33,7 +19,7 @@ export function useChapters() {
     queryKey: ['chapters'],
     queryFn: async (): Promise<Chapter[]> => {
       try {
-        return await supabaseFetch<Chapter[]>('chapters?order=name.asc');
+        return await supabaseRestFetch<Chapter[]>('chapters?order=name.asc');
       } catch {
         return [];
       }
@@ -46,7 +32,7 @@ export function useChapter(slug: string) {
     queryKey: ['chapters', slug],
     queryFn: async (): Promise<Chapter | null> => {
       try {
-        const chapters = await supabaseFetch<Chapter[]>(`chapters?slug=eq.${slug}`);
+        const chapters = await supabaseRestFetch<Chapter[]>(`chapters?slug=eq.${slug}`);
         return chapters[0] || null;
       } catch {
         return null;

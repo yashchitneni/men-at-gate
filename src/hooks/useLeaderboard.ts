@@ -1,23 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-
-const SUPABASE_URL = 'https://prursaeokvkulphtskdn.supabase.co';
-const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydXJzYWVva3ZrdWxwaHRza2RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NTYwOTIsImV4cCI6MjA4MzEzMjA5Mn0.Lqku85Nn1jKfomnrtMFpJ20z7wH70JgiMWYBN4iNP-Q';
-
-async function supabaseFetch<T>(path: string): Promise<T> {
-  const url = `${SUPABASE_URL}/rest/v1/${path}`;
-  const response = await fetch(url, {
-    headers: {
-      'apikey': ANON_KEY,
-      'Authorization': `Bearer ${ANON_KEY}`,
-      'Accept': 'application/json',
-    },
-  });
-  if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err.message || 'Fetch failed');
-  }
-  return response.json();
-}
+import { supabaseRestFetch } from '@/lib/supabaseHttp';
 
 export interface LeaderboardEntry {
   id: string;
@@ -62,7 +44,7 @@ export function useLeaderboard(timeFilter: TimeFilter = 'all') {
       try {
         if (timeFilter === 'all') {
           // Use the view directly
-          return await supabaseFetch<LeaderboardEntry[]>(
+          return await supabaseRestFetch<LeaderboardEntry[]>(
             'leaderboard?order=total_points.desc&limit=50'
           );
         }
@@ -73,7 +55,7 @@ export function useLeaderboard(timeFilter: TimeFilter = 'all') {
         if (timeFilter === 'week') start.setDate(now.getDate() - 7);
         else if (timeFilter === 'month') start.setMonth(now.getMonth() - 1);
 
-        const logs = await supabaseFetch<PointsLogEntry[]>(
+        const logs = await supabaseRestFetch<PointsLogEntry[]>(
           `points_log?created_at=gte.${start.toISOString()}&select=user_id,points`
         );
 
@@ -87,7 +69,7 @@ export function useLeaderboard(timeFilter: TimeFilter = 'all') {
         const userIds = [...userMap.keys()];
         if (!userIds.length) return [];
 
-        const profiles = await supabaseFetch<{ id: string; full_name: string | null }[]>(
+        const profiles = await supabaseRestFetch<{ id: string; full_name: string | null }[]>(
           `public_profiles?id=in.(${userIds.join(',')})&select=id,full_name`
         );
 
@@ -112,7 +94,7 @@ export function useUserPoints(userId: string) {
     queryKey: ['points', userId],
     queryFn: async (): Promise<PointsLogEntry[]> => {
       try {
-        return await supabaseFetch<PointsLogEntry[]>(
+        return await supabaseRestFetch<PointsLogEntry[]>(
           `points_log?user_id=eq.${userId}&order=created_at.desc`
         );
       } catch {
@@ -128,7 +110,7 @@ export function useUserBadges(userId: string) {
     queryKey: ['badges', userId],
     queryFn: async (): Promise<UserBadge[]> => {
       try {
-        return await supabaseFetch<UserBadge[]>(
+        return await supabaseRestFetch<UserBadge[]>(
           `user_badges?user_id=eq.${userId}&select=*,badge:badges(*)`
         );
       } catch {

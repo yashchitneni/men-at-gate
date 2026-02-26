@@ -34,6 +34,11 @@ export default function Races() {
     return races.filter(r => r.distance_type === distanceFilter);
   }, [races, distanceFilter]);
 
+  const visibleRaceParticipation = useMemo(
+    () => filteredRaces.reduce((sum, race) => sum + race.participants.length, 0),
+    [filteredRaces],
+  );
+
   const handleJoin = (raceId: string, options: { distance: string; carpool: boolean; lodging: boolean }) => {
     if (!user) {
       setAuthModalOpen(true);
@@ -95,7 +100,7 @@ export default function Races() {
               <div>
                 <h1 className="text-4xl md:text-5xl font-bold font-heading mb-4">Race Board</h1>
                 <p className="text-lg text-muted-foreground max-w-2xl">
-                  See what races MTA brothers are running. Join them and connect directly via Instagram.
+                  See race momentum across the brotherhood. Public visitors see counts, members can unlock full participant details.
                 </p>
               </div>
               <div className="mt-6 md:mt-0">
@@ -126,6 +131,20 @@ export default function Races() {
                 onDistanceChange={setDistanceFilter}
                 raceCount={filteredRaces.length}
               />
+            )}
+
+            {!isLoading && !user && filteredRaces.length > 0 && (
+              <Card className="p-5 mb-6 border-accent/40 bg-accent/5">
+                <p className="font-semibold mb-1">
+                  {visibleRaceParticipation} total race commitments across {filteredRaces.length} upcoming events.
+                </p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Sign in to see exactly who is racing each event and coordinate as a team.
+                </p>
+                <Button size="sm" onClick={() => setAuthModalOpen(true)}>
+                  Sign in to unlock participant details
+                </Button>
+              </Card>
             )}
 
             {/* Race List */}
@@ -172,6 +191,8 @@ export default function Races() {
                     key={race.id}
                     race={race}
                     currentUserId={user?.id}
+                    showParticipantIdentities={Boolean(user)}
+                    onRequireAuth={() => setAuthModalOpen(true)}
                     onJoin={handleJoin}
                     onLeave={handleLeave}
                     onDelete={handleDelete}

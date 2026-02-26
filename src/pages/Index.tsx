@@ -1,5 +1,6 @@
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
+import FeaturedEventSpotlight from "@/components/FeaturedEventSpotlight";
 import Stats from "@/components/Stats";
 import Mission from "@/components/Mission";
 import Story from "@/components/Story";
@@ -12,12 +13,16 @@ import FeaturedMember from "@/components/FeaturedMember";
 import Vision from "@/components/Vision";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
+import { useActiveFeaturedEvent } from "@/hooks/useFeaturedEvents";
 
 const Index = () => {
+  const { data: featuredEvent } = useActiveFeaturedEvent();
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <Navigation />
-      <Hero />
+      <Hero featuredEvent={featuredEvent} />
+      <FeaturedEventSpotlight event={featuredEvent} />
       <Stats />
       <Mission />
       {/* <Pillars /> removed */}

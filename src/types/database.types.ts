@@ -115,6 +115,66 @@ export interface Database {
           updated_at?: string;
         };
       };
+      featured_events: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          subtitle: string | null;
+          summary: string | null;
+          badge_text: string | null;
+          event_date_text: string | null;
+          event_path: string;
+          hero_cta_label: string | null;
+          hero_cta_url: string;
+          registration_url: string | null;
+          image_url: string | null;
+          is_active: boolean;
+          priority: number;
+          start_at: string | null;
+          end_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          subtitle?: string | null;
+          summary?: string | null;
+          badge_text?: string | null;
+          event_date_text?: string | null;
+          event_path: string;
+          hero_cta_label?: string | null;
+          hero_cta_url: string;
+          registration_url?: string | null;
+          image_url?: string | null;
+          is_active?: boolean;
+          priority?: number;
+          start_at?: string | null;
+          end_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          slug?: string;
+          title?: string;
+          subtitle?: string | null;
+          summary?: string | null;
+          badge_text?: string | null;
+          event_date_text?: string | null;
+          event_path?: string;
+          hero_cta_label?: string | null;
+          hero_cta_url?: string;
+          registration_url?: string | null;
+          image_url?: string | null;
+          is_active?: boolean;
+          priority?: number;
+          start_at?: string | null;
+          end_at?: string | null;
+          updated_at?: string;
+        };
+      };
       race_participants: {
         Row: {
           id: string;
@@ -284,6 +344,7 @@ export interface Database {
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type MemberPhoto = Database['public']['Tables']['member_photos']['Row'];
 export type Race = Database['public']['Tables']['races']['Row'];
+export type FeaturedEvent = Database['public']['Tables']['featured_events']['Row'];
 export type RaceParticipant = Database['public']['Tables']['race_participants']['Row'];
 export type WorkoutSlot = Database['public']['Tables']['workout_slots']['Row'];
 export type WorkoutInterest = Database['public']['Tables']['workout_interest']['Row'];

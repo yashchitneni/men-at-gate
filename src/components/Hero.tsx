@@ -1,12 +1,20 @@
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-workout.jpg";
-import ScrollReveal from "@/components/ScrollReveal";
+import type { FeaturedEvent } from "@/types/database.types";
+import { isExternalUrl } from "@/lib/url";
+import { Link } from "react-router-dom";
 
-const Hero = () => {
+interface HeroProps {
+  featuredEvent?: FeaturedEvent | null;
+}
+
+const Hero = ({ featuredEvent = null }: HeroProps) => {
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     element?.scrollIntoView({ behavior: "smooth" });
   };
+
+  const featuredCtaUrl = featuredEvent?.hero_cta_url || featuredEvent?.event_path || "/events";
 
   return (
     <section className="relative h-screen w-full overflow-hidden">
@@ -45,6 +53,33 @@ const Hero = () => {
           <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-xl leading-relaxed animate-fade-in font-light" style={{ animationDelay: "400ms" }}>
             Stop walking through life alone. Join a brotherhood that challenges you to be physically harder, mentally stronger, and spiritually alive.
           </p>
+
+          {featuredEvent && (
+            <div className="mb-8 p-4 border border-accent/40 bg-black/40 backdrop-blur-sm max-w-2xl animate-fade-in" style={{ animationDelay: "450ms" }}>
+              <p className="text-xs uppercase tracking-[0.25em] text-accent mb-2">
+                {featuredEvent.badge_text || "Featured Event"}
+              </p>
+              <p className="text-lg md:text-xl font-heading font-bold uppercase tracking-wide text-white">
+                {featuredEvent.title}
+              </p>
+              {featuredEvent.event_date_text && (
+                <p className="text-sm uppercase tracking-[0.2em] text-white/80 mt-2">
+                  {featuredEvent.event_date_text}
+                </p>
+              )}
+              <div className="mt-4">
+                <Button asChild size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground uppercase tracking-wider font-bold rounded-none">
+                  {isExternalUrl(featuredCtaUrl) ? (
+                    <a href={featuredCtaUrl} target="_blank" rel="noreferrer">
+                      {featuredEvent.hero_cta_label || "View Event"}
+                    </a>
+                  ) : (
+                    <Link to={featuredCtaUrl}>{featuredEvent.hero_cta_label || "View Event"}</Link>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-6 animate-fade-in" style={{ animationDelay: "500ms" }}>
             <Button

@@ -1,24 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile, MemberPhoto, ProfileWithPhotos, CoreRosterMember } from '@/types/database.types';
-
-// Helper for direct fetch
-async function supabaseFetch<T>(path: string): Promise<T> {
-  const url = `https://prursaeokvkulphtskdn.supabase.co/rest/v1/${path}`;
-  const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBydXJzYWVva3ZrdWxwaHRza2RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NTYwOTIsImV4cCI6MjA4MzEzMjA5Mn0.Lqku85Nn1jKfomnrtMFpJ20z7wH70JgiMWYBN4iNP-Q';
-  const response = await fetch(url, {
-    headers: {
-      'apikey': anonKey,
-      'Authorization': `Bearer ${anonKey}`,
-      'Accept': 'application/json',
-    },
-  });
-  if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err.message || 'Fetch failed');
-  }
-  return response.json();
-}
+import { supabaseRestFetch } from '@/lib/supabaseHttp';
 
 // Fetch core roster members (for /men page) - uses secure core_roster view
 export function useCoreRoster() {
@@ -26,7 +9,7 @@ export function useCoreRoster() {
     queryKey: ['profiles', 'core-roster'],
     queryFn: async () => {
       // Use the core_roster view which only exposes non-sensitive fields
-      const coreMembers = await supabaseFetch<CoreRosterMember[]>(
+      const coreMembers = await supabaseRestFetch<CoreRosterMember[]>(
         'core_roster?order=id.asc'
       );
       
@@ -63,11 +46,11 @@ export function useAllProfiles() {
   return useQuery({
     queryKey: ['profiles', 'all'],
     queryFn: async () => {
-      const profiles = await supabaseFetch<Profile[]>(
+      const profiles = await supabaseRestFetch<Profile[]>(
         'profiles?order=created_at.desc'
       );
       
-      const photos = await supabaseFetch<MemberPhoto[]>('member_photos?select=*');
+      const photos = await supabaseRestFetch<MemberPhoto[]>('member_photos?select=*');
       const photosByUser = photos.reduce((acc, photo) => {
         if (!acc[photo.user_id]) acc[photo.user_id] = [];
         acc[photo.user_id].push(photo);
@@ -88,14 +71,14 @@ export function useProfile(userId: string) {
   return useQuery({
     queryKey: ['profiles', userId],
     queryFn: async () => {
-      const profiles = await supabaseFetch<Profile[]>(
+      const profiles = await supabaseRestFetch<Profile[]>(
         `profiles?id=eq.${userId}`
       );
       
       if (!profiles.length) throw new Error('Profile not found');
       const profile = profiles[0];
       
-      const photos = await supabaseFetch<MemberPhoto[]>(
+      const photos = await supabaseRestFetch<MemberPhoto[]>(
         `member_photos?user_id=eq.${userId}`
       );
       

@@ -4,6 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useWorkoutSlots, useWorkoutInterest } from '@/hooks/useWorkouts';
 import { useRaces } from '@/hooks/useRaces';
 import { useAllProfiles } from '@/hooks/useProfiles';
+import { useFeaturedEvents } from '@/hooks/useFeaturedEvents';
+import { useRunSweatpalsTestIngest, useSweatpalsHealth } from '@/hooks/useIntegrations';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,16 +18,23 @@ import {
   Calendar,
   ChevronRight,
   AlertCircle,
+  Megaphone,
+  Activity,
 } from 'lucide-react';
-import { format, isAfter, isBefore, addDays } from 'date-fns';
+import { format, isAfter } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Admin() {
   const navigate = useNavigate();
   const { profile, loading: authLoading } = useAuth();
-  const { data: workoutSlots, isLoading: slotsLoading } = useWorkoutSlots();
-  const { data: workoutInterest, isLoading: interestLoading } = useWorkoutInterest();
-  const { data: races, isLoading: racesLoading } = useRaces();
-  const { data: allProfiles, isLoading: profilesLoading } = useAllProfiles();
+  const { data: workoutSlots } = useWorkoutSlots();
+  const { data: workoutInterest } = useWorkoutInterest();
+  const { data: races } = useRaces();
+  const { data: allProfiles } = useAllProfiles();
+  const { data: featuredEvents } = useFeaturedEvents();
+  const { data: sweatpalsHealth } = useSweatpalsHealth();
+  const runSweatpalsTestIngest = useRunSweatpalsTestIngest();
+  const { toast } = useToast();
 
   // Redirect if not admin
   useEffect(() => {
@@ -42,8 +51,6 @@ export default function Admin() {
     );
   }
 
-  const isLoading = slotsLoading || interestLoading || racesLoading || profilesLoading;
-
   // Calculate stats
   const today = new Date();
   const upcomingWorkouts = workoutSlots?.filter(s => 
@@ -53,12 +60,30 @@ export default function Admin() {
   const pendingInterest = workoutInterest?.filter(i => i.status === 'pending') || [];
   const unassignedSlots = upcomingWorkouts.filter(s => !s.leader_id);
   const upcomingRaces = races?.length || 0;
+  const activeFeaturedEvents = featuredEvents?.filter(e => e.is_active).length || 0;
   const totalMembers = allProfiles?.length || 0;
   const coreMembers = allProfiles?.filter(p => p.is_core_member).length || 0;
+  const integrationHealthy = sweatpalsHealth?.status === 'ok';
 
   // Get next workout
   const nextWorkout = upcomingWorkouts[0];
   const needsAttention = unassignedSlots.length > 0 || pendingInterest.length > 0;
+
+  async function handleTestIngest() {
+    try {
+      const result = await runSweatpalsTestIngest.mutateAsync({ dry_run: true });
+      toast({
+        title: 'SweatPals test ingest completed',
+        description: `Dry run: ${result.inserted_external_events} external events and ${result.inserted_attendance_facts} attendance facts.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Test ingest failed',
+        description: 'Could not run SweatPals test ingest right now.',
+        variant: 'destructive',
+      });
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -98,7 +123,7 @@ export default function Admin() {
             )}
 
             {/* Quick Stats */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -146,10 +171,34 @@ export default function Admin() {
                   </div>
                 </CardContent>
               </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Active Featured Events</p>
+                      <p className="text-3xl font-bold">{activeFeaturedEvents}</p>
+                    </div>
+                    <Megaphone className="h-8 w-8 text-muted-foreground/30" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">SweatPals Sync</p>
+                      <p className="text-lg font-bold">{integrationHealthy ? 'Healthy' : 'Needs Attention'}</p>
+                    </div>
+                    <Activity className="h-8 w-8 text-muted-foreground/30" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Management Cards */}
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Workouts */}
               <Card className="hover:border-accent/50 transition-colors">
                 <CardHeader>
@@ -239,6 +288,72 @@ export default function Admin() {
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
+                </CardContent>
+              </Card>
+
+              {/* Featured Events */}
+              <Card className="hover:border-accent/50 transition-colors">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Megaphone className="h-5 w-5 text-accent" />
+                    Featured Events
+                  </CardTitle>
+                  <CardDescription>
+                    Spotlight flagship events on homepage and control event CTAs
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4 p-3 bg-muted rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Currently Active</p>
+                    <p className="text-2xl font-bold">{activeFeaturedEvents}</p>
+                  </div>
+                  <Button className="w-full" variant="outline" asChild>
+                    <Link to="/admin/events">
+                      Manage Events
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Integrations */}
+              <Card className="hover:border-accent/50 transition-colors md:col-span-2 lg:col-span-4">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-accent" />
+                    Integrations
+                  </CardTitle>
+                  <CardDescription>
+                    SweatPals webhook ingestion health, mapping warnings, and replay controls.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={integrationHealthy ? 'default' : 'destructive'}>
+                          {integrationHealthy ? 'Healthy' : 'Issue Detected'}
+                        </Badge>
+                        {sweatpalsHealth?.last_webhook_at && (
+                          <span className="text-sm text-muted-foreground">
+                            Last webhook {format(new Date(sweatpalsHealth.last_webhook_at), 'MMM d, h:mm a')}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {sweatpalsHealth?.external_events_count || 0} external events • {sweatpalsHealth?.attendance_facts_count || 0} attendance facts • {sweatpalsHealth?.unmapped_external_events || 0} unmapped
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <Button variant="outline" asChild>
+                        <Link to="/admin/integrations/sweatpals">Open Integration</Link>
+                      </Button>
+                      <Button onClick={handleTestIngest} disabled={runSweatpalsTestIngest.isPending}>
+                        {runSweatpalsTestIngest.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Send Test Ingest
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>

@@ -39,7 +39,7 @@ const Calendar = () => {
           <div className="max-w-6xl mx-auto">
             {/* Header */}
             <div className="text-center mb-12">
-              <Link to="/#events">
+              <Link to="/events">
                 <Button variant="ghost" className="mb-4">
                   <ChevronLeft className="w-4 h-4 mr-2" />
                   Back to Events
