@@ -282,7 +282,7 @@ function extractEventName(payload: Record<string, unknown>): string | null {
 
 async function resolveAuth(
   req: Request,
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
 ): Promise<AuthResultOk | AuthResultFail> {
   const syncSecret = Deno.env.get("SWEATPALS_SYNC_SECRET");
   const providedSyncSecret = req.headers.get("x-sync-secret");
