@@ -324,7 +324,7 @@ async function resolveAuth(
 }
 
 async function writeIngestionRun(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   run: IngestionRunInput,
 ): Promise<void> {
   const payload = {
