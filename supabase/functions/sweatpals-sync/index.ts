@@ -451,7 +451,7 @@ function mergeIdentityRows(rows: ExternalIdentityRow[]): ExternalIdentityRow[] {
 }
 
 async function ingestEvents(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   rawEvents: RawEvent[],
   dryRun: boolean,
 ): Promise<IngestionResult> {
