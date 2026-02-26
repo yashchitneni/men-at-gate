@@ -595,7 +595,7 @@ async function ingestEvents(
   if (mergedIdentities.length > 0) {
     const identityUpsert = await supabase
       .from("external_member_identities")
-      .upsert(mergedIdentities, { onConflict: "provider,external_member_id" })
+      .upsert(mergedIdentities as unknown as Record<string, unknown>[], { onConflict: "provider,external_member_id" })
       .select("id");
 
     if (identityUpsert.error) throw identityUpsert.error;
