@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useWorkoutSlots, useMyWorkoutSubmission, useSaveWorkoutSubmission } from '@/hooks/useWorkouts';
+import {
+  useMyWorkoutAssignment,
+  useMyWorkoutSubmission,
+  useSaveWorkoutSubmission,
+} from '@/hooks/useWorkouts';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -10,15 +14,15 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save, Send, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Send, Calendar, CheckCircle, AlertCircle, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function WorkoutSubmit() {
-  const { slotId } = useParams<{ slotId: string }>();
+  const { assignmentId } = useParams<{ assignmentId: string }>();
   const navigate = useNavigate();
-  const { user, profile, loading: authLoading } = useAuth();
-  const { data: slots } = useWorkoutSlots();
-  const { data: existingSubmission, isLoading: submissionLoading } = useMyWorkoutSubmission(slotId || '');
+  const { user, loading: authLoading } = useAuth();
+  const { data: assignment, isLoading: assignmentLoading } = useMyWorkoutAssignment(assignmentId || '');
+  const { data: existingSubmission, isLoading: submissionLoading } = useMyWorkoutSubmission(assignmentId || '');
   const saveSubmission = useSaveWorkoutSubmission();
   const { toast } = useToast();
 
@@ -26,16 +30,19 @@ export default function WorkoutSubmit() {
   const [message, setMessage] = useState('');
   const [leadershipNote, setLeadershipNote] = useState('');
 
-  // Find the slot
-  const slot = slots?.find(s => s.id === slotId);
-
-  // Redirect if not logged in or not the assigned leader
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/workouts');
+    }
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    if (authLoading || assignmentLoading) return;
+    if (!assignmentId) {
+      navigate('/workouts');
       return;
     }
-    if (slot && slot.leader_id !== user?.id) {
+    if (!assignment) {
       navigate('/workouts');
       toast({
         title: 'Access denied',
@@ -43,9 +50,8 @@ export default function WorkoutSubmit() {
         variant: 'destructive',
       });
     }
-  }, [user, authLoading, slot, navigate, toast]);
+  }, [assignment, assignmentId, assignmentLoading, authLoading, navigate, toast]);
 
-  // Populate form with existing submission
   useEffect(() => {
     if (existingSubmission) {
       setWorkoutPlan(existingSubmission.workout_plan || '');
@@ -55,7 +61,7 @@ export default function WorkoutSubmit() {
   }, [existingSubmission]);
 
   async function handleSave(submit = false) {
-    if (!slotId || !workoutPlan.trim()) {
+    if (!assignmentId || !workoutPlan.trim()) {
       toast({
         title: 'Workout plan required',
         description: 'Please describe your workout plan.',
@@ -66,24 +72,22 @@ export default function WorkoutSubmit() {
 
     try {
       await saveSubmission.mutateAsync({
-        slotId,
+        assignmentId,
         workoutPlan,
         message: message || undefined,
         leadershipNote: leadershipNote || undefined,
         status: submit ? 'submitted' : 'draft',
       });
-      
+
       toast({
         title: submit ? 'Workout submitted!' : 'Draft saved',
-        description: submit 
-          ? 'Your workout has been submitted for review.' 
-          : 'Your draft has been saved.',
+        description: submit ? 'Your workout has been submitted for review.' : 'Your draft has been saved.',
       });
 
       if (submit) {
         navigate('/workouts');
       }
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to save. Please try again.',
@@ -92,7 +96,7 @@ export default function WorkoutSubmit() {
     }
   }
 
-  if (authLoading || submissionLoading) {
+  if (authLoading || assignmentLoading || submissionLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -118,23 +122,34 @@ export default function WorkoutSubmit() {
 
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4">
                   <div>
                     <CardTitle className="text-2xl font-heading">Submit Your Workout</CardTitle>
-                    {slot && (
-                      <CardDescription className="flex items-center gap-2 mt-2">
-                        <Calendar className="h-4 w-4" />
-                        {format(new Date(slot.workout_date + 'T12:00:00'), 'EEEE, MMMM d, yyyy')}
+                    {assignment?.schedule_event && (
+                      <CardDescription className="space-y-1 mt-2">
+                        <span className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          {format(new Date(assignment.schedule_event.starts_at), 'EEEE, MMMM d, yyyy h:mm a')}
+                        </span>
+                        {assignment.schedule_event.location && (
+                          <span className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            {assignment.schedule_event.location}
+                          </span>
+                        )}
                       </CardDescription>
                     )}
                   </div>
                   {existingSubmission && (
                     <Badge
                       variant={
-                        isApproved ? 'default' :
-                        isSubmitted ? 'secondary' :
-                        changesRequested ? 'destructive' :
-                        'outline'
+                        isApproved
+                          ? 'default'
+                          : isSubmitted
+                            ? 'secondary'
+                            : changesRequested
+                              ? 'destructive'
+                              : 'outline'
                       }
                     >
                       {isApproved ? 'Approved' : isSubmitted ? 'Submitted' : changesRequested ? 'Changes Requested' : 'Draft'}
@@ -147,7 +162,7 @@ export default function WorkoutSubmit() {
                   <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500" />
                     <p className="text-sm text-green-500 font-medium">
-                      Your workout has been approved! You're all set.
+                      Your workout has been approved. You&apos;re all set.
                     </p>
                   </div>
                 )}
@@ -156,101 +171,66 @@ export default function WorkoutSubmit() {
                   <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg space-y-2">
                     <div className="flex items-center gap-3">
                       <AlertCircle className="h-5 w-5 text-yellow-700" />
-                      <p className="text-sm text-yellow-700 font-semibold">
-                        Admin has requested changes
-                      </p>
+                      <p className="text-sm text-yellow-700 font-semibold">Admin has requested changes</p>
                     </div>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {existingSubmission.admin_feedback}
-                    </p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{existingSubmission.admin_feedback}</p>
                   </div>
                 )}
 
-                {/* Workout Plan */}
                 <div className="space-y-2">
                   <Label htmlFor="workoutPlan" className="text-base font-semibold">
                     1. What is the workout? *
                   </Label>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Describe the physical experience you're creating. Include warm-up (10 min), 
-                    main workout (30-40 min), and cooldown/reflection (10-15 min).
+                    Describe the physical experience you&apos;re creating. Include warm-up (10 min), main workout (30-40 min), and cooldown/reflection (10-15 min).
                   </p>
                   <Textarea
                     id="workoutPlan"
-                    placeholder="Example:
-
-WARM-UP (10 min)
-- 400m jog
-- Dynamic stretches
-- 10 burpees
-
-MAIN WORKOUT (35 min)
-- 4 rounds of:
-  - 400m run
-  - 20 air squats
-  - 15 push-ups
-  - 10 burpees
-- Rest 2 min between rounds
-
-CHALLENGE: Final 200m all-out sprint
-
-COOLDOWN (10 min)
-- Slow walk
-- Static stretches
-- Reflection circle"
+                    placeholder={`Example:\n\nWARM-UP (10 min)\n- 400m jog\n- Dynamic stretches\n- 10 burpees\n\nMAIN WORKOUT (35 min)\n- 4 rounds of:\n  - 400m run\n  - 20 air squats\n  - 15 push-ups\n  - 10 burpees\n- Rest 2 min between rounds\n\nCHALLENGE: Final 200m all-out sprint\n\nCOOLDOWN (10 min)\n- Slow walk\n- Static stretches\n- Reflection circle`}
                     value={workoutPlan}
-                    onChange={(e) => setWorkoutPlan(e.target.value)}
+                    onChange={(event) => setWorkoutPlan(event.target.value)}
                     className="min-h-[250px] font-mono text-sm"
                     disabled={isApproved || isSubmitted}
                   />
                 </div>
 
-                {/* Message/Intention */}
                 <div className="space-y-2">
                   <Label htmlFor="message" className="text-base font-semibold">
                     2. What is the message?
                   </Label>
                   <p className="text-sm text-muted-foreground mb-2">
-                    What do you want the men to take away? How does this connect to MTA's 
-                    pillars of challenge, fellowship, duty, or reflection?
+                    What do you want the men to take away? How does this connect to MTA&apos;s pillars of challenge, fellowship, duty, or reflection?
                   </p>
                   <Textarea
                     id="message"
-                    placeholder="Example: Today's workout is about pushing through when your body wants to quit. The challenge isn't the workout itself—it's the voice in your head telling you to stop. We're here to prove that voice wrong, together."
+                    placeholder="Example: Today's workout is about pushing through when your body wants to quit..."
                     value={message}
-                    onChange={(e) => setMessage(e.target.value)}
+                    onChange={(event) => setMessage(event.target.value)}
                     className="min-h-[100px]"
                     disabled={isApproved || isSubmitted}
                   />
                 </div>
 
-                {/* Leadership Note */}
                 <div className="space-y-2">
                   <Label htmlFor="leadershipNote" className="text-base font-semibold">
                     3. How are you showing up?
                   </Label>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Brief note on your leadership approach. How will you prepare, carry yourself, 
-                    and support the brothers?
+                    Brief note on your leadership approach. How will you prepare, carry yourself, and support the brothers?
                   </p>
                   <Textarea
                     id="leadershipNote"
-                    placeholder="Example: I'll arrive 20 min early to set up and greet everyone personally. During the workout, I'll run alongside and call out encouragement. At the end, I'll share a short reflection on what this workout means to me."
+                    placeholder="Example: I'll arrive 20 min early to set up and greet everyone personally..."
                     value={leadershipNote}
-                    onChange={(e) => setLeadershipNote(e.target.value)}
+                    onChange={(event) => setLeadershipNote(event.target.value)}
                     className="min-h-[80px]"
                     disabled={isApproved || isSubmitted}
                   />
                 </div>
 
-                {/* Actions */}
                 {!isApproved && (
                   <div className="flex gap-3 pt-4 border-t">
-                    <Button
-                      variant="outline"
-                      onClick={() => handleSave(false)}
-                      disabled={saveSubmission.isPending}
-                    >
+                    <Button variant="outline" onClick={() => handleSave(false)} disabled={saveSubmission.isPending}>
                       {saveSubmission.isPending ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (

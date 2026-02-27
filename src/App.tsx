@@ -63,7 +63,7 @@ const App = () => (
             <Route path="/admin/members" element={<AdminMembers />} />
             <Route path="/admin/events" element={<AdminFeaturedEvents />} />
             <Route path="/admin/integrations/sweatpals" element={<AdminSweatpalsIntegration />} />
-            <Route path="/workout-submit/:slotId" element={<WorkoutSubmit />} />
+            <Route path="/workout-submit/:assignmentId" element={<WorkoutSubmit />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

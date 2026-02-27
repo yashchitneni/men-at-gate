@@ -2,6 +2,7 @@
 -- Fix 1: Replace overly permissive profiles SELECT policy
 -- Remove the "Profiles are viewable by everyone" policy that exposes email, phone, admin flags
 DROP POLICY IF EXISTS "Profiles are viewable by everyone" ON public.profiles;
+DROP POLICY IF EXISTS "Users can view own profile and admins can view all" ON public.profiles;
 
 -- Only allow users to view their own profile, or admins to view all
 CREATE POLICY "Users can view own profile and admins can view all"

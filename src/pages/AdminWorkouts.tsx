@@ -1,25 +1,25 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
-  useWorkoutSlots,
-  useWorkoutInterest,
-  useCreateWorkoutSlot,
-  useAssignLeader,
-  useDeleteWorkoutSlot,
+  useLeadableWorkouts,
+  useAdminWorkoutLeadRequests,
+  useWorkoutLeadAssignments,
+  useApproveWorkoutLeadRequest,
+  useRejectWorkoutLeadRequest,
+  useAssignWorkoutLeaderDirect,
   useAllWorkoutSubmissions,
   useApproveSubmission,
   useRequestSubmissionChanges,
-  useUnassignLeader,
+  type WorkoutSubmissionWithContext,
 } from '@/hooks/useWorkouts';
+import { useAllProfiles } from '@/hooks/useProfiles';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
@@ -27,14 +27,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -42,190 +35,131 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { 
-  ArrowLeft, 
-  Plus, 
-  Calendar, 
-  User, 
-  Loader2, 
-  Trash2,
+import {
+  ArrowLeft,
+  Calendar,
+  Loader2,
+  UserCheck,
   UserPlus,
-  FileText,
+  Users,
   CheckCircle,
+  XCircle,
+  FileText,
   Eye,
-  MoreVertical,
-  ArrowRightLeft,
-  UserMinus,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { Link } from 'react-router-dom';
-import { useEffect } from 'react';
-
-interface WorkoutSubmission {
-  id: string;
-  slot_id: string;
-  workout_plan: string;
-  message?: string | null;
-  leadership_note?: string | null;
-  admin_feedback?: string | null;
-  status: string;
-}
 
 export default function AdminWorkouts() {
   const navigate = useNavigate();
   const { profile, loading: authLoading } = useAuth();
-  const { data: slots, isLoading: slotsLoading } = useWorkoutSlots();
-  const { data: interests, isLoading: interestsLoading } = useWorkoutInterest();
-  const { data: submissions, isLoading: submissionsLoading } = useAllWorkoutSubmissions();
-  const createSlot = useCreateWorkoutSlot();
-  const assignLeader = useAssignLeader();
-  const deleteSlot = useDeleteWorkoutSlot();
-  const unassignLeader = useUnassignLeader();
-  const approveSubmission = useApproveSubmission();
-  const requestChanges = useRequestSubmissionChanges();
   const { toast } = useToast();
 
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [assignModalOpen, setAssignModalOpen] = useState(false);
-  const [viewSubmissionModalOpen, setViewSubmissionModalOpen] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [selectedSubmission, setSelectedSubmission] = useState<WorkoutSubmission | null>(null);
-  const [newDate, setNewDate] = useState('');
-  const [adminFeedback, setAdminFeedback] = useState('');
-  const [assignInterestModalOpen, setAssignInterestModalOpen] = useState(false);
-  const [selectedInterest, setSelectedInterest] = useState<typeof pendingInterests[number] | null>(null);
+  const { data: leadableWorkouts = [], isLoading: workoutsLoading } = useLeadableWorkouts(30);
+  const { data: pendingRequests = [], isLoading: requestsLoading } = useAdminWorkoutLeadRequests('pending');
+  const { data: assignments = [] } = useWorkoutLeadAssignments('assigned');
+  const { data: allProfiles = [] } = useAllProfiles();
+  const { data: submissions = [], isLoading: submissionsLoading } = useAllWorkoutSubmissions();
 
-  // Redirect if not admin
+  const approveLeadRequest = useApproveWorkoutLeadRequest();
+  const rejectLeadRequest = useRejectWorkoutLeadRequest();
+  const assignLeaderDirect = useAssignWorkoutLeaderDirect();
+  const approveSubmission = useApproveSubmission();
+  const requestChanges = useRequestSubmissionChanges();
+
+  const [requestsModalOpen, setRequestsModalOpen] = useState(false);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [submissionModalOpen, setSubmissionModalOpen] = useState(false);
+
+  const [selectedScheduleEventId, setSelectedScheduleEventId] = useState<string | null>(null);
+  const [selectedLeaderId, setSelectedLeaderId] = useState('');
+  const [selectedSubmission, setSelectedSubmission] = useState<WorkoutSubmissionWithContext | null>(null);
+  const [adminFeedback, setAdminFeedback] = useState('');
+
   useEffect(() => {
     if (!authLoading && (!profile || !profile.is_admin)) {
       navigate('/workouts');
     }
   }, [profile, authLoading, navigate]);
 
-  async function handleCreateSlot() {
-    if (!newDate) return;
-    
+  const requestsByEvent = useMemo(() => {
+    const map = new Map<string, typeof pendingRequests>();
+    for (const request of pendingRequests) {
+      const group = map.get(request.schedule_event_id) || [];
+      group.push(request);
+      map.set(request.schedule_event_id, group);
+    }
+    return map;
+  }, [pendingRequests]);
+
+  const assignmentsByEvent = useMemo(() => {
+    const map = new Map<string, (typeof assignments)[number]>();
+    for (const assignment of assignments) {
+      map.set(assignment.schedule_event_id, assignment);
+    }
+    return map;
+  }, [assignments]);
+
+  const selectedEventRequests = selectedScheduleEventId ? requestsByEvent.get(selectedScheduleEventId) || [] : [];
+  const selectedEvent = selectedScheduleEventId
+    ? leadableWorkouts.find((workout) => workout.schedule_event_id === selectedScheduleEventId) || null
+    : null;
+
+  const pendingSubmissions = submissions.filter((submission) => submission.status === 'submitted');
+
+  async function handleApproveRequest(requestId: string) {
     try {
-      await createSlot.mutateAsync({ workoutDate: newDate });
+      await approveLeadRequest.mutateAsync(requestId);
       toast({
-        title: 'Workout slot created',
-        description: `Added slot for ${format(new Date(newDate), 'MMMM d, yyyy')}`,
+        title: 'Leader approved',
+        description: 'The workout now has an assigned leader.',
       });
-      setCreateModalOpen(false);
-      setNewDate('');
-    } catch (error: unknown) {
+      setRequestsModalOpen(false);
+    } catch (error) {
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create slot',
+        description: error instanceof Error ? error.message : 'Failed to approve request.',
         variant: 'destructive',
       });
     }
   }
 
-  async function handleAssignLeader(leaderId: string) {
-    if (!selectedSlot) return;
-    
+  async function handleRejectRequest(requestId: string) {
     try {
-      await assignLeader.mutateAsync({ slotId: selectedSlot, leaderId });
+      await rejectLeadRequest.mutateAsync(requestId);
+      toast({
+        title: 'Request rejected',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to reject request.',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  async function handleDirectAssign() {
+    if (!selectedScheduleEventId || !selectedLeaderId) return;
+
+    try {
+      await assignLeaderDirect.mutateAsync({
+        scheduleEventId: selectedScheduleEventId,
+        leaderId: selectedLeaderId,
+      });
       toast({
         title: 'Leader assigned',
-        description: 'The workout has been assigned.',
+        description: 'Assignment was updated successfully.',
       });
       setAssignModalOpen(false);
-      setSelectedSlot(null);
+      setSelectedLeaderId('');
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to assign leader',
+        description: error instanceof Error ? error.message : 'Failed to assign leader.',
         variant: 'destructive',
       });
     }
-  }
-
-  async function handleDeleteSlot(slotId: string) {
-    try {
-      await deleteSlot.mutateAsync(slotId);
-      toast({
-        title: 'Slot deleted',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete slot',
-        variant: 'destructive',
-      });
-    }
-  }
-
-  async function handleSwapLeader(slotId: string) {
-    try {
-      await unassignLeader.mutateAsync(slotId);
-      setSelectedSlot(slotId);
-      setAssignModalOpen(true);
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to unassign leader',
-        variant: 'destructive',
-      });
-    }
-  }
-
-  async function handleUnassignLeader(slotId: string) {
-    try {
-      await unassignLeader.mutateAsync(slotId);
-      toast({
-        title: 'Leader unassigned',
-        description: 'The workout slot is now open.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to unassign leader',
-        variant: 'destructive',
-      });
-    }
-  }
-
-  async function handleAssignInterestToSlot(slotId: string) {
-    if (!selectedInterest) return;
-
-    try {
-      await assignLeader.mutateAsync({
-        slotId,
-        leaderId: selectedInterest.user_id,
-      });
-      toast({
-        title: 'Leader assigned',
-        description: `${selectedInterest.profile?.full_name || 'Leader'} has been assigned to the workout.`,
-      });
-      setAssignInterestModalOpen(false);
-      setSelectedInterest(null);
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to assign leader',
-        variant: 'destructive',
-      });
-    }
-  }
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  const pendingInterests = interests?.filter(i => i.status === 'pending') || [];
-  const pendingSubmissions = submissions?.filter(s => s.status === 'submitted') || [];
-  const openSlots = slots?.filter(s => s.status === 'open' && !s.leader) || [];
-
-  // Get slot info for a submission
-  function getSlotForSubmission(slotId: string) {
-    return slots?.find(s => s.id === slotId);
   }
 
   async function handleApproveSubmission(submissionId: string) {
@@ -235,13 +169,13 @@ export default function AdminWorkouts() {
         title: 'Submission approved',
         description: 'The workout plan has been approved.',
       });
-      setViewSubmissionModalOpen(false);
+      setSubmissionModalOpen(false);
       setSelectedSubmission(null);
       setAdminFeedback('');
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
-        description: 'Failed to approve submission',
+        description: 'Failed to approve submission.',
         variant: 'destructive',
       });
     }
@@ -257,18 +191,26 @@ export default function AdminWorkouts() {
       });
       toast({
         title: 'Changes requested',
-        description: 'The leader will be notified to revise their submission.',
+        description: 'The leader will be notified to revise the plan.',
       });
-      setViewSubmissionModalOpen(false);
+      setSubmissionModalOpen(false);
       setSelectedSubmission(null);
       setAdminFeedback('');
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
-        description: 'Failed to request changes',
+        description: 'Failed to request changes.',
         variant: 'destructive',
       });
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -277,306 +219,94 @@ export default function AdminWorkouts() {
 
       <section className="pt-24 pb-20">
         <div className="container px-4">
-          <div className="max-w-6xl mx-auto">
-            <Link to="/workouts" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6">
+          <div className="max-w-6xl mx-auto space-y-8">
+            <Link to="/admin" className="inline-flex items-center text-muted-foreground hover:text-foreground">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Workouts
+              Back to Admin Dashboard
             </Link>
 
-            <div className="flex items-center justify-between mb-8">
+            <div>
               <h1 className="text-3xl font-bold font-heading">Manage Workouts</h1>
-              <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-accent hover:bg-accent/90">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Slot
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Create Workout Slot</DialogTitle>
-                    <DialogDescription>
-                      Add a new date to the workout schedule.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="date">Date</Label>
-                      <Input
-                        id="date"
-                        type="date"
-                        value={newDate}
-                        onChange={(e) => setNewDate(e.target.value)}
-                      />
-                    </div>
-                    <Button 
-                      className="w-full" 
-                      onClick={handleCreateSlot}
-                      disabled={createSlot.isPending || !newDate}
-                    >
-                      {createSlot.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Create Slot
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <p className="text-muted-foreground mt-1">
+                Review lead requests for synced workout dates, assign leaders, and approve workout plans.
+              </p>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-8">
-              {/* Workout Schedule */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Workout Schedule
-                  </CardTitle>
-                  <CardDescription>
-                    Upcoming and past workout slots
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {slotsLoading ? (
-                    <div className="space-y-4">
-                      {[1, 2, 3].map(i => (
-                        <Skeleton key={i} className="h-16 w-full" />
-                      ))}
-                    </div>
-                  ) : slots?.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">
-                      No workout slots yet. Create one to get started.
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {slots?.map(slot => (
-                        <div 
-                          key={slot.id} 
-                          className="flex items-center justify-between p-3 border rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div>
-                              <p className="font-medium">
-                                {format(new Date(slot.workout_date + 'T12:00:00'), 'EEE, MMM d, yyyy')}
-                              </p>
-                              {slot.leader ? (
-                                <p className="text-sm text-muted-foreground">
-                                  Led by {slot.leader.full_name || slot.leader.email}
-                                </p>
-                              ) : (
-                                <p className="text-sm text-muted-foreground">No leader assigned</p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={slot.status === 'assigned' ? 'default' : 'secondary'}>
-                              {slot.status}
-                            </Badge>
-                            {slot.leader ? (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleSwapLeader(slot.id)}>
-                                    <ArrowRightLeft className="h-4 w-4 mr-2" />
-                                    Swap Leader
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleUnassignLeader(slot.id)}>
-                                    <UserMinus className="h-4 w-4 mr-2" />
-                                    Unassign
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDeleteSlot(slot.id)}
-                                    className="text-destructive"
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            ) : (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedSlot(slot.id);
-                                    setAssignModalOpen(true);
-                                  }}
-                                >
-                                  <UserPlus className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteSlot(slot.id)}
-                                  disabled={deleteSlot.isPending}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Interest List */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Interest List
-                    {pendingInterests.length > 0 && (
-                      <Badge variant="secondary">{pendingInterests.length}</Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription>
-                    People who want to lead a workout
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {interestsLoading ? (
-                    <div className="space-y-4">
-                      {[1, 2].map(i => (
-                        <Skeleton key={i} className="h-16 w-full" />
-                      ))}
-                    </div>
-                  ) : pendingInterests.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">
-                      No one has expressed interest yet.
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {pendingInterests.map(interest => (
-                        <div 
-                          key={interest.id} 
-                          className="p-3 border rounded-lg space-y-2"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-10 w-10">
-                                <AvatarFallback>
-                                  {interest.profile?.full_name?.charAt(0) || '?'}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium">
-                                  {interest.profile?.full_name || interest.profile?.email}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  Submitted {format(new Date(interest.created_at), 'MMM d, yyyy')}
-                                </p>
-                              </div>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedInterest(interest);
-                                setAssignInterestModalOpen(true);
-                              }}
-                            >
-                              <UserPlus className="h-4 w-4 mr-1" />
-                              Assign
-                            </Button>
-                          </div>
-                          {interest.preferred_dates && (
-                            <p className="text-sm">
-                              <span className="text-muted-foreground">Preferred: </span>
-                              {interest.preferred_dates}
-                            </p>
-                          )}
-                          {interest.notes && (
-                            <p className="text-sm text-muted-foreground">
-                              {interest.notes}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Workout Submissions */}
-            <Card className="mt-8">
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Workout Submissions
-                  {pendingSubmissions.length > 0 && (
-                    <Badge variant="secondary">{pendingSubmissions.length} pending</Badge>
-                  )}
+                  <Calendar className="h-5 w-5" />
+                  Upcoming Workout Dates
                 </CardTitle>
                 <CardDescription>
-                  Review and approve workout plans from assigned leaders
+                  Dates are synced from SweatPals schedule and used as the source of truth for leadership assignments.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {submissionsLoading ? (
-                  <div className="space-y-4">
-                    {[1, 2].map(i => (
-                      <Skeleton key={i} className="h-16 w-full" />
+                {workoutsLoading || requestsLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((value) => (
+                      <Skeleton key={value} className="h-24 w-full" />
                     ))}
                   </div>
-                ) : submissions?.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    No workout submissions yet.
-                  </p>
+                ) : leadableWorkouts.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No upcoming synced workout dates.</p>
                 ) : (
                   <div className="space-y-3">
-                    {submissions?.map(submission => {
-                      const slot = getSlotForSubmission(submission.slot_id);
+                    {leadableWorkouts.map((workout) => {
+                      const assignment = assignmentsByEvent.get(workout.schedule_event_id);
+                      const requestCount = requestsByEvent.get(workout.schedule_event_id)?.length || 0;
+
                       return (
-                        <div 
-                          key={submission.id} 
-                          className="flex items-center justify-between p-3 border rounded-lg"
-                        >
-                          <div>
-                            <p className="font-medium">
-                              {slot ? format(new Date(slot.workout_date + 'T12:00:00'), 'EEE, MMM d, yyyy') : 'Unknown date'}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {slot?.leader?.full_name || 'Unknown leader'}
-                            </p>
+                        <div key={workout.schedule_event_id} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                            <div>
+                              <p className="font-semibold text-lg">
+                                {format(new Date(workout.starts_at), 'EEEE, MMMM d, yyyy h:mm a')}
+                              </p>
+                              <p className="text-sm text-muted-foreground">{workout.title}</p>
+                              {workout.location && (
+                                <p className="text-xs text-muted-foreground mt-1">{workout.location}</p>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant={assignment ? 'default' : 'secondary'}>
+                                {assignment ? 'Assigned' : 'Needs Leader'}
+                              </Badge>
+                              <Badge variant="outline">
+                                {requestCount} pending request{requestCount === 1 ? '' : 's'}
+                              </Badge>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant={
-                                submission.status === 'approved' ? 'default' :
-                                submission.status === 'submitted' ? 'secondary' :
-                                submission.status === 'changes_requested' ? 'destructive' :
-                                'outline'
-                              }
-                            >
-                              {submission.status === 'changes_requested' ? 'changes requested' : submission.status}
-                            </Badge>
+
+                          {assignment && (
+                            <div className="text-sm text-muted-foreground">
+                              Assigned to <span className="font-medium text-foreground">{assignment.leader?.full_name || assignment.leader?.email || 'Unknown leader'}</span>
+                            </div>
+                          )}
+
+                          <div className="flex flex-wrap gap-2">
                             <Button
-                              variant="ghost"
-                              size="sm"
+                              variant="outline"
                               onClick={() => {
-                                setSelectedSubmission(submission);
-                                setViewSubmissionModalOpen(true);
+                                setSelectedScheduleEventId(workout.schedule_event_id);
+                                setRequestsModalOpen(true);
                               }}
                             >
-                              <Eye className="h-4 w-4" />
+                              <Users className="h-4 w-4 mr-2" />
+                              Review Requests
                             </Button>
-                            {submission.status === 'submitted' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleApproveSubmission(submission.id)}
-                                disabled={approveSubmission.isPending}
-                              >
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                              </Button>
-                            )}
+                            <Button
+                              onClick={() => {
+                                setSelectedScheduleEventId(workout.schedule_event_id);
+                                setSelectedLeaderId(assignment?.leader_id || '');
+                                setAssignModalOpen(true);
+                              }}
+                              className="bg-accent hover:bg-accent/90"
+                            >
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Assign Leader
+                            </Button>
                           </div>
                         </div>
                       );
@@ -586,95 +316,182 @@ export default function AdminWorkouts() {
               </CardContent>
             </Card>
 
-            {/* Assign Leader Modal */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Workout Submissions
+                  {pendingSubmissions.length > 0 && <Badge variant="secondary">{pendingSubmissions.length} pending</Badge>}
+                </CardTitle>
+                <CardDescription>
+                  Review and approve workout plans from assigned leaders.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {submissionsLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2].map((value) => (
+                      <Skeleton key={value} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : submissions.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No workout submissions yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {submissions.map((submission) => (
+                      <div key={submission.id} className="flex items-center justify-between border rounded-lg p-3 gap-3">
+                        <div>
+                          <p className="font-medium">
+                            {submission.schedule_event?.starts_at
+                              ? format(new Date(submission.schedule_event.starts_at), 'EEE, MMM d, yyyy')
+                              : 'Unknown date'}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {submission.leader_profile?.full_name || submission.leader_profile?.email || 'Unknown leader'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={
+                              submission.status === 'approved'
+                                ? 'default'
+                                : submission.status === 'submitted'
+                                  ? 'secondary'
+                                  : submission.status === 'changes_requested'
+                                    ? 'destructive'
+                                    : 'outline'
+                            }
+                          >
+                            {submission.status === 'changes_requested' ? 'changes requested' : submission.status}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedSubmission(submission);
+                              setSubmissionModalOpen(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Dialog open={requestsModalOpen} onOpenChange={setRequestsModalOpen}>
+              <DialogContent className="max-w-xl">
+                <DialogHeader>
+                  <DialogTitle>Lead Requests</DialogTitle>
+                  <DialogDescription>
+                    {selectedEvent?.starts_at
+                      ? format(new Date(selectedEvent.starts_at), 'EEEE, MMMM d, yyyy h:mm a')
+                      : 'Select the member to approve for this date.'}
+                  </DialogDescription>
+                </DialogHeader>
+
+                {selectedEventRequests.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4">No pending requests for this workout date.</p>
+                ) : (
+                  <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+                    {selectedEventRequests.map((request) => (
+                      <div key={request.id} className="border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <p className="font-medium">{request.profile?.full_name || request.profile?.email || 'Unknown member'}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Requested {format(new Date(request.created_at), 'MMM d, yyyy h:mm a')}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => handleApproveRequest(request.id)}
+                              disabled={approveLeadRequest.isPending || rejectLeadRequest.isPending}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleRejectRequest(request.id)}
+                              disabled={approveLeadRequest.isPending || rejectLeadRequest.isPending}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
+                        </div>
+                        {request.notes && <p className="text-sm text-muted-foreground">{request.notes}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+
             <Dialog open={assignModalOpen} onOpenChange={setAssignModalOpen}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Assign Leader</DialogTitle>
                   <DialogDescription>
-                    Select someone from the interest list to lead this workout.
+                    {selectedEvent?.starts_at
+                      ? `Assign a leader for ${format(new Date(selectedEvent.starts_at), 'EEEE, MMMM d, yyyy')}.`
+                      : 'Select a member to assign.'}
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  {pendingInterests.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-4">
-                      No one on the interest list yet.
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {pendingInterests.map(interest => (
-                        <Button
-                          key={interest.id}
-                          variant="outline"
-                          className="w-full justify-start"
-                          onClick={() => handleAssignLeader(interest.user_id)}
-                          disabled={assignLeader.isPending}
-                        >
-                          <Avatar className="h-6 w-6 mr-2">
-                            <AvatarFallback className="text-xs">
-                              {interest.profile?.full_name?.charAt(0) || '?'}
-                            </AvatarFallback>
-                          </Avatar>
-                          {interest.profile?.full_name || interest.profile?.email}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
 
-            {/* Assign Interest to Slot Modal */}
-            <Dialog open={assignInterestModalOpen} onOpenChange={setAssignInterestModalOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Assign to Workout Slot</DialogTitle>
-                  <DialogDescription>
-                    {selectedInterest && (
-                      <>Assign {selectedInterest.profile?.full_name || 'this person'} to a workout slot.</>
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-2">
+                    <Label>Member</Label>
+                    <Select value={selectedLeaderId} onValueChange={setSelectedLeaderId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select member" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        {allProfiles.map((member) => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.full_name || member.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Button
+                    className="w-full bg-accent hover:bg-accent/90"
+                    onClick={handleDirectAssign}
+                    disabled={!selectedLeaderId || !selectedScheduleEventId || assignLeaderDirect.isPending}
+                  >
+                    {assignLeaderDirect.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <UserCheck className="mr-2 h-4 w-4" />
                     )}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  {openSlots.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-4">
-                      No open workout slots available.
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {openSlots.map(slot => (
-                        <Button
-                          key={slot.id}
-                          variant="outline"
-                          className="w-full justify-start"
-                          onClick={() => handleAssignInterestToSlot(slot.id)}
-                          disabled={assignLeader.isPending}
-                        >
-                          <Calendar className="h-4 w-4 mr-2" />
-                          {format(new Date(slot.workout_date + 'T12:00:00'), 'EEE, MMM d, yyyy')}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
+                    Save Assignment
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
 
-            {/* View Submission Modal */}
-            <Dialog open={viewSubmissionModalOpen} onOpenChange={setViewSubmissionModalOpen}>
+            <Dialog open={submissionModalOpen} onOpenChange={setSubmissionModalOpen}>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Workout Submission</DialogTitle>
                   <DialogDescription>
-                    {selectedSubmission && getSlotForSubmission(selectedSubmission.slot_id) && (
-                      <span>
-                        For {format(new Date(getSlotForSubmission(selectedSubmission.slot_id)!.workout_date + 'T12:00:00'), 'EEEE, MMMM d, yyyy')}
-                      </span>
-                    )}
+                    {selectedSubmission?.schedule_event?.starts_at
+                      ? `For ${format(new Date(selectedSubmission.schedule_event.starts_at), 'EEEE, MMMM d, yyyy')}`
+                      : 'Workout details'}
                   </DialogDescription>
                 </DialogHeader>
+
                 {selectedSubmission && (
-                  <div className="space-y-6 pt-4">
+                  <div className="space-y-6 pt-2">
                     {selectedSubmission.admin_feedback && (
                       <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                         <h4 className="font-semibold mb-2 text-yellow-700">Admin Feedback</h4>
@@ -683,28 +500,28 @@ export default function AdminWorkouts() {
                         </p>
                       </div>
                     )}
+
                     <div>
                       <h4 className="font-semibold mb-2">1. The Workout</h4>
                       <div className="p-3 bg-muted rounded-lg whitespace-pre-wrap text-sm font-mono">
                         {selectedSubmission.workout_plan}
                       </div>
                     </div>
+
                     {selectedSubmission.message && (
                       <div>
                         <h4 className="font-semibold mb-2">2. The Message</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedSubmission.message}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{selectedSubmission.message}</p>
                       </div>
                     )}
+
                     {selectedSubmission.leadership_note && (
                       <div>
                         <h4 className="font-semibold mb-2">3. Leadership Approach</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedSubmission.leadership_note}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{selectedSubmission.leadership_note}</p>
                       </div>
                     )}
+
                     {selectedSubmission.status === 'submitted' && (
                       <>
                         <div className="space-y-3 pt-4 border-t">
@@ -713,7 +530,7 @@ export default function AdminWorkouts() {
                             id="admin-feedback"
                             placeholder="Provide feedback on what needs to be revised..."
                             value={adminFeedback}
-                            onChange={(e) => setAdminFeedback(e.target.value)}
+                            onChange={(event) => setAdminFeedback(event.target.value)}
                             rows={4}
                           />
                         </div>
@@ -736,24 +553,11 @@ export default function AdminWorkouts() {
                             onClick={handleRequestChanges}
                             disabled={requestChanges.isPending || !adminFeedback.trim()}
                           >
-                            {requestChanges.isPending && (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            )}
+                            {requestChanges.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Request Changes
                           </Button>
                         </div>
                       </>
-                    )}
-                    {selectedSubmission.status === 'approved' && (
-                      <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg">
-                        <CheckCircle className="h-5 w-5 text-green-500" />
-                        <span className="text-green-500 font-medium">Approved</span>
-                      </div>
-                    )}
-                    {selectedSubmission.status === 'changes_requested' && (
-                      <div className="flex items-center gap-2 p-3 bg-yellow-500/10 rounded-lg">
-                        <span className="text-yellow-700 font-medium">Waiting for leader to revise</span>
-                      </div>
                     )}
                   </div>
                 )}

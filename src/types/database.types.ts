@@ -262,7 +262,8 @@ export interface Database {
       workout_submissions: {
         Row: {
           id: string;
-          slot_id: string;
+          slot_id: string | null;
+          assignment_id: string | null;
           leader_id: string;
           workout_plan: string;
           message: string | null;
@@ -280,7 +281,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          slot_id: string;
+          slot_id?: string | null;
+          assignment_id?: string | null;
           leader_id: string;
           workout_plan: string;
           message?: string | null;
@@ -297,6 +299,8 @@ export interface Database {
           updated_at?: string;
         };
         Update: {
+          slot_id?: string | null;
+          assignment_id?: string | null;
           workout_plan?: string;
           message?: string | null;
           leadership_note?: string | null;
@@ -308,6 +312,126 @@ export interface Database {
           feedback_requested_at?: string | null;
           feedback_requested_by?: string | null;
           last_submitted_at?: string | null;
+          updated_at?: string;
+        };
+      };
+      workout_lead_requests: {
+        Row: {
+          id: string;
+          schedule_event_id: string;
+          user_id: string;
+          notes: string | null;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          schedule_event_id: string;
+          user_id: string;
+          notes?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          schedule_event_id?: string;
+          user_id?: string;
+          notes?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+      };
+      workout_lead_assignments: {
+        Row: {
+          id: string;
+          schedule_event_id: string;
+          leader_id: string;
+          assigned_by: string | null;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          schedule_event_id: string;
+          leader_id: string;
+          assigned_by?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          schedule_event_id?: string;
+          leader_id?: string;
+          assigned_by?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+      };
+      sweatpals_schedule_events: {
+        Row: {
+          id: string;
+          provider: string;
+          community_username: string;
+          community_id: string;
+          external_event_id: string;
+          alias: string | null;
+          title: string;
+          event_type: string | null;
+          starts_at: string;
+          ends_at: string | null;
+          timezone: string | null;
+          location: string | null;
+          image_url: string | null;
+          event_url: string | null;
+          checkout_url: string | null;
+          is_workout: boolean;
+          payload_json: Json;
+          synced_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          provider?: string;
+          community_username: string;
+          community_id: string;
+          external_event_id: string;
+          alias?: string | null;
+          title: string;
+          event_type?: string | null;
+          starts_at: string;
+          ends_at?: string | null;
+          timezone?: string | null;
+          location?: string | null;
+          image_url?: string | null;
+          event_url?: string | null;
+          checkout_url?: string | null;
+          is_workout?: boolean;
+          payload_json?: Json;
+          synced_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          provider?: string;
+          community_username?: string;
+          community_id?: string;
+          external_event_id?: string;
+          alias?: string | null;
+          title?: string;
+          event_type?: string | null;
+          starts_at?: string;
+          ends_at?: string | null;
+          timezone?: string | null;
+          location?: string | null;
+          image_url?: string | null;
+          event_url?: string | null;
+          checkout_url?: string | null;
+          is_workout?: boolean;
+          payload_json?: Json;
+          synced_at?: string;
           updated_at?: string;
         };
       };
@@ -336,6 +460,23 @@ export interface Database {
           leader_photo_url: string | null;
         };
       };
+      upcoming_leadable_workouts: {
+        Row: {
+          schedule_event_id: string;
+          external_event_id: string;
+          event_alias: string | null;
+          title: string;
+          starts_at: string;
+          ends_at: string | null;
+          location: string | null;
+          event_url: string | null;
+          is_assigned: boolean;
+          assignment_id: string | null;
+          assigned_leader_id: string | null;
+          assigned_leader_name: string | null;
+          pending_requests: number;
+        };
+      };
     };
   };
 }
@@ -349,8 +490,12 @@ export type RaceParticipant = Database['public']['Tables']['race_participants'][
 export type WorkoutSlot = Database['public']['Tables']['workout_slots']['Row'];
 export type WorkoutInterest = Database['public']['Tables']['workout_interest']['Row'];
 export type WorkoutSubmission = Database['public']['Tables']['workout_submissions']['Row'];
+export type WorkoutLeadRequest = Database['public']['Tables']['workout_lead_requests']['Row'];
+export type WorkoutLeadAssignment = Database['public']['Tables']['workout_lead_assignments']['Row'];
+export type SweatpalsScheduleEvent = Database['public']['Tables']['sweatpals_schedule_events']['Row'];
 export type CoreRosterMember = Database['public']['Views']['core_roster']['Row'];
 export type UpcomingWorkout = Database['public']['Views']['upcoming_workout']['Row'];
+export type UpcomingLeadableWorkout = Database['public']['Views']['upcoming_leadable_workouts']['Row'];
 
 // Extended types with joins
 export type RaceWithParticipants = Race & {
