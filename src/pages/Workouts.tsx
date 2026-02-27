@@ -32,6 +32,7 @@ import {
   Hand,
   Check,
   FileEdit,
+  RefreshCw,
   AlertCircle,
   Clock,
   MapPin,
@@ -45,7 +46,12 @@ import { Link } from 'react-router-dom';
 
 export default function Workouts() {
   const { user, profile } = useAuth();
-  const { data: sweatpalsNextWorkout, isLoading: isLoadingSweatpalsWorkout } = useSweatpalsNextWorkout();
+  const {
+    data: sweatpalsNextWorkout,
+    isLoading: isLoadingSweatpalsWorkout,
+    isError: isSweatpalsWorkoutError,
+    refetch: refetchSweatpalsWorkout,
+  } = useSweatpalsNextWorkout();
   const { data: leadableWorkouts = [], isLoading: leadableLoading } = useLeadableWorkouts(20);
   const { data: myAssignedWorkouts = [] } = useMyAssignedWorkouts();
   const { data: myLeadRequests = [] } = useMyWorkoutLeadRequests();
@@ -179,6 +185,16 @@ export default function Workouts() {
                     <Skeleton className="h-8 w-1/2" />
                     <Skeleton className="h-4 w-1/3" />
                     <Skeleton className="h-16 w-full" />
+                  </div>
+                ) : isSweatpalsWorkoutError ? (
+                  <div className="space-y-4 text-center py-4">
+                    <p className="text-sm text-muted-foreground">
+                      We couldn&apos;t load the latest workout right now.
+                    </p>
+                    <Button variant="outline" size="sm" onClick={() => refetchSweatpalsWorkout()}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Try Again
+                    </Button>
                   </div>
                 ) : sweatpalsNextWorkout ? (
                   <div className="space-y-4">

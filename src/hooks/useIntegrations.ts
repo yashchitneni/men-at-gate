@@ -6,6 +6,19 @@ const SWEATPALS_MAPPINGS_QUERY_KEY = ["integrations", "sweatpals", "mappings"];
 const SWEATPALS_UNMAPPED_QUERY_KEY = ["integrations", "sweatpals", "unmapped"];
 const SWEATPALS_NEXT_WORKOUT_QUERY_KEY = ["integrations", "sweatpals", "next-workout"];
 const SWEATPALS_SCHEDULE_QUERY_KEY = ["integrations", "sweatpals", "public-schedule"];
+const SWEATPALS_FUNCTION_TIMEOUT_MS = 15_000;
+
+async function invokeSweatpalsFunction<T>(body: Record<string, unknown>): Promise<T> {
+  const result = await Promise.race([
+    supabase.functions.invoke("sweatpals-sync", { body }),
+    new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("SweatPals request timed out. Please try again.")), SWEATPALS_FUNCTION_TIMEOUT_MS);
+    }),
+  ]) as { data: T | null; error: Error | null };
+
+  if (result.error) throw result.error;
+  return result.data as T;
+}
 
 export interface SweatpalsRunSummary {
   id: string;
@@ -232,14 +245,14 @@ export function useSweatpalsNextWorkout() {
   return useQuery({
     queryKey: SWEATPALS_NEXT_WORKOUT_QUERY_KEY,
     queryFn: async (): Promise<SweatpalsNextWorkout | null> => {
-      const { data, error } = await supabase.functions.invoke("sweatpals-sync", {
-        body: { action: "public_next_workout" },
+      const data = await invokeSweatpalsFunction<{ item?: SweatpalsNextWorkout | null }>({
+        action: "public_next_workout",
       });
 
-      if (error) return null;
-      return ((data as { item?: SweatpalsNextWorkout | null })?.item ?? null) as SweatpalsNextWorkout | null;
+      return (data?.item ?? null) as SweatpalsNextWorkout | null;
     },
     staleTime: 60_000,
+    retry: 1,
   });
 }
 
@@ -257,20 +270,18 @@ export function useSweatpalsSchedule(options?: {
   return useQuery({
     queryKey: [...SWEATPALS_SCHEDULE_QUERY_KEY, workoutsOnly, limit, from ?? null, communityUsername ?? null],
     queryFn: async (): Promise<SweatpalsScheduleItem[]> => {
-      const { data, error } = await supabase.functions.invoke("sweatpals-sync", {
-        body: {
-          action: "public_schedule",
-          workouts_only: workoutsOnly,
-          limit,
-          from,
-          community_username: communityUsername,
-        },
+      const data = await invokeSweatpalsFunction<{ items?: SweatpalsScheduleItem[] }>({
+        action: "public_schedule",
+        workouts_only: workoutsOnly,
+        limit,
+        from,
+        community_username: communityUsername,
       });
 
-      if (error) throw error;
       return ((data as { items?: SweatpalsScheduleItem[] })?.items || []) as SweatpalsScheduleItem[];
     },
     staleTime: 60_000,
+    retry: 1,
   });
 }
 

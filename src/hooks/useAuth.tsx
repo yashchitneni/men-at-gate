@@ -3,7 +3,15 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/types/database.types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const AUTH_QUERY_PARAMS = ['code', 'state', 'error', 'error_code', 'error_description'];
+const AUTH_HASH_PARAMS = [
+  'access_token',
+  'refresh_token',
+  'expires_in',
+  'expires_at',
+  'token_type',
+  'provider_token',
+];
 
 interface AuthContextType {
   user: User | null;
@@ -14,6 +22,95 @@ interface AuthContextType {
   signInWithGoogle: (redirectPath?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+}
+
+function getAuthRedirectPath(redirectPath?: string) {
+  if (!redirectPath) {
+    return `${window.location.pathname}${window.location.search}`;
+  }
+
+  if (redirectPath.startsWith('/')) {
+    return redirectPath;
+  }
+
+  return `/${redirectPath}`;
+}
+
+function getAuthRedirectUrl(redirectPath?: string) {
+  return `${window.location.origin}${getAuthRedirectPath(redirectPath)}`;
+}
+
+function hasOAuthHashTokens() {
+  const hash = window.location.hash.startsWith('#')
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  if (!hash) return false;
+
+  const params = new URLSearchParams(hash);
+  return AUTH_HASH_PARAMS.some((key) => params.has(key));
+}
+
+function hasOAuthQueryParams() {
+  const params = new URLSearchParams(window.location.search);
+  return AUTH_QUERY_PARAMS.some((key) => params.has(key));
+}
+
+function cleanupAuthUrl() {
+  const url = new URL(window.location.href);
+  let changed = false;
+
+  AUTH_QUERY_PARAMS.forEach((key) => {
+    if (url.searchParams.has(key)) {
+      url.searchParams.delete(key);
+      changed = true;
+    }
+  });
+
+  if (url.hash) {
+    const hash = url.hash.startsWith('#') ? url.hash.slice(1) : url.hash;
+    const hashParams = new URLSearchParams(hash);
+    const hasAuthHash = AUTH_HASH_PARAMS.some((key) => hashParams.has(key));
+
+    if (hasAuthHash) {
+      url.hash = '';
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    const cleanUrl = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState(null, '', cleanUrl);
+  }
+}
+
+async function resolveSessionFromOAuthCallback() {
+  const searchParams = new URLSearchParams(window.location.search);
+  const code = searchParams.get('code');
+
+  if (code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+    if (error) throw error;
+    return data.session;
+  }
+
+  const hash = window.location.hash.startsWith('#')
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  if (!hash) return null;
+
+  const hashParams = new URLSearchParams(hash);
+  const accessToken = hashParams.get('access_token');
+  const refreshToken = hashParams.get('refresh_token');
+
+  if (!accessToken || !refreshToken) return null;
+
+  const { data, error } = await supabase.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
+
+  if (error) throw error;
+  return data.session;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -79,25 +176,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Check for OAuth hash and wait for Supabase to process it
-    const hasOAuthHash = window.location.hash.includes('access_token');
-
-    if (hasOAuthHash) {
-      console.log('OAuth callback detected, waiting for Supabase to process...');
-    }
-
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+      async (event, nextSession) => {
+        console.log('Auth state changed:', event, nextSession?.user?.id);
 
         if (!mounted) return;
 
         try {
-          setAuthState(session);
+          setAuthState(nextSession);
 
-          if (session?.user) {
-            await fetchProfile(session.user.id);
+          if (nextSession?.user) {
+            await fetchProfile(nextSession.user.id);
           } else {
             setProfile(null);
           }
@@ -110,59 +199,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        // Clean up URL hash after successful sign in
-        if (event === 'SIGNED_IN' && window.location.hash) {
-          console.log('Cleaning up OAuth hash from URL');
-          window.history.replaceState(null, '', window.location.pathname);
+        if (event === 'SIGNED_IN' && (hasOAuthHashTokens() || hasOAuthQueryParams())) {
+          cleanupAuthUrl();
         }
       }
     );
 
-    // Initialize session - delay slightly if OAuth hash present to let Supabase process it
     const initSession = async () => {
-      // If OAuth hash is present, wait a bit for Supabase to process it
-      if (hasOAuthHash) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-
-      let session: Session | null = null;
-      let error: Error | null = null;
+      let currentSession: Session | null = null;
 
       try {
-        const result = await supabase.auth.getSession();
-        session = result.data.session;
-        error = result.error;
-      } catch (err) {
-        error = err as Error;
+        if (hasOAuthHashTokens() || hasOAuthQueryParams()) {
+          currentSession = await resolveSessionFromOAuthCallback();
+        }
+      } catch (error) {
+        console.error('OAuth callback session exchange failed:', error);
       }
 
-      console.log('Initial session check:', session?.user?.id, error);
+      if (!currentSession) {
+        let sessionError: Error | null = null;
+
+        try {
+          const result = await supabase.auth.getSession();
+          currentSession = result.data.session;
+          sessionError = result.error;
+        } catch (error) {
+          sessionError = error as Error;
+        }
+
+        if (sessionError) {
+          console.error('Session initialization error:', sessionError);
+          if (!mounted) return;
+          clearAuthState();
+          if (mounted) setLoading(false);
+          return;
+        }
+      }
 
       if (!mounted) return;
 
-      if (error) {
-        console.error('Session initialization error:', error);
-        clearAuthState();
-        if (mounted) setLoading(false);
-        return;
-      }
-
       try {
-        setAuthState(session);
+        setAuthState(currentSession);
 
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-
-          // Failsafe: Clean up hash if Supabase didn't do it
-          if (window.location.hash.includes('access_token')) {
-            console.log('Manually cleaning up OAuth hash (failsafe)');
-            window.history.replaceState(null, '', window.location.pathname);
-          }
+        if (currentSession?.user) {
+          await fetchProfile(currentSession.user.id);
         } else {
           setProfile(null);
         }
-      } catch (err) {
-        console.error('Session initialization error:', err);
+
+        if (hasOAuthHashTokens() || hasOAuthQueryParams()) {
+          cleanupAuthUrl();
+        }
+      } catch (error) {
+        console.error('Session initialization error:', error);
         clearAuthState();
       } finally {
         if (mounted) setLoading(false);
@@ -181,14 +270,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}${redirectPath || window.location.pathname}`,
+        emailRedirectTo: getAuthRedirectUrl(redirectPath),
       },
     });
     return { error };
   }
 
   async function signInWithGoogle(redirectPath?: string) {
-    const redirectUrl = `${window.location.origin}${redirectPath || '/'}`;
+    const redirectUrl = getAuthRedirectUrl(redirectPath);
     console.log('Google sign in - redirect URL:', redirectUrl);
 
     const { error } = await supabase.auth.signInWithOAuth({
