@@ -52,7 +52,6 @@ import {
   Users,
   CheckCircle,
   XCircle,
-  FileText,
   Eye,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -128,7 +127,42 @@ export default function AdminWorkouts() {
     ? leadableWorkouts.find((workout) => workout.schedule_event_id === selectedScheduleEventId) || null
     : null;
 
-  const pendingSubmissions = submissions.filter((submission) => submission.status === 'submitted');
+  const submissionByAssignmentId = useMemo(() => {
+    const map = new Map<string, WorkoutSubmissionWithContext>();
+    for (const submission of submissions) {
+      if (!submission.assignment_id) continue;
+      if (!map.has(submission.assignment_id)) {
+        map.set(submission.assignment_id, submission);
+      }
+    }
+    return map;
+  }, [submissions]);
+
+  const submissionByScheduleEventId = useMemo(() => {
+    const map = new Map<string, WorkoutSubmissionWithContext>();
+    for (const submission of submissions) {
+      if (!submission.schedule_event?.id) continue;
+      if (!map.has(submission.schedule_event.id)) {
+        map.set(submission.schedule_event.id, submission);
+      }
+    }
+    return map;
+  }, [submissions]);
+
+  function getSubmissionBadgeVariant(status: string) {
+    if (status === 'approved') return 'default' as const;
+    if (status === 'submitted') return 'secondary' as const;
+    if (status === 'changes_requested') return 'destructive' as const;
+    return 'outline' as const;
+  }
+
+  function getSubmissionLabel(status: string) {
+    if (status === 'changes_requested') return 'Changes requested';
+    if (status === 'submitted') return 'Submitted for review';
+    if (status === 'approved') return 'Approved';
+    if (status === 'draft') return 'Draft in progress';
+    return status;
+  }
 
   async function handleApproveRequest(requestId: string) {
     try {
@@ -339,51 +373,92 @@ export default function AdminWorkouts() {
 
             <Card>
               <CardHeader>
+                <CardTitle>Leader Guide Content</CardTitle>
+                <CardDescription>
+                  This content appears inside the leader submission flow and reminder emails.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {guideLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <Badge variant="outline">Slug: leader_guidelines</Badge>
+                      <Badge variant="secondary">{guideSections.length} sections</Badge>
+                      {leaderGuide?.version_label && <Badge variant="outline">{leaderGuide.version_label}</Badge>}
+                      {leaderGuide?.updated_at && (
+                        <span className="text-muted-foreground">
+                          Updated {format(new Date(leaderGuide.updated_at), 'MMM d, yyyy h:mm a')}
+                        </span>
+                      )}
+                    </div>
+                    <Button onClick={() => setGuideModalOpen(true)} className="bg-accent hover:bg-accent/90">
+                      Edit Leader Guide
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
                   Upcoming Workout Dates
                 </CardTitle>
                 <CardDescription>
-                  Dates are synced from SweatPals schedule and used as the source of truth for leadership assignments.
+                  Dates are synced from SweatPals schedule and used as the source of truth for assignments and workout plan review.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {workoutsLoading || requestsLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((value) => (
-                      <Skeleton key={value} className="h-24 w-full" />
+                {workoutsLoading || requestsLoading || submissionsLoading ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {[1, 2, 3, 4].map((value) => (
+                      <Skeleton key={value} className="h-64 w-full" />
                     ))}
                   </div>
                 ) : leadableWorkouts.length === 0 ? (
                   <p className="text-muted-foreground text-center py-8">No upcoming synced workout dates.</p>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="grid gap-4 md:grid-cols-2">
                     {leadableWorkouts.map((workout) => {
                       const assignment = assignmentsByEvent.get(workout.schedule_event_id);
                       const requestCount = requestsByEvent.get(workout.schedule_event_id)?.length || 0;
+                      const submission =
+                        (assignment?.id ? submissionByAssignmentId.get(assignment.id) : undefined)
+                        || submissionByScheduleEventId.get(workout.schedule_event_id)
+                        || null;
 
                       return (
-                        <div key={workout.schedule_event_id} className="border rounded-lg p-4 space-y-3">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                            <div>
-                              <p className="font-semibold text-lg">
-                                {format(new Date(workout.starts_at), 'EEEE, MMMM d, yyyy h:mm a')}
-                              </p>
-                              <p className="text-sm text-muted-foreground">{workout.title}</p>
-                              {workout.location && (
-                                <p className="text-xs text-muted-foreground mt-1">{workout.location}</p>
-                              )}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <Badge variant={assignment ? 'default' : 'secondary'}>
-                                {assignment ? 'Assigned' : 'Needs Leader'}
+                        <div key={workout.schedule_event_id} className="border rounded-lg p-4 space-y-4">
+                          <div className="space-y-2">
+                            <p className="font-semibold text-lg">
+                              {format(new Date(workout.starts_at), 'EEEE, MMM d, yyyy h:mm a')}
+                            </p>
+                            <p className="text-sm text-muted-foreground">{workout.title}</p>
+                            {workout.location && (
+                              <p className="text-xs text-muted-foreground">{workout.location}</p>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant={assignment ? 'default' : 'secondary'}>
+                              {assignment ? 'Assigned' : 'Needs Leader'}
+                            </Badge>
+                            {requestCount > 0 && (
+                              <Badge variant="outline">
+                                {requestCount} pending request{requestCount === 1 ? '' : 's'}
                               </Badge>
-                              {requestCount > 0 && (
-                                <Badge variant="outline">
-                                  {requestCount} pending request{requestCount === 1 ? '' : 's'}
-                                </Badge>
-                              )}
-                            </div>
+                            )}
+                            {submission && (
+                              <Badge variant={getSubmissionBadgeVariant(submission.status)}>
+                                {getSubmissionLabel(submission.status)}
+                              </Badge>
+                            )}
                           </div>
 
                           {assignment && (
@@ -391,6 +466,56 @@ export default function AdminWorkouts() {
                               Assigned to <span className="font-medium text-foreground">{assignment.leader?.full_name || assignment.leader?.email || 'Unknown leader'}</span>
                             </div>
                           )}
+
+                          <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                            <p className="text-sm font-medium">Workout plan</p>
+                            {submission ? (
+                              <>
+                                <p className="text-xs text-muted-foreground">
+                                  Last updated {format(new Date(submission.updated_at), 'MMM d, yyyy h:mm a')}
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedSubmission(submission);
+                                      setSubmissionModalOpen(true);
+                                    }}
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    View Plan
+                                  </Button>
+                                  {submission.status === 'submitted' && (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        className="bg-green-600 hover:bg-green-700"
+                                        onClick={() => handleApproveSubmission(submission.id)}
+                                        disabled={approveSubmission.isPending}
+                                      >
+                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                        Approve
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setSelectedSubmission(submission);
+                                          setAdminFeedback('');
+                                          setSubmissionModalOpen(true);
+                                        }}
+                                      >
+                                        Request Changes
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                              </>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">No plan started yet.</p>
+                            )}
+                          </div>
 
                           <div className="flex flex-wrap gap-2">
                             {requestCount > 0 && (
@@ -418,112 +543,10 @@ export default function AdminWorkouts() {
                                 Assign Leader
                               </Button>
                             )}
-                            {requestCount === 0 && assignment && (
-                              <p className="text-sm text-muted-foreground">No open actions for this workout.</p>
-                            )}
                           </div>
                         </div>
                       );
                     })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Workout Submissions
-                  {pendingSubmissions.length > 0 && <Badge variant="secondary">{pendingSubmissions.length} pending</Badge>}
-                </CardTitle>
-                <CardDescription>
-                  Review and approve workout plans from assigned leaders.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {submissionsLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2].map((value) => (
-                      <Skeleton key={value} className="h-16 w-full" />
-                    ))}
-                  </div>
-                ) : submissions.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">No workout submissions yet.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {submissions.map((submission) => (
-                      <div key={submission.id} className="flex items-center justify-between border rounded-lg p-3 gap-3">
-                        <div>
-                          <p className="font-medium">
-                            {submission.schedule_event?.starts_at
-                              ? format(new Date(submission.schedule_event.starts_at), 'EEE, MMM d, yyyy')
-                              : 'Unknown date'}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {submission.leader_profile?.full_name || submission.leader_profile?.email || 'Unknown leader'}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant={
-                              submission.status === 'approved'
-                                ? 'default'
-                                : submission.status === 'submitted'
-                                  ? 'secondary'
-                                  : submission.status === 'changes_requested'
-                                    ? 'destructive'
-                                    : 'outline'
-                            }
-                          >
-                            {submission.status === 'changes_requested' ? 'changes requested' : submission.status}
-                          </Badge>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedSubmission(submission);
-                              setSubmissionModalOpen(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Leader Guide Content</CardTitle>
-                <CardDescription>
-                  This content appears inside the leader submission flow and reminder emails.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {guideLoading ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-48" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <Badge variant="outline">Slug: leader_guidelines</Badge>
-                      <Badge variant="secondary">{guideSections.length} sections</Badge>
-                      {leaderGuide?.version_label && <Badge variant="outline">{leaderGuide.version_label}</Badge>}
-                      {leaderGuide?.updated_at && (
-                        <span className="text-muted-foreground">
-                          Updated {format(new Date(leaderGuide.updated_at), 'MMM d, yyyy h:mm a')}
-                        </span>
-                      )}
-                    </div>
-                    <Button onClick={() => setGuideModalOpen(true)} className="bg-accent hover:bg-accent/90">
-                      Edit Leader Guide
-                    </Button>
                   </div>
                 )}
               </CardContent>

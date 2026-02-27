@@ -82,6 +82,20 @@ export interface WorkoutGuideRecord {
   updated_at: string;
 }
 
+interface AssignmentNotificationPayload {
+  schedule_event_id: string;
+  leader_id: string;
+  source: 'approve_request' | 'direct_assign';
+}
+
+async function notifyWorkoutAssignment(payload: AssignmentNotificationPayload) {
+  const { error } = await supabase.functions.invoke('workout-assignment-notify', {
+    body: payload,
+  });
+
+  if (error) throw error;
+}
+
 // Fetch upcoming workout (next one)
 export function useUpcomingWorkout() {
   return useQuery({
@@ -799,11 +813,30 @@ export function useApproveWorkoutLeadRequest() {
 
   return useMutation({
     mutationFn: async (requestId: string) => {
+      const { data: request, error: requestError } = await db
+        .from('workout_lead_requests')
+        .select('schedule_event_id, user_id')
+        .eq('id', requestId)
+        .maybeSingle();
+
+      if (requestError) throw requestError;
+      if (!request) throw new Error('Lead request not found');
+
       const { error } = await db.rpc('approve_workout_lead_request', {
         p_request_id: requestId,
       });
 
       if (error) throw error;
+
+      try {
+        await notifyWorkoutAssignment({
+          schedule_event_id: request.schedule_event_id,
+          leader_id: request.user_id,
+          source: 'approve_request',
+        });
+      } catch (notifyError) {
+        console.warn('Assignment email notification failed', notifyError);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts', 'leadable'] });
@@ -859,6 +892,16 @@ export function useAssignWorkoutLeaderDirect() {
       });
 
       if (error) throw error;
+
+      try {
+        await notifyWorkoutAssignment({
+          schedule_event_id: scheduleEventId,
+          leader_id: leaderId,
+          source: 'direct_assign',
+        });
+      } catch (notifyError) {
+        console.warn('Assignment email notification failed', notifyError);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workouts', 'leadable'] });
@@ -1209,6 +1252,53 @@ export function useMyAssignedWorkouts() {
           schedule_event: eventMap.get(assignment.schedule_event_id) || null,
           submission: submissionMap.get(assignment.id) || null,
         })) as AssignedWorkoutWithSubmission[];
+    },
+  });
+}
+
+export function useMyPendingWorkoutActionCount() {
+  return useQuery({
+    queryKey: ['workouts', 'my-pending-action-count'],
+    queryFn: async () => {
+      const {
+        data: { user },
+      } = await db.auth.getUser();
+      if (!user) return 0;
+
+      const { data: assignments, error: assignmentError } = await db
+        .from('workout_lead_assignments')
+        .select('id')
+        .eq('leader_id', user.id)
+        .eq('status', 'assigned');
+
+      if (assignmentError) throw assignmentError;
+      if (!assignments || assignments.length === 0) return 0;
+
+      const assignmentIds = assignments.map((assignment) => assignment.id);
+      const { data: submissions, error: submissionError } = await db
+        .from('workout_submissions')
+        .select('assignment_id, status')
+        .in('assignment_id', assignmentIds);
+
+      if (submissionError) throw submissionError;
+
+      const submissionByAssignment = new Map<string, WorkoutSubmission['status']>();
+      for (const submission of submissions || []) {
+        if (!submission.assignment_id) continue;
+        if (!submissionByAssignment.has(submission.assignment_id)) {
+          submissionByAssignment.set(submission.assignment_id, submission.status);
+        }
+      }
+
+      let count = 0;
+      for (const assignmentId of assignmentIds) {
+        const status = submissionByAssignment.get(assignmentId);
+        if (!status || status === 'draft' || status === 'changes_requested') {
+          count += 1;
+        }
+      }
+
+      return count;
     },
   });
 }

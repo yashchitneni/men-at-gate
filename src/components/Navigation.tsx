@@ -3,6 +3,7 @@ import { Menu, X, User, LogOut, Settings, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyPendingWorkoutActionCount } from "@/hooks/useWorkouts";
 import { AuthModal } from "@/components/AuthModal";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 const Navigation = () => {
@@ -14,6 +15,7 @@ const Navigation = () => {
     profile,
     signOut
   } = useAuth();
+  const { data: pendingWorkoutCount = 0 } = useMyPendingWorkoutActionCount();
 
   const handleSignOut = async () => {
     await signOut();
@@ -84,9 +86,14 @@ const Navigation = () => {
             
             {user ? <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="font-bold uppercase tracking-wider">
+                  <Button variant="outline" className="relative font-bold uppercase tracking-wider">
                     <User className="h-4 w-4 mr-2" />
                     {profile?.full_name?.split(' ')[0] || 'Profile'}
+                    {pendingWorkoutCount > 0 && (
+                      <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-accent text-accent-foreground text-[11px] leading-5 font-bold">
+                        {pendingWorkoutCount}
+                      </span>
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -137,6 +144,11 @@ const Navigation = () => {
             <Link to="/brotherhood" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
               Brotherhood
             </Link>
+            {pendingWorkoutCount > 0 && (
+              <Link to="/workouts" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
+                Workout Tasks ({pendingWorkoutCount})
+              </Link>
+            )}
             <Link to="/donate" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
               Donate
             </Link>
