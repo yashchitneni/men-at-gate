@@ -54,6 +54,11 @@ interface AuthResultOk {
   mode: AuthMode;
 }
 
+interface UserAuthResultOk {
+  ok: true;
+  userId: string;
+}
+
 interface AuthResultFail {
   ok: false;
   status: number;
@@ -118,6 +123,7 @@ const ADMIN_ONLY_ACTIONS = new Set([
   "save_mapping",
   "cleanup_errors",
 ]);
+const MEMBER_AUTH_ACTIONS = new Set(["identity_status", "claim_identity"]);
 
 function jsonResponse(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -709,6 +715,28 @@ async function resolveAuth(
   return { ok: true, mode: "admin_jwt" };
 }
 
+async function resolveUserAuth(
+  req: Request,
+  supabase: AnySupabaseClient,
+): Promise<UserAuthResultOk | AuthResultFail> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return { ok: false, status: 401, error: "Missing bearer token" };
+  }
+
+  const jwt = authHeader.replace("Bearer ", "").trim();
+  if (!jwt) {
+    return { ok: false, status: 401, error: "Invalid bearer token" };
+  }
+
+  const { data: authData, error: authError } = await supabase.auth.getUser(jwt);
+  if (authError || !authData?.user?.id) {
+    return { ok: false, status: 401, error: "Unauthorized user" };
+  }
+
+  return { ok: true, userId: authData.user.id };
+}
+
 async function writeIngestionRun(
   supabase: AnySupabaseClient,
   run: IngestionRunInput,
@@ -1030,15 +1058,24 @@ serve(async (req) => {
 
     const isPublicReadAction = PUBLIC_READ_ACTIONS.has(action);
     let authMode: AuthMode | null = null;
+    let userId: string | null = null;
 
     if (!isPublicReadAction) {
-      const authResult = await resolveAuth(req, supabase);
-      if (!authResult.ok) {
-        const failedAuth = authResult as AuthResultFail;
-        return jsonResponse({ error: failedAuth.error }, failedAuth.status);
+      if (MEMBER_AUTH_ACTIONS.has(action)) {
+        const userAuthResult = await resolveUserAuth(req, supabase);
+        if (!userAuthResult.ok) {
+          const failedAuth = userAuthResult as AuthResultFail;
+          return jsonResponse({ error: failedAuth.error }, failedAuth.status);
+        }
+        userId = userAuthResult.userId;
+      } else {
+        const authResult = await resolveAuth(req, supabase);
+        if (!authResult.ok) {
+          const failedAuth = authResult as AuthResultFail;
+          return jsonResponse({ error: failedAuth.error }, failedAuth.status);
+        }
+        authMode = authResult.mode;
       }
-
-      authMode = authResult.mode;
     }
 
     if (authMode === "sync_secret" && !WEBHOOK_ALLOWED_ACTIONS.has(action)) {
@@ -1047,6 +1084,127 @@ serve(async (req) => {
 
     if (ADMIN_ONLY_ACTIONS.has(action) && authMode !== "admin_jwt") {
       return jsonResponse({ error: "Admin access required for this action" }, 403);
+    }
+
+    if (action === "identity_status") {
+      if (!userId) return jsonResponse({ error: "Unauthorized user" }, 401);
+
+      const provider = pickString(body?.provider, "sweatpals") || "sweatpals";
+
+      const profileResult = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (profileResult.error) throw profileResult.error;
+
+      const profileEmail = pickString(profileResult.data?.email);
+      if (!profileEmail) {
+        return jsonResponse({
+          status: "ok",
+          provider,
+          linked: false,
+          linked_identities: 0,
+          matchable_unlinked_identities: 0,
+          last_seen_external_at: null,
+        });
+      }
+
+      const [linkedResult, matchableResult, linkedLastSeenResult, matchableLastSeenResult] = await Promise.all([
+        supabase
+          .from("external_member_identities")
+          .select("id", { count: "exact", head: true })
+          .eq("provider", provider)
+          .eq("profile_id", userId),
+        supabase
+          .from("external_member_identities")
+          .select("id", { count: "exact", head: true })
+          .eq("provider", provider)
+          .is("profile_id", null)
+          .ilike("email", profileEmail),
+        supabase
+          .from("external_member_identities")
+          .select("last_seen_at")
+          .eq("provider", provider)
+          .eq("profile_id", userId)
+          .order("last_seen_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("external_member_identities")
+          .select("last_seen_at")
+          .eq("provider", provider)
+          .is("profile_id", null)
+          .ilike("email", profileEmail)
+          .order("last_seen_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
+      if (linkedResult.error) throw linkedResult.error;
+      if (matchableResult.error) throw matchableResult.error;
+      if (linkedLastSeenResult.error) throw linkedLastSeenResult.error;
+      if (matchableLastSeenResult.error) throw matchableLastSeenResult.error;
+
+      const linkedLastSeen = pickString(linkedLastSeenResult.data?.last_seen_at);
+      const matchableLastSeen = pickString(matchableLastSeenResult.data?.last_seen_at);
+      const lastSeenExternalAt =
+        linkedLastSeen && matchableLastSeen
+          ? (linkedLastSeen > matchableLastSeen ? linkedLastSeen : matchableLastSeen)
+          : linkedLastSeen || matchableLastSeen || null;
+
+      return jsonResponse({
+        status: "ok",
+        provider,
+        linked: (linkedResult.count ?? 0) > 0,
+        linked_identities: linkedResult.count ?? 0,
+        matchable_unlinked_identities: matchableResult.count ?? 0,
+        last_seen_external_at: lastSeenExternalAt,
+      });
+    }
+
+    if (action === "claim_identity") {
+      if (!userId) return jsonResponse({ error: "Unauthorized user" }, 401);
+
+      const provider = pickString(body?.provider, "sweatpals") || "sweatpals";
+      const profileResult = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (profileResult.error) throw profileResult.error;
+
+      const profileEmail = pickString(profileResult.data?.email);
+      if (!profileEmail) {
+        return jsonResponse({
+          status: "ok",
+          provider,
+          linked_identities: 0,
+          linked_external_events: 0,
+          linked_attendance_facts: 0,
+          rollups_refreshed: false,
+        });
+      }
+
+      const claimResult = await supabase
+        .rpc("claim_sweatpals_identity_for_profile", {
+          p_profile_id: userId,
+          p_provider: provider,
+        });
+
+      if (claimResult.error) throw claimResult.error;
+
+      const row = Array.isArray(claimResult.data) ? claimResult.data[0] : claimResult.data;
+      return jsonResponse({
+        status: "ok",
+        provider,
+        linked_identities: Number(row?.linked_identities || 0),
+        linked_external_events: Number(row?.linked_external_events || 0),
+        linked_attendance_facts: Number(row?.linked_attendance_facts || 0),
+        rollups_refreshed: Boolean(row?.rollups_refreshed),
+      });
     }
 
     if (action === "health") {

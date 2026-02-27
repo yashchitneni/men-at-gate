@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile, useUpdateProfile, useUploadPhoto } from '@/hooks/useProfiles';
+import { useClaimSweatpalsIdentity, useSweatpalsIdentityStatus } from '@/hooks/useIntegrations';
 import { useRaces } from '@/hooks/useRaces';
 import { useWorkoutSlots } from '@/hooks/useWorkouts';
 import { useMySpotlightSubmission, useSaveMySpotlightDraft, useSubmitMySpotlight } from '@/hooks/useSpotlights';
@@ -22,7 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, Save, Trophy, Dumbbell, Sparkles, Upload, Plus, X } from 'lucide-react';
+import { Loader2, User, Save, Trophy, Dumbbell, Sparkles, Upload, Plus, X, Link2 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { SpotlightSubmission } from '@/types/database.types';
 
@@ -75,6 +76,8 @@ export default function Profile() {
   const { data: races } = useRaces();
   const { data: workoutSlots } = useWorkoutSlots();
   const { data: profileWithPhotos } = useProfile(user?.id || '');
+  const { data: sweatpalsIdentityStatus, isLoading: identityLoading } = useSweatpalsIdentityStatus(Boolean(user));
+  const claimSweatpalsIdentity = useClaimSweatpalsIdentity();
   const { data: spotlightSubmission } = useMySpotlightSubmission(user?.id || null);
   const saveSpotlightDraft = useSaveMySpotlightDraft();
   const submitSpotlight = useSubmitMySpotlight();
@@ -443,6 +446,22 @@ export default function Profile() {
   // Get workouts user has led
   const myWorkouts = workoutSlots?.filter((slot) => slot.leader_id === user?.id) || [];
 
+  async function handleConnectSweatpalsIdentity() {
+    try {
+      const result = await claimSweatpalsIdentity.mutateAsync();
+      toast({
+        title: 'SweatPals linked',
+        description: `${result.linked_attendance_facts} attendance records connected to your profile.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Connect failed',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -582,6 +601,60 @@ export default function Profile() {
                       {profile?.is_admin && <Badge variant="default">Admin</Badge>}
                       {profile?.is_core_member && <Badge variant="secondary">Core Member</Badge>}
                     </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Link2 className="h-5 w-5 text-accent" />
+                      SweatPals Connection
+                    </CardTitle>
+                    <CardDescription>
+                      Link your SweatPals activity to keep attendance and leaderboard stats accurate.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {identityLoading ? (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Checking connection status...
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant={sweatpalsIdentityStatus?.linked ? 'default' : 'outline'}>
+                            {sweatpalsIdentityStatus?.linked ? 'Connected' : 'Not connected'}
+                          </Badge>
+                          {sweatpalsIdentityStatus?.last_seen_external_at && (
+                            <span className="text-xs text-muted-foreground">
+                              Last external activity {format(new Date(sweatpalsIdentityStatus.last_seen_external_at), 'MMM d, yyyy h:mm a')}
+                            </span>
+                          )}
+                        </div>
+
+                        {!sweatpalsIdentityStatus?.linked && (sweatpalsIdentityStatus?.matchable_unlinked_identities || 0) > 0 ? (
+                          <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">
+                              We found {(sweatpalsIdentityStatus?.matchable_unlinked_identities || 0)} SweatPals record(s) for your email.
+                            </p>
+                            <Button
+                              type="button"
+                              className="bg-accent hover:bg-accent/90"
+                              onClick={() => void handleConnectSweatpalsIdentity()}
+                              disabled={claimSweatpalsIdentity.isPending}
+                            >
+                              {claimSweatpalsIdentity.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              Connect SweatPals Activity
+                            </Button>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            Register and check in on SweatPals to sync future attendance automatically.
+                          </p>
+                        )}
+                      </>
+                    )}
                   </CardContent>
                 </Card>
 

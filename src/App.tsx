@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import SweatpalsIdentityPrompt from "@/components/SweatpalsIdentityPrompt";
 import { SentryErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Calendar from "./pages/Calendar";
@@ -42,6 +43,7 @@ const App = () => (
       <AuthProvider>
         <OnboardingModal />
         <BrowserRouter>
+          <SweatpalsIdentityPrompt />
           <SentryErrorBoundary>
           <Routes>
             <Route path="/" element={<Index />} />

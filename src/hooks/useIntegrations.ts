@@ -6,6 +6,7 @@ const SWEATPALS_MAPPINGS_QUERY_KEY = ["integrations", "sweatpals", "mappings"];
 const SWEATPALS_UNMAPPED_QUERY_KEY = ["integrations", "sweatpals", "unmapped"];
 const SWEATPALS_NEXT_WORKOUT_QUERY_KEY = ["integrations", "sweatpals", "next-workout"];
 const SWEATPALS_SCHEDULE_QUERY_KEY = ["integrations", "sweatpals", "public-schedule"];
+const SWEATPALS_IDENTITY_STATUS_QUERY_KEY = ["integrations", "sweatpals", "identity-status"];
 const SWEATPALS_FUNCTION_TIMEOUT_MS = 15_000;
 
 async function invokeSweatpalsFunction<T>(body: Record<string, unknown>): Promise<T> {
@@ -128,6 +129,24 @@ export interface SweatpalsScheduleSyncResponse {
   from: string;
   community_username: string;
   community_id: string;
+}
+
+export interface SweatpalsIdentityStatusResponse {
+  status: "ok";
+  provider: "sweatpals" | string;
+  linked: boolean;
+  linked_identities: number;
+  matchable_unlinked_identities: number;
+  last_seen_external_at: string | null;
+}
+
+export interface SweatpalsClaimIdentityResponse {
+  status: "ok";
+  provider: "sweatpals" | string;
+  linked_identities: number;
+  linked_external_events: number;
+  linked_attendance_facts: number;
+  rollups_refreshed: boolean;
 }
 
 export function useSweatpalsHealth() {
@@ -314,6 +333,38 @@ export function useSyncSweatpalsSchedule() {
       queryClient.invalidateQueries({ queryKey: SWEATPALS_HEALTH_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: SWEATPALS_NEXT_WORKOUT_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: SWEATPALS_SCHEDULE_QUERY_KEY });
+    },
+  });
+}
+
+export function useSweatpalsIdentityStatus(enabled = true) {
+  return useQuery({
+    queryKey: SWEATPALS_IDENTITY_STATUS_QUERY_KEY,
+    enabled,
+    queryFn: async (): Promise<SweatpalsIdentityStatusResponse> => {
+      const data = await invokeSweatpalsFunction<SweatpalsIdentityStatusResponse>({
+        action: "identity_status",
+      });
+      return data;
+    },
+    staleTime: 60_000,
+    retry: 1,
+  });
+}
+
+export function useClaimSweatpalsIdentity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (): Promise<SweatpalsClaimIdentityResponse> => {
+      const data = await invokeSweatpalsFunction<SweatpalsClaimIdentityResponse>({
+        action: "claim_identity",
+      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: SWEATPALS_IDENTITY_STATUS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: SWEATPALS_HEALTH_QUERY_KEY });
     },
   });
 }
