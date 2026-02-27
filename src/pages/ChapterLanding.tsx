@@ -83,7 +83,7 @@ export default function ChapterLanding() {
             {[
               { title: 'Workouts', desc: 'Join the next session', to: '/workouts', icon: '🏋️' },
               { title: 'Races', desc: 'Run with your brothers', to: '/races', icon: '🏃' },
-              { title: 'The Men', desc: 'Meet the chapter', to: '/men', icon: '👊' },
+              { title: 'Brotherhood', desc: 'Meet the chapter', to: '/brotherhood', icon: '👊' },
             ].map((item, i) => (
               <motion.div
                 key={item.to}

@@ -5,6 +5,7 @@ import { useWorkoutSlots, useWorkoutInterest } from '@/hooks/useWorkouts';
 import { useRaces } from '@/hooks/useRaces';
 import { useAllProfiles } from '@/hooks/useProfiles';
 import { useFeaturedEvents } from '@/hooks/useFeaturedEvents';
+import { useSpotlightSubmissions } from '@/hooks/useSpotlights';
 import { useRunSweatpalsTestIngest, useSweatpalsHealth } from '@/hooks/useIntegrations';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +21,7 @@ import {
   AlertCircle,
   Megaphone,
   Activity,
+  Star,
 } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +34,7 @@ export default function Admin() {
   const { data: races } = useRaces();
   const { data: allProfiles } = useAllProfiles();
   const { data: featuredEvents } = useFeaturedEvents();
+  const { data: spotlights } = useSpotlightSubmissions({ enabled: !!profile?.is_admin });
   const { data: sweatpalsHealth } = useSweatpalsHealth();
   const runSweatpalsTestIngest = useRunSweatpalsTestIngest();
   const { toast } = useToast();
@@ -61,6 +64,7 @@ export default function Admin() {
   const unassignedSlots = upcomingWorkouts.filter(s => !s.leader_id);
   const upcomingRaces = races?.length || 0;
   const activeFeaturedEvents = featuredEvents?.filter(e => e.is_active).length || 0;
+  const approvedSpotlights = spotlights?.filter(s => s.status === 'approved' || s.status === 'published').length || 0;
   const totalMembers = allProfiles?.length || 0;
   const coreMembers = allProfiles?.filter(p => p.is_core_member).length || 0;
   const integrationHealthy = sweatpalsHealth?.status === 'ok';
@@ -123,7 +127,7 @@ export default function Admin() {
             )}
 
             {/* Quick Stats */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-7 gap-4 mb-8">
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -188,6 +192,18 @@ export default function Admin() {
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
+                      <p className="text-sm text-muted-foreground">Approved Spotlights</p>
+                      <p className="text-3xl font-bold">{approvedSpotlights}</p>
+                    </div>
+                    <Star className="h-8 w-8 text-muted-foreground/30" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
                       <p className="text-sm text-muted-foreground">SweatPals Sync</p>
                       <p className="text-lg font-bold">{integrationHealthy ? 'Healthy' : 'Needs Attention'}</p>
                     </div>
@@ -198,7 +214,7 @@ export default function Admin() {
             </div>
 
             {/* Management Cards */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
               {/* Workouts */}
               <Card className="hover:border-accent/50 transition-colors">
                 <CardHeader>
@@ -316,8 +332,33 @@ export default function Admin() {
                 </CardContent>
               </Card>
 
+              {/* Spotlights */}
+              <Card className="hover:border-accent/50 transition-colors">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Star className="h-5 w-5 text-accent" />
+                    Member Spotlights
+                  </CardTitle>
+                  <CardDescription>
+                    Moderate profile submissions and schedule who gets featured each week
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4 p-3 bg-muted rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Ready to Publish</p>
+                    <p className="text-2xl font-bold">{approvedSpotlights}</p>
+                  </div>
+                  <Button className="w-full" variant="outline" asChild>
+                    <Link to="/admin/spotlights">
+                      Manage Spotlights
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+
               {/* Integrations */}
-              <Card className="hover:border-accent/50 transition-colors md:col-span-2 lg:col-span-4">
+              <Card className="hover:border-accent/50 transition-colors md:col-span-2 lg:col-span-5">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Activity className="h-5 w-5 text-accent" />

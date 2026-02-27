@@ -256,6 +256,84 @@ export interface Database {
           updated_at?: string;
         };
       };
+      spotlight_submissions: {
+        Row: {
+          id: string;
+          profile_id: string;
+          supersedes_submission_id: string | null;
+          slug: string;
+          status: "draft" | "submitted" | "needs_update" | "approved" | "published" | "rejected" | "archived";
+          display_name: string;
+          headline: string | null;
+          short_bio: string | null;
+          why_i_joined: string | null;
+          mission: string | null;
+          instagram_handle: string | null;
+          photo_url: string | null;
+          consent_public_display: boolean;
+          admin_notes: string | null;
+          member_revision_note: string | null;
+          publish_on_date: string | null;
+          published_at: string | null;
+          is_featured: boolean;
+          feature_start_date: string | null;
+          feature_end_date: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          supersedes_submission_id?: string | null;
+          slug: string;
+          status?: "draft" | "submitted" | "needs_update" | "approved" | "published" | "rejected" | "archived";
+          display_name: string;
+          headline?: string | null;
+          short_bio?: string | null;
+          why_i_joined?: string | null;
+          mission?: string | null;
+          instagram_handle?: string | null;
+          photo_url?: string | null;
+          consent_public_display?: boolean;
+          admin_notes?: string | null;
+          member_revision_note?: string | null;
+          publish_on_date?: string | null;
+          published_at?: string | null;
+          is_featured?: boolean;
+          feature_start_date?: string | null;
+          feature_end_date?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          profile_id?: string;
+          supersedes_submission_id?: string | null;
+          slug?: string;
+          status?: "draft" | "submitted" | "needs_update" | "approved" | "published" | "rejected" | "archived";
+          display_name?: string;
+          headline?: string | null;
+          short_bio?: string | null;
+          why_i_joined?: string | null;
+          mission?: string | null;
+          instagram_handle?: string | null;
+          photo_url?: string | null;
+          consent_public_display?: boolean;
+          admin_notes?: string | null;
+          member_revision_note?: string | null;
+          publish_on_date?: string | null;
+          published_at?: string | null;
+          is_featured?: boolean;
+          feature_start_date?: string | null;
+          feature_end_date?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          updated_at?: string;
+        };
+      };
       race_participants: {
         Row: {
           id: string;
@@ -597,6 +675,26 @@ export interface Database {
           pending_requests: number;
         };
       };
+      public_brotherhood_profiles: {
+        Row: {
+          spotlight_submission_id: string;
+          profile_id: string;
+          slug: string;
+          display_name: string;
+          headline: string | null;
+          short_bio: string | null;
+          why_i_joined: string | null;
+          mission: string | null;
+          instagram_handle: string | null;
+          photo_url: string | null;
+          publish_on_date: string | null;
+          published_at: string | null;
+          is_featured: boolean;
+          feature_start_date: string | null;
+          feature_end_date: string | null;
+          profile_role: string | null;
+        };
+      };
     };
   };
 }
@@ -615,9 +713,11 @@ export type WorkoutSubmission = Database['public']['Tables']['workout_submission
 export type WorkoutLeadRequest = Database['public']['Tables']['workout_lead_requests']['Row'];
 export type WorkoutLeadAssignment = Database['public']['Tables']['workout_lead_assignments']['Row'];
 export type SweatpalsScheduleEvent = Database['public']['Tables']['sweatpals_schedule_events']['Row'];
+export type SpotlightSubmission = Database['public']['Tables']['spotlight_submissions']['Row'];
 export type CoreRosterMember = Database['public']['Views']['core_roster']['Row'];
 export type UpcomingWorkout = Database['public']['Views']['upcoming_workout']['Row'];
 export type UpcomingLeadableWorkout = Database['public']['Views']['upcoming_leadable_workouts']['Row'];
+export type PublicBrotherhoodProfile = Database['public']['Views']['public_brotherhood_profiles']['Row'];
 
 // Extended types with joins
 export type RaceWithParticipants = Race & {

@@ -77,6 +77,9 @@ const Navigation = () => {
             <Link to="/workouts" className="text-sm font-medium text-white hover:text-accent transition-colors uppercase tracking-wider">
               Workouts
             </Link>
+            <Link to="/brotherhood" className="text-sm font-medium text-white hover:text-accent transition-colors uppercase tracking-wider">
+              Brotherhood
+            </Link>
             
             
             {user ? <DropdownMenu>
@@ -131,8 +134,8 @@ const Navigation = () => {
             <Link to="/workouts" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
               Workouts
             </Link>
-            <Link to="/men" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
-              The Men
+            <Link to="/brotherhood" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
+              Brotherhood
             </Link>
             <Link to="/donate" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
               Donate
