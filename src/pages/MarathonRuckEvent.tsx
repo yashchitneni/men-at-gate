@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { buildTrackedUrl } from "@/lib/url";
 import {
+  DEFAULT_MARATHON_RUCK_IMAGE_URL,
   MARATHON_RUCK_SLUG,
   MARATHON_RUCK_UTM,
   SWEATPALS_DEFAULT_URL,
@@ -13,7 +14,6 @@ import {
   marathonRuckSponsorPoints,
 } from "@/data/events";
 import { useFeaturedEventBySlug } from "@/hooks/useFeaturedEvents";
-import heroImage from "@/assets/grit-test-hero.png";
 import ScrollReveal from "@/components/ScrollReveal";
 
 export default function MarathonRuckEvent() {
@@ -47,9 +47,9 @@ export default function MarathonRuckEvent() {
       <section className="relative min-h-[90vh] flex items-center pt-20 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
-            src={featuredEvent?.image_url || heroImage}
+            src={DEFAULT_MARATHON_RUCK_IMAGE_URL}
             alt={title}
-            className="w-full h-full object-cover scale-105"
+            className="w-full h-full object-cover object-center"
             style={{ filter: "grayscale(30%) contrast(120%)" }}
           />
           {/* Gradient to Matte Black */}

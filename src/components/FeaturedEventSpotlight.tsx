@@ -3,6 +3,7 @@ import type { FeaturedEvent } from "@/types/database.types";
 import { isExternalUrl } from "@/lib/url";
 import { Link } from "react-router-dom";
 import { useCommunityActivitySummary } from "@/hooks/useCommunityInsights";
+import { DEFAULT_MARATHON_RUCK_IMAGE_URL, MARATHON_RUCK_SLUG } from "@/data/events";
 
 interface FeaturedEventSpotlightProps {
   event: FeaturedEvent | null;
@@ -17,6 +18,10 @@ const FeaturedEventSpotlight = ({ event }: FeaturedEventSpotlightProps) => {
   const subtitle = event.subtitle || "Major event spotlight";
   const eventSummary = event.summary || "Step into the arena and be part of the mission.";
   const badgeText = event.badge_text || "Featured Event";
+  const spotlightImage =
+    event.slug === MARATHON_RUCK_SLUG
+      ? DEFAULT_MARATHON_RUCK_IMAGE_URL
+      : event.image_url;
   const activityMetrics = [
     {
       label: "Attending This Week",
@@ -81,9 +86,9 @@ const FeaturedEventSpotlight = ({ event }: FeaturedEventSpotlightProps) => {
           </div>
 
           <div className="min-h-[300px] border border-primary-foreground/20 overflow-hidden">
-            {event.image_url ? (
+            {spotlightImage ? (
               <img
-                src={event.image_url}
+                src={spotlightImage}
                 alt={title}
                 className="w-full h-full object-cover"
               />

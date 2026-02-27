@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin } from "lucide-react";
-import { eventCards } from "@/data/events";
+import { DEFAULT_MARATHON_RUCK_IMAGE_URL, eventCards } from "@/data/events";
 import { useFeaturedEvents } from "@/hooks/useFeaturedEvents";
 
 export default function EventsIndex() {
@@ -29,7 +29,10 @@ export default function EventsIndex() {
               event.summary ||
               event.subtitle ||
               "Step into the arena and move with the brotherhood.",
-            image: event.image_url || eventCards[0].image,
+            image:
+              event.slug === "marathon-ruck"
+                ? DEFAULT_MARATHON_RUCK_IMAGE_URL
+                : (event.image_url || eventCards[0].image),
             path: event.event_path,
             featured: event.is_active,
           }))

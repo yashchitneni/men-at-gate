@@ -1,8 +1,9 @@
-import gritTestHero from "@/assets/grit-test-hero.png";
 import heroWorkout from "@/assets/hero-workout.jpg";
 import { buildTrackedUrl } from "@/lib/url";
 
 export const MARATHON_RUCK_SLUG = "marathon-ruck";
+export const DEFAULT_MARATHON_RUCK_IMAGE_URL =
+  "https://prursaeokvkulphtskdn.supabase.co/storage/v1/object/public/member-photos/featured-events/overnight-ruck.jpg";
 
 export const SWEATPALS_DEFAULT_URL =
   import.meta.env.VITE_MARATHON_RUCK_SWEATPALS_URL ||
@@ -40,7 +41,7 @@ export const eventCards: EventCardItem[] = [
     location: "Austin, TX",
     summary:
       "An overnight 26.2-mile ruck for men's mental health. Carry weight, move as brothers, finish together.",
-    image: gritTestHero,
+    image: DEFAULT_MARATHON_RUCK_IMAGE_URL,
     path: "/events/marathon-ruck",
     featured: true,
   },
