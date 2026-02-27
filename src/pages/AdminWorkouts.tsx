@@ -53,6 +53,9 @@ import {
   CheckCircle,
   XCircle,
   Eye,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -89,6 +92,7 @@ export default function AdminWorkouts() {
   const [guideVersionLabel, setGuideVersionLabel] = useState('v1');
   const [guidePurpose, setGuidePurpose] = useState('');
   const [guideSections, setGuideSections] = useState<LeaderGuideSection[]>([]);
+  const [draggingSectionId, setDraggingSectionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && (!profile || !profile.is_admin)) {
@@ -284,6 +288,34 @@ export default function AdminWorkouts() {
 
   function removeSection(sectionId: string) {
     setGuideSections((sections) => sections.filter((section) => section.id !== sectionId));
+  }
+
+  function moveSection(draggedId: string, targetId: string) {
+    if (draggedId === targetId) return;
+    setGuideSections((sections) => {
+      const draggedIndex = sections.findIndex((section) => section.id === draggedId);
+      const targetIndex = sections.findIndex((section) => section.id === targetId);
+      if (draggedIndex === -1 || targetIndex === -1) return sections;
+
+      const next = [...sections];
+      const [dragged] = next.splice(draggedIndex, 1);
+      next.splice(targetIndex, 0, dragged);
+      return next;
+    });
+  }
+
+  function moveSectionByOffset(sectionId: string, offset: -1 | 1) {
+    setGuideSections((sections) => {
+      const currentIndex = sections.findIndex((section) => section.id === sectionId);
+      if (currentIndex === -1) return sections;
+      const targetIndex = currentIndex + offset;
+      if (targetIndex < 0 || targetIndex >= sections.length) return sections;
+
+      const next = [...sections];
+      const [moved] = next.splice(currentIndex, 1);
+      next.splice(targetIndex, 0, moved);
+      return next;
+    });
   }
 
   async function handleSaveGuide() {
@@ -601,8 +633,63 @@ export default function AdminWorkouts() {
                       </Button>
                     </div>
 
-                    {guideSections.map((section) => (
-                      <div key={section.id} className="border rounded-lg p-4 space-y-3">
+                    {guideSections.map((section, index) => (
+                      <div
+                        key={section.id}
+                        className={`border rounded-lg p-4 space-y-3 transition-colors ${
+                          draggingSectionId === section.id ? 'border-accent bg-accent/5' : ''
+                        }`}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                        }}
+                        onDrop={() => {
+                          if (!draggingSectionId) return;
+                          moveSection(draggingSectionId, section.id);
+                          setDraggingSectionId(null);
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 rounded-md border px-2 py-1 hover:bg-muted"
+                              draggable
+                              onDragStart={(event) => {
+                                event.dataTransfer.effectAllowed = 'move';
+                                setDraggingSectionId(section.id);
+                              }}
+                              onDragEnd={() => setDraggingSectionId(null)}
+                              title="Drag to reorder section"
+                            >
+                              <GripVertical className="h-4 w-4" />
+                              Drag
+                            </button>
+                            <span>Section {index + 1}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => moveSectionByOffset(section.id, -1)}
+                              disabled={index === 0}
+                            >
+                              <ChevronUp className="h-4 w-4 mr-1" />
+                              Move up
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => moveSectionByOffset(section.id, 1)}
+                              disabled={index === guideSections.length - 1}
+                            >
+                              <ChevronDown className="h-4 w-4 mr-1" />
+                              Move down
+                            </Button>
+                          </div>
+                        </div>
+
                         <div className="grid md:grid-cols-2 gap-3">
                           <div className="space-y-2">
                             <Label>Section id</Label>
