@@ -43,9 +43,10 @@ function toDatetimeLocal(value: string | null) {
   )}:${pad(date.getMinutes())}`;
 }
 
-type ImageField = "hero_image_url" | "cover_image_url" | "image_url";
-
-const EDITOR_STEPS = ["Event Setup", "Page Content", "Images", "Publish"] as const;
+function fromDatetimeLocal(value: string) {
+  if (!value) return null;
+  return new Date(value).toISOString();
+}
 
 const EMPTY_FORM: FeaturedEventForm = {
   slug: "",
@@ -64,140 +65,6 @@ const EMPTY_FORM: FeaturedEventForm = {
   end_at: "",
   is_active: false,
 };
-
-const CHALLENGE_TEMPLATE_DEFAULTS: Omit<FeaturedEventForm, "id" | "start_at" | "end_at" | "is_active" | "template_key" | "publish_status" | "published_at" | "slug" | "title" | "subtitle" | "summary" | "badge_text" | "event_date_text" | "event_path" | "hero_cta_label" | "hero_cta_url" | "registration_url" | "image_url" | "hero_image_url" | "cover_image_url"> = {
-  mission_heading: "Why We Show Up",
-  mission_body: "This event exists to build brotherhood through action and accountability.",
-  spec_format: "Challenge",
-  spec_location: "TBA",
-  spec_registration: "Open",
-  sponsor_heading: "Support the Mission",
-  sponsor_body: "Partner with Men in the Arena to support growth, accountability, and impact.",
-  sponsor_cta_label: "Contact Partnership Team",
-  sponsor_cta_url: "mailto:community@meninthearena.co",
-  quote: "The credit belongs to the man who is actually in the arena.",
-  quote_author: "Theodore Roosevelt",
-  final_heading: "Ready to Commit?",
-  final_body: "Register, prepare, and move with the brotherhood.",
-  final_cta_label: "Register on SweatPals",
-  final_cta_url: "",
-  retreat_session_1_title: "",
-  retreat_session_1_copy: "",
-  retreat_session_2_title: "",
-  retreat_session_2_copy: "",
-  retreat_session_3_title: "",
-  retreat_session_3_copy: "",
-  retreat_gallery_heading: "",
-  retreat_gallery_body: "",
-  retreat_gallery_images: "",
-};
-
-const RETREAT_TEMPLATE_DEFAULTS: Omit<FeaturedEventForm, "id" | "start_at" | "end_at" | "is_active" | "template_key" | "publish_status" | "published_at" | "slug" | "title" | "subtitle" | "summary" | "badge_text" | "event_date_text" | "event_path" | "hero_cta_label" | "hero_cta_url" | "registration_url" | "image_url" | "hero_image_url" | "cover_image_url"> = {
-  mission_heading: "Why Retreat",
-  mission_body: "A reset to reconnect, build trust, and leave with clear commitments.",
-  spec_format: "",
-  spec_location: "",
-  spec_registration: "",
-  sponsor_heading: "",
-  sponsor_body: "",
-  sponsor_cta_label: "",
-  sponsor_cta_url: "",
-  quote: "Brotherhood is built through honest work, not comfort.",
-  quote_author: "Men in the Arena",
-  final_heading: "Reserve Your Spot",
-  final_body: "Spots are limited. Register early and prepare intentionally.",
-  final_cta_label: "Reserve on SweatPals",
-  final_cta_url: "",
-  retreat_session_1_title: "Arrival + Grounding",
-  retreat_session_1_copy: "Set context and shared expectations.",
-  retreat_session_2_title: "Challenge Sessions",
-  retreat_session_2_copy: "Guided physical and reflection sessions.",
-  retreat_session_3_title: "Commitment Close",
-  retreat_session_3_copy: "Leave with concrete next steps.",
-  retreat_gallery_heading: "Retreat Moments",
-  retreat_gallery_body: "Add supporting images and moments from previous retreats.",
-  retreat_gallery_images: "",
-};
-
-const TEMPLATE_DEFAULTS: Record<FeaturedEventTemplateKey, Omit<FeaturedEventForm, "id" | "start_at" | "end_at" | "is_active" | "template_key" | "publish_status" | "published_at" | "slug" | "title" | "subtitle" | "summary" | "badge_text" | "event_date_text" | "event_path" | "hero_cta_label" | "hero_cta_url" | "registration_url" | "image_url" | "hero_image_url" | "cover_image_url"> = {
-  challenge: CHALLENGE_TEMPLATE_DEFAULTS,
-  retreat: RETREAT_TEMPLATE_DEFAULTS,
-};
-
-type JsonRecord = Record<string, unknown>;
-
-type JsonItem = Record<string, unknown>;
-
-function toDatetimeLocal(value?: string | null) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
-    date.getHours(),
-  )}:${pad(date.getMinutes())}`;
-}
-
-function fromDatetimeLocal(value: string) {
-  if (!value) return null;
-  return new Date(value).toISOString();
-}
-
-function asString(value: unknown, fallback = "") {
-  if (typeof value === "string" && value.trim()) return value.trim();
-  return fallback;
-}
-
-function getContent(content: JsonRecord | undefined, key: string, fallback = "") {
-  return asString(content?.[key], fallback);
-}
-
-function getContentItems(content: JsonRecord | undefined): JsonItem[] {
-  const raw = content?.items;
-  if (!Array.isArray(raw)) return [];
-  return raw.filter((entry): entry is JsonItem => typeof entry === "object" && entry !== null && !Array.isArray(entry));
-}
-
-function getContentImages(content: JsonRecord | undefined): string[] {
-  const raw = content?.images;
-  if (!Array.isArray(raw)) return [];
-  return raw.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0);
-}
-
-function findBlockByType(
-  blocks: FeaturedEventBlock[] | FeaturedEventBlockDraft[] | null | undefined,
-  blockType: FeaturedEventBlock["block_type"],
-): FeaturedEventBlock | FeaturedEventBlockDraft | null {
-  return blocks?.find((block) => block.block_type === blockType) ?? null;
-}
-
-function splitImageLines(value: string): string[] {
-  return value
-    .split(/\n|,/)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-}
-
-function formatImageLines(value: string[]): string {
-  return value.filter((entry) => entry.trim()).join("\n");
-}
-
-function withTemplateDefaults(form: FeaturedEventForm, templateKey: FeaturedEventTemplateKey): FeaturedEventForm {
-  return {
-    ...form,
-    template_key: templateKey,
-    ...TEMPLATE_DEFAULTS[templateKey],
-  };
-}
-
-function createBlankForm(templateKey: FeaturedEventTemplateKey): FeaturedEventForm {
-  return {
-    ...EMPTY_FORM,
-    template_key: templateKey,
-    ...TEMPLATE_DEFAULTS[templateKey],
-  };
-}
 
 function mapEventToForm(event: FeaturedEvent): FeaturedEventForm {
   return {

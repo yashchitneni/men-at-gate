@@ -8,10 +8,10 @@ describe("MarathonRuckEvent", () => {
 
     expect(screen.getByText("The Weight We Carry")).toBeInTheDocument();
     expect(screen.getByText("Why We Ruck")).toBeInTheDocument();
-    expect(screen.getByText("Event Specs")).toBeInTheDocument();
-    expect(screen.getByText("Partner with the Mission")).toBeInTheDocument();
+    expect(screen.getByText("Distance")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Partner with/i })).toBeInTheDocument();
 
-    const registerLinks = screen.getAllByRole("link", { name: /Register on SweatPals/i });
+    const registerLinks = screen.getAllByRole("link", { name: /Commit to the Ruck|Register Now/i });
     const href = registerLinks[0].getAttribute("href") || "";
 
     expect(href).toContain("utm_source=men-at-gate");
