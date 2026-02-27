@@ -413,7 +413,7 @@ serve(async (req: Request) => {
       "PUBLIC_APP_URL",
       "APP_BASE_URL",
       "SITE_URL",
-    ], "https://meninthearena.com").replace(/\/$/, "");
+    ], "https://meninthearena.co").replace(/\/$/, "");
 
     const results: ReminderResult[] = [];
     let sentCount = 0;
@@ -421,7 +421,7 @@ serve(async (req: Request) => {
     let errorCount = 0;
 
     const resendApiKey = mode === "send" ? getEnv("RESEND_API_KEY") : "";
-    const fromEmail = mode === "send" ? getPreferredEnv(["WORKOUT_REMINDER_FROM_EMAIL", "RESEND_FROM_EMAIL"], "MTA <noreply@meninthearena.com>") : "";
+    const fromEmail = mode === "send" ? getPreferredEnv(["WORKOUT_REMINDER_FROM_EMAIL", "RESEND_FROM_EMAIL"], "MTA <noreply@meninthearena.co>") : "";
     const replyTo = mode === "send" ? Deno.env.get("WORKOUT_REMINDER_REPLY_TO") || undefined : undefined;
 
     for (const assignment of assignments) {

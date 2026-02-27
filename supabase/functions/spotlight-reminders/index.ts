@@ -131,9 +131,12 @@ serve(async (req) => {
     const resendApiKey = getEnv("RESEND_API_KEY");
     const fromEmail = getPreferredEnv(
       ["SPOTLIGHT_REMINDER_FROM_EMAIL", "WORKOUT_REMINDER_FROM_EMAIL", "RESEND_FROM_EMAIL"],
-      "MTA <noreply@meninthearena.com>",
+      "MTA <noreply@meninthearena.co>",
     );
-    const appBaseUrl = getOptionalEnv("APP_BASE_URL", "https://meninthearena.com");
+    const appBaseUrl = getPreferredEnv(
+      ["SPOTLIGHT_APP_BASE_URL", "PUBLIC_APP_URL", "APP_BASE_URL", "SITE_URL"],
+      "https://meninthearena.co",
+    );
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
