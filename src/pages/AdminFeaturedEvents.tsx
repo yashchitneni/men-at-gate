@@ -58,7 +58,7 @@ const EMPTY_FORM: FeaturedEventForm = {
   event_path: "/events/marathon-ruck",
   hero_cta_label: "View Event",
   hero_cta_url: "/events/marathon-ruck",
-  registration_url: "https://www.sweatpals.com/",
+  registration_url: "https://www.sweatpals.com/event/the-weight-we-carry-overnight-ruck-hosted-by-mta/2026-05-01",
   image_url: "",
   priority: "0",
   start_at: "",

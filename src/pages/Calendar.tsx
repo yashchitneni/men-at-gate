@@ -101,7 +101,6 @@ const Calendar = () => {
                 {workouts.map((workout) => {
                   const startsAt = new Date(workout.starts_at);
                   const destinationUrl =
-                    workout.checkout_url ||
                     workout.event_url ||
                     (workout.event_alias ? `https://www.sweatpals.com/event/${workout.event_alias}` : null);
 

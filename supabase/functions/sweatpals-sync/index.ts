@@ -343,6 +343,12 @@ function clampAutoSyncMinutes(value: unknown): number {
   return clampLimit(value, DEFAULT_AUTO_SYNC_MINUTES, 24 * 60);
 }
 
+function toEventPageUrl(...values: unknown[]): string | null {
+  const raw = pickString(...values);
+  if (!raw) return null;
+  return raw.replace(/\/checkout\/?(?=$|\?)/i, "");
+}
+
 function getSweatpalsApiBase(rawValue: unknown): string {
   const value = pickString(rawValue, Deno.env.get("SWEATPALS_API_BASE"), DEFAULT_SWEATPALS_API_BASE) || DEFAULT_SWEATPALS_API_BASE;
   return value.replace(/\/+$/, "");
@@ -377,6 +383,12 @@ function buildSweatpalsEventUrls(
   };
 }
 
+function buildSweatpalsFileUrl(apiBase: string, fileId: string, variant: string | null): string {
+  const encodedFileId = encodeURIComponent(fileId);
+  const variantValue = variant || "l";
+  return `${apiBase}/files/${encodedFileId}?variant=${encodeURIComponent(variantValue)}`;
+}
+
 async function fetchJsonFromSweatpals<T>(url: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
@@ -405,6 +417,7 @@ function normalizeScheduleEventRow(
   event: SweatpalsPublicEvent,
   communityUsername: string,
   communityId: string,
+  apiBase: string,
 ): Record<string, unknown> | null {
   const externalEventId = pickString(
     event.baseId,
@@ -444,8 +457,23 @@ function normalizeScheduleEventRow(
   const defaultUrls = buildSweatpalsEventUrls(alias, eventType, shortLocalInstance);
 
   const onlineUrl = pickString(event.onlineUrl, event.online_url);
-  const eventUrl = pickString(event.deepLink, event.event_url, defaultUrls.event_url, onlineUrl);
+  const eventUrl = toEventPageUrl(event.deepLink, event.event_url, defaultUrls.event_url, onlineUrl);
   const checkoutUrl = pickString(event.checkout_url, defaultUrls.checkout_url);
+  const avatar = (typeof event.avatar === "object" && event.avatar !== null)
+    ? (event.avatar as Record<string, unknown>)
+    : null;
+  const avatarId = pickString(
+    event.avatarId,
+    event.avatar_id,
+    avatar?.id,
+  );
+  const avatarVariant = pickString(
+    event.avatarVariant,
+    event.avatar_variant,
+    avatar?.variant,
+    "l",
+  );
+  const derivedAvatarUrl = avatarId ? buildSweatpalsFileUrl(apiBase, avatarId, avatarVariant) : null;
 
   return {
     provider: "sweatpals",
@@ -459,7 +487,17 @@ function normalizeScheduleEventRow(
     ends_at: endsAt,
     timezone: pickString(event.tzid, event.timezone),
     location: pickString(event.addressName, event.address_name, event.location),
-    image_url: pickString(event.image_url, event.imageUrl, event.avatar_url, event.avatarUrl),
+    image_url: pickString(
+      event.image_url,
+      event.imageUrl,
+      event.coverImageUrl,
+      event.cover_image_url,
+      event.bannerImageUrl,
+      event.banner_image_url,
+      event.avatar_url,
+      event.avatarUrl,
+      derivedAvatarUrl,
+    ),
     event_url: eventUrl,
     checkout_url: checkoutUrl,
     is_workout: isWorkoutLikeEvent(title, alias),
@@ -506,7 +544,7 @@ async function syncSweatpalsSchedule(
   let workoutCount = 0;
 
   for (const event of events ?? []) {
-    const row = normalizeScheduleEventRow(event, input.communityUsername, communityId);
+    const row = normalizeScheduleEventRow(event, input.communityUsername, communityId, input.apiBase);
     if (!row) continue;
 
     if (row.is_workout === true) workoutCount += 1;
@@ -1224,8 +1262,8 @@ serve(async (req) => {
           ends_at: row.ends_at,
           location: row.location,
           image_url: row.image_url,
-          event_url: row.event_url,
-          checkout_url: row.checkout_url,
+          event_url: toEventPageUrl(row.event_url, row.checkout_url),
+          checkout_url: null,
           event_alias: row.alias,
           event_type: row.event_type,
           is_workout: row.is_workout,
@@ -1276,9 +1314,9 @@ serve(async (req) => {
         const externalEventId = scheduleResult.data.external_event_id;
         let featuredEventId: string | null = null;
         let destinationPath: string | null = null;
-        let destinationUrl: string | null = pickString(
-          scheduleResult.data.checkout_url,
+        let destinationUrl: string | null = toEventPageUrl(
           scheduleResult.data.event_url,
+          scheduleResult.data.checkout_url,
         );
 
         const mappingResult = await supabase
