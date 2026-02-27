@@ -91,6 +91,7 @@ interface FeaturedEventForm {
 }
 
 type ImageField = "hero_image_url" | "cover_image_url" | "image_url";
+const FEATURED_EVENTS_BUCKET = "featured-events";
 
 const EDITOR_STEPS = ["Event Setup", "Page Content", "Images", "Publish"] as const;
 
@@ -595,17 +596,17 @@ export default function AdminFeaturedEvents() {
 
       const fileExt = file.name.split(".").pop() || "jpg";
       const safeSlug = normalizeSlug(form.slug) || "draft-event";
-      const filePath = `featured-events/${safeSlug}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const filePath = `events/${safeSlug}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("member-photos")
+        .from(FEATURED_EVENTS_BUCKET)
         .upload(filePath, file, { upsert: false });
 
       if (uploadError) throw uploadError;
 
       const {
         data: { publicUrl },
-      } = supabase.storage.from("member-photos").getPublicUrl(filePath);
+      } = supabase.storage.from(FEATURED_EVENTS_BUCKET).getPublicUrl(filePath);
 
       setForm((previous) => ({
         ...previous,
