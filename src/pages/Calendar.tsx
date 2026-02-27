@@ -1,9 +1,8 @@
 import { useEffect } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, ChevronLeft, ExternalLink, MapPin, RefreshCw } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ExternalLink, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
@@ -44,17 +43,10 @@ const Calendar = () => {
               </p>
             </div>
 
-            <div className="bg-card p-5 rounded-lg border mb-8 flex flex-wrap items-center gap-3 justify-between">
+            <div className="bg-card p-5 rounded-lg border mb-8">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <CalendarIcon className="w-4 h-4 text-accent" />
-                <span>Showing workouts only</span>
-                <Badge variant="secondary">SweatPals Sync</Badge>
-              </div>
-              <div>
-                <Button variant="outline" size="sm" onClick={() => refetch()}>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Refresh
-                </Button>
+                <span>Showing upcoming workouts</span>
               </div>
             </div>
 
