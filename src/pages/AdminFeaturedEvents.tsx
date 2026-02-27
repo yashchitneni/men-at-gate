@@ -196,7 +196,7 @@ const RETREAT_TEMPLATE_DEFAULTS: Omit<FeaturedEventForm, "id" | "start_at" | "en
   retreat_gallery_images: "",
 };
 
-const TEMPLATE_DEFAULTS: Record<FeaturedEventTemplateKey, Omit<FeaturedEventForm, "id" | "start_at" | "end_at" | "is_active" | "template_key" | "publish_status" | "published_at" | "slug" | "title" | "subtitle" | "summary" | "badge_text" | "event_date_text" | "event_path" | "hero_cta_label" | "hero_cta_url" | "registration_url" | "image_url" | "hero_image_url" | "cover_image_url"> = {
+const TEMPLATE_DEFAULTS: Record<FeaturedEventTemplateKey, Omit<FeaturedEventForm, "id" | "start_at" | "end_at" | "is_active" | "template_key" | "publish_status" | "published_at" | "slug" | "title" | "subtitle" | "summary" | "badge_text" | "event_date_text" | "event_path" | "hero_cta_label" | "hero_cta_url" | "registration_url" | "image_url" | "hero_image_url" | "cover_image_url">> = {
   challenge: CHALLENGE_TEMPLATE_DEFAULTS,
   retreat: RETREAT_TEMPLATE_DEFAULTS,
 };
