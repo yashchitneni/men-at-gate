@@ -30,6 +30,7 @@ const SHIRT_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 const MAX_ABOUT_YOU_POINTS = 5;
 const MAX_SPOTLIGHT_QUOTES = 2;
 const MAX_FEATURE_PHOTOS = 3;
+const MAX_TOTAL_PROFILE_PHOTOS = 4;
 
 function spotlightStatusLabel(status: SpotlightSubmission['status'] | null) {
   if (!status) return 'Not submitted';
@@ -70,6 +71,7 @@ export default function Profile() {
   const submitSpotlight = useSubmitMySpotlight();
   const { toast } = useToast();
   const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const spotlightPhotoInputRef = useRef<HTMLInputElement | null>(null);
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -96,6 +98,7 @@ export default function Profile() {
     '';
 
   const availableSpotlightPhotos = profileWithPhotos?.photos?.filter((photo) => photo.photo_url !== primaryHeadshotUrl) || [];
+  const totalPhotoCount = profileWithPhotos?.photos?.length || 0;
 
   // Redirect if not logged in
   useEffect(() => {
@@ -181,6 +184,16 @@ export default function Profile() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    if (totalPhotoCount >= MAX_TOTAL_PROFILE_PHOTOS) {
+      toast({
+        title: 'Photo limit reached',
+        description: `You can upload up to ${MAX_TOTAL_PROFILE_PHOTOS} total photos including your headshot.`,
+        variant: 'destructive',
+      });
+      event.target.value = '';
+      return;
+    }
+
     try {
       await uploadPhoto.mutateAsync({
         userId: user.id,
@@ -190,6 +203,42 @@ export default function Profile() {
       toast({
         title: 'Headshot uploaded',
         description: 'Your new photo is now set as primary.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Upload failed',
+        description: error instanceof Error ? error.message : 'Could not upload photo.',
+        variant: 'destructive',
+      });
+    } finally {
+      event.target.value = '';
+    }
+  }
+
+  async function handleUploadSpotlightPhoto(event: React.ChangeEvent<HTMLInputElement>) {
+    if (!user) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (totalPhotoCount >= MAX_TOTAL_PROFILE_PHOTOS) {
+      toast({
+        title: 'Photo limit reached',
+        description: `You can upload up to ${MAX_TOTAL_PROFILE_PHOTOS} total photos including your headshot.`,
+        variant: 'destructive',
+      });
+      event.target.value = '';
+      return;
+    }
+
+    try {
+      await uploadPhoto.mutateAsync({
+        userId: user.id,
+        file,
+        isPrimary: false,
+      });
+      toast({
+        title: 'Photo uploaded',
+        description: 'You can now select this image for your spotlight profile.',
       });
     } catch (error) {
       toast({
@@ -335,8 +384,8 @@ export default function Profile() {
       });
 
       toast({
-        title: 'Submitted for review',
-        description: 'An admin will review and schedule your spotlight.',
+        title: 'Submitted',
+        description: 'Your spotlight profile has been submitted.',
       });
     } catch (error) {
       toast({
@@ -496,6 +545,17 @@ export default function Profile() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-5">
+                    <div className="rounded-lg border border-accent/30 bg-accent/5 p-4 space-y-3">
+                      <p className="text-lg font-medium">
+                        We are honored to highlight the men who consistently step into the arena.
+                      </p>
+                      <p className="text-muted-foreground">
+                        Please take 5-10 minutes to thoughtfully answer the questions below. Your responses will be
+                        used to create a Member Spotlight feature across MTA platforms.
+                      </p>
+                      <p className="text-muted-foreground">Answer with depth, authenticity, and ownership.</p>
+                    </div>
+
                     <div className="space-y-3">
                       <Label>Headshot (required)</Label>
                       <div className="flex items-center gap-4">
@@ -563,7 +623,7 @@ export default function Profile() {
                         onChange={(e) => setSpotlightShortBio(e.target.value)}
                         rows={3}
                         maxLength={320}
-                        placeholder="Who you are and what people should know"
+                        placeholder="A short paragraph that introduces who you are."
                       />
                     </div>
 
@@ -580,9 +640,9 @@ export default function Profile() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>About You (optional, 3-5 points)</Label>
+                      <Label>ABOUT YOU: If you had to describe who you are and what you do in 3-5 bullet points, what would they be?</Label>
                       <p className="text-xs text-muted-foreground">
-                        Add a few quick points to help others know you better.
+                        Think roles, passions, career, mission, or anything that showcases who you are.
                       </p>
                       <div className="space-y-2">
                         {spotlightAboutYouPoints.map((point, index) => (
@@ -590,7 +650,7 @@ export default function Profile() {
                             <Input
                               value={point}
                               onChange={(event) => updateAboutYouPoint(index, event.target.value)}
-                              placeholder="Write a short bullet point"
+                              placeholder="Add a bullet point about you"
                             />
                             {spotlightAboutYouPoints.length > 1 && (
                               <Button
@@ -619,26 +679,26 @@ export default function Profile() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="spotlightArenaMeaning">What has Men in the Arena meant for you?</Label>
+                      <Label htmlFor="spotlightArenaMeaning">What Does Being a Man in the Arena Mean to You?</Label>
                       <Textarea
                         id="spotlightArenaMeaning"
                         value={spotlightArenaMeaning}
                         onChange={(event) => setSpotlightArenaMeaning(event.target.value)}
-                        rows={3}
+                        rows={4}
                         maxLength={500}
-                        placeholder="How this community has changed you"
+                        placeholder="What does this identity represent in your life? How does it show up in your actions, habits, or decisions?"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="spotlightAccomplishments">Favorite accomplishments</Label>
+                      <Label htmlFor="spotlightAccomplishments">Favorite Accomplishments in the Arena</Label>
                       <Textarea
                         id="spotlightAccomplishments"
                         value={spotlightAccomplishments}
                         onChange={(event) => setSpotlightAccomplishments(event.target.value)}
                         rows={3}
                         maxLength={500}
-                        placeholder="Recent wins, moments, and moments of growth"
+                        placeholder="What are a few accomplishments you are proud of (fitness, business, personal growth, leadership, etc.)?"
                       />
                     </div>
 
@@ -681,11 +741,32 @@ export default function Profile() {
                     <div className="space-y-2">
                       <Label>Spotlight Photos (optional, up to 3)</Label>
                       <p className="text-xs text-muted-foreground">
-                        These appear with your spotlight, in addition to your headshot.
+                        You can keep up to 4 total photos in your profile, including your headshot.
                       </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => spotlightPhotoInputRef.current?.click()}
+                        disabled={uploadPhoto.isPending || totalPhotoCount >= MAX_TOTAL_PROFILE_PHOTOS}
+                      >
+                        {uploadPhoto.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Upload className="h-4 w-4 mr-2" />
+                        )}
+                        Upload spotlight photo
+                      </Button>
+                      <input
+                        ref={spotlightPhotoInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleUploadSpotlightPhoto}
+                      />
                       {availableSpotlightPhotos.length === 0 ? (
                         <p className="text-sm text-muted-foreground">
-                          No extra photos yet. Upload photos to your profile first if you want to add more.
+                          No extra photos yet. Upload photos here to add up to 3 spotlight photos.
                         </p>
                       ) : (
                         <div className="grid grid-cols-3 gap-2">
@@ -756,7 +837,7 @@ export default function Profile() {
                           I consent to public display of this spotlight profile.
                         </Label>
                         <p className="text-xs text-muted-foreground">
-                          Required before submission. Admins review your profile before publishing.
+                          Required before submission.
                         </p>
                       </div>
                     </div>
@@ -784,7 +865,7 @@ export default function Profile() {
                         disabled={submitSpotlight.isPending || saveSpotlightDraft.isPending}
                       >
                         {submitSpotlight.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                        Submit for Review
+                        Submit
                       </Button>
                       <Button type="button" variant="ghost" asChild>
                         <Link to="/brotherhood">View Public Directory</Link>
