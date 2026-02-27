@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useDeleteFeaturedEvent,
@@ -88,6 +89,8 @@ interface FeaturedEventForm {
   retreat_gallery_body: string;
   retreat_gallery_images: string;
 }
+
+type ImageField = "hero_image_url" | "cover_image_url" | "image_url";
 
 const EDITOR_STEPS = ["Event Setup", "Page Content", "Images", "Publish"] as const;
 
@@ -538,6 +541,7 @@ export default function AdminFeaturedEvents() {
   const [activeStep, setActiveStep] = useState(0);
   const [form, setForm] = useState<FeaturedEventForm>(createBlankForm("challenge"));
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [uploadingImageField, setUploadingImageField] = useState<ImageField | null>(null);
 
   const { data: editingBlocks = [], isLoading: blocksLoading } = useFeaturedEventBlocks(editingEventId);
 
@@ -581,6 +585,47 @@ export default function AdminFeaturedEvents() {
 
   function previousStep() {
     setActiveStep((previous) => Math.max(previous - 1, 0));
+  }
+
+  async function handleImageUpload(field: ImageField, file: File | null) {
+    if (!file) return;
+
+    try {
+      setUploadingImageField(field);
+
+      const fileExt = file.name.split(".").pop() || "jpg";
+      const safeSlug = normalizeSlug(form.slug) || "draft-event";
+      const filePath = `featured-events/${safeSlug}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("member-photos")
+        .upload(filePath, file, { upsert: false });
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("member-photos").getPublicUrl(filePath);
+
+      setForm((previous) => ({
+        ...previous,
+        [field]: publicUrl,
+        ...(field === "hero_image_url" && !previous.image_url ? { image_url: publicUrl } : {}),
+      }));
+
+      toast({
+        title: "Image uploaded",
+        description: "Image URL has been filled in for this event.",
+      });
+    } catch (error: unknown) {
+      toast({
+        title: "Image upload failed",
+        description: error instanceof Error ? error.message : "Please try uploading again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImageField(null);
+    }
   }
 
   async function handleSave() {
@@ -1263,6 +1308,15 @@ export default function AdminFeaturedEvents() {
                       onChange={(event) => setForm((previous) => ({ ...previous, hero_image_url: event.target.value }))}
                       placeholder="https://..."
                     />
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingImageField !== null}
+                      onChange={(event) => void handleImageUpload("hero_image_url", event.target.files?.[0] ?? null)}
+                    />
+                    {uploadingImageField === "hero_image_url" ? (
+                      <p className="text-xs text-muted-foreground">Uploading hero image...</p>
+                    ) : null}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="cover_image_url">Cover image URL *</Label>
@@ -1272,6 +1326,15 @@ export default function AdminFeaturedEvents() {
                       onChange={(event) => setForm((previous) => ({ ...previous, cover_image_url: event.target.value }))}
                       placeholder="https://..."
                     />
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingImageField !== null}
+                      onChange={(event) => void handleImageUpload("cover_image_url", event.target.files?.[0] ?? null)}
+                    />
+                    {uploadingImageField === "cover_image_url" ? (
+                      <p className="text-xs text-muted-foreground">Uploading cover image...</p>
+                    ) : null}
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
@@ -1282,6 +1345,15 @@ export default function AdminFeaturedEvents() {
                       onChange={(event) => setForm((previous) => ({ ...previous, image_url: event.target.value }))}
                       placeholder="https://..."
                     />
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingImageField !== null}
+                      onChange={(event) => void handleImageUpload("image_url", event.target.files?.[0] ?? null)}
+                    />
+                    {uploadingImageField === "image_url" ? (
+                      <p className="text-xs text-muted-foreground">Uploading fallback image...</p>
+                    ) : null}
                   </div>
                 </div>
 
@@ -1331,18 +1403,23 @@ export default function AdminFeaturedEvents() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="publish-start">Publish visibility window</Label>
+                    <Label htmlFor="publish-start">Visibility dates (optional)</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Set when this page should appear and disappear. Leave blank to keep it visible while published.
+                    </p>
                     <div className="grid grid-cols-2 gap-2">
                       <Input
                         id="publish-start"
                         type="datetime-local"
                         value={form.start_at}
+                        aria-label="Visible from"
                         onChange={(event) => setForm((previous) => ({ ...previous, start_at: event.target.value }))}
                       />
                       <Input
                         id="publish-end"
                         type="datetime-local"
                         value={form.end_at}
+                        aria-label="Visible until"
                         onChange={(event) => setForm((previous) => ({ ...previous, end_at: event.target.value }))}
                       />
                     </div>
