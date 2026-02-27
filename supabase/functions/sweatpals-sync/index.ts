@@ -71,7 +71,27 @@ interface IngestionRunInput {
   unmapped_events?: number;
   error_count?: number;
   errors?: unknown[];
-  result_payload?: Record<string, unknown>;
+  result_payload?: unknown;
+}
+
+interface SweatpalsPublicUser {
+  id?: string;
+  userName?: string;
+  [key: string]: unknown;
+}
+
+interface SweatpalsPublicEvent {
+  [key: string]: unknown;
+}
+
+interface ScheduleSyncResult {
+  status: "ok" | "dry_run";
+  fetched: number;
+  upserted: number;
+  workouts: number;
+  from: string;
+  community_username: string;
+  community_id: string;
 }
 
 const corsHeaders = {
@@ -79,7 +99,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-sync-secret",
 };
 
-const WEBHOOK_ALLOWED_ACTIONS = new Set(["health", "ingest"]);
+const DEFAULT_SWEATPALS_API_BASE = "https://ilove.sweatpals.com/api";
+const DEFAULT_SCHEDULE_LIMIT = 100;
+const MAX_SCHEDULE_LIMIT = 200;
+const DEFAULT_AUTO_SYNC_MINUTES = 120;
+
+const WEBHOOK_ALLOWED_ACTIONS = new Set(["health", "ingest", "sync_schedule"]);
+const PUBLIC_READ_ACTIONS = new Set([
+  "public_schedule",
+  "public_next_workout",
+]);
 const ADMIN_ONLY_ACTIONS = new Set([
   "test_ingest",
   "replay",
@@ -280,6 +309,324 @@ function extractEventName(payload: Record<string, unknown>): string | null {
   );
 }
 
+function parseEventDate(value: string | null): string | null {
+  if (!value) return null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const parsedShortDate = new Date(`${value}T12:00:00Z`);
+    return Number.isNaN(parsedShortDate.getTime()) ? null : parsedShortDate.toISOString();
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString();
+}
+
+function isWorkoutLikeEvent(name: string | null, alias: string | null): boolean {
+  const combined = `${name || ""} ${alias || ""}`.toLowerCase();
+  return (
+    combined.includes("workout") ||
+    combined.includes("mta") ||
+    combined.includes("men-in-the-arena") ||
+    combined.includes("men in the arena")
+  );
+}
+
+function clampLimit(value: unknown, defaultValue: number, maxValue: number): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return defaultValue;
+  const rounded = Math.floor(numeric);
+  return Math.min(Math.max(rounded, 1), maxValue);
+}
+
+function clampAutoSyncMinutes(value: unknown): number {
+  return clampLimit(value, DEFAULT_AUTO_SYNC_MINUTES, 24 * 60);
+}
+
+function getSweatpalsApiBase(rawValue: unknown): string {
+  const value = pickString(rawValue, Deno.env.get("SWEATPALS_API_BASE"), DEFAULT_SWEATPALS_API_BASE) || DEFAULT_SWEATPALS_API_BASE;
+  return value.replace(/\/+$/, "");
+}
+
+function mapEventRouteSegment(eventType: string | null): string {
+  const normalized = (eventType || "").toLowerCase();
+  if (normalized === "class") return "class";
+  if (normalized === "retreat") return "retreat";
+  if (normalized === "challenge") return "challenge";
+  return "event";
+}
+
+function buildSweatpalsEventUrls(
+  alias: string | null,
+  eventType: string | null,
+  shortLocalInstance: string | null,
+): { event_url: string | null; checkout_url: string | null } {
+  if (!alias) {
+    return { event_url: null, checkout_url: null };
+  }
+
+  const routeSegment = mapEventRouteSegment(eventType);
+  const basePath = shortLocalInstance
+    ? `/${routeSegment}/${alias}/${shortLocalInstance}`
+    : `/${routeSegment}/${alias}`;
+  const siteBase = "https://www.sweatpals.com";
+
+  return {
+    event_url: `${siteBase}${basePath}`,
+    checkout_url: `${siteBase}${basePath}/checkout`,
+  };
+}
+
+async function fetchJsonFromSweatpals<T>(url: string, init: RequestInit = {}): Promise<T> {
+  const headers = new Headers(init.headers);
+  if (!headers.has("Accept")) headers.set("Accept", "application/json");
+
+  const response = await fetch(url, {
+    ...init,
+    headers,
+  });
+
+  const bodyText = await response.text();
+  if (!response.ok) {
+    const trimmedBody = bodyText.length > 300 ? `${bodyText.slice(0, 300)}...` : bodyText;
+    throw new Error(`SweatPals API request failed (${response.status}): ${trimmedBody || response.statusText}`);
+  }
+
+  if (!bodyText) return {} as T;
+
+  try {
+    return JSON.parse(bodyText) as T;
+  } catch {
+    throw new Error(`SweatPals API returned invalid JSON for: ${url}`);
+  }
+}
+
+function normalizeScheduleEventRow(
+  event: SweatpalsPublicEvent,
+  communityUsername: string,
+  communityId: string,
+): Record<string, unknown> | null {
+  const externalEventId = pickString(
+    event.baseId,
+    event.base_id,
+    event.external_event_id,
+    event.id,
+  );
+  const title = pickString(event.name, event.title, event.event_name);
+  const alias = pickString(event.alias, event.event_alias, event.eventAlias);
+  const eventType = pickString(event.eventType, event.event_type, event.type) || "EVENT";
+
+  const startsAt = parseEventDate(
+    pickString(
+      event.instance,
+      event.instanceStartDate,
+      event.startDate,
+      event.start_date,
+      event.event_full_date,
+      event.event_date,
+    ),
+  );
+
+  if (!externalEventId || !title || !startsAt) {
+    return null;
+  }
+
+  const endsAt = parseEventDate(
+    pickString(
+      event.instanceEndDate,
+      event.endDate,
+      event.end_date,
+      event.event_full_end_date,
+    ),
+  );
+
+  const shortLocalInstance = pickString(event.shortLocalInstance, event.event_short_date);
+  const defaultUrls = buildSweatpalsEventUrls(alias, eventType, shortLocalInstance);
+
+  const onlineUrl = pickString(event.onlineUrl, event.online_url);
+  const eventUrl = pickString(event.deepLink, event.event_url, defaultUrls.event_url, onlineUrl);
+  const checkoutUrl = pickString(event.checkout_url, defaultUrls.checkout_url);
+
+  return {
+    provider: "sweatpals",
+    community_username: communityUsername,
+    community_id: communityId,
+    external_event_id: externalEventId,
+    alias,
+    title,
+    event_type: eventType,
+    starts_at: startsAt,
+    ends_at: endsAt,
+    timezone: pickString(event.tzid, event.timezone),
+    location: pickString(event.addressName, event.address_name, event.location),
+    image_url: pickString(event.image_url, event.imageUrl, event.avatar_url, event.avatarUrl),
+    event_url: eventUrl,
+    checkout_url: checkoutUrl,
+    is_workout: isWorkoutLikeEvent(title, alias),
+    payload_json: event,
+    synced_at: new Date().toISOString(),
+  };
+}
+
+async function syncSweatpalsSchedule(
+  supabase: SupabaseClient,
+  input: {
+    communityUsername: string;
+    periodFrom: string;
+    limit: number;
+    dryRun: boolean;
+    apiBase: string;
+  },
+): Promise<ScheduleSyncResult> {
+  const profileUrl =
+    `${input.apiBase}/users/username/${encodeURIComponent(input.communityUsername)}` +
+    "?withEventsCount=true&withFriendsAndFollowersCount=true&withFriendsAndFollowersList=false";
+
+  const communityProfile = await fetchJsonFromSweatpals<SweatpalsPublicUser>(profileUrl);
+  const communityId = pickString(communityProfile.id);
+  if (!communityId) {
+    throw new Error("Unable to resolve SweatPals community profile id.");
+  }
+
+  const events = await fetchJsonFromSweatpals<SweatpalsPublicEvent[]>(
+    `${input.apiBase}/events/public/search`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        creatorsIds: [communityId],
+        periodFrom: input.periodFrom,
+        limit: input.limit,
+        withUnverifiedEvents: true,
+      }),
+    },
+  );
+
+  const rowsByKey = new Map<string, Record<string, unknown>>();
+  let workoutCount = 0;
+
+  for (const event of events ?? []) {
+    const row = normalizeScheduleEventRow(event, input.communityUsername, communityId);
+    if (!row) continue;
+
+    if (row.is_workout === true) workoutCount += 1;
+
+    const key = `${row.provider}:${row.external_event_id}:${row.starts_at}`;
+    if (!rowsByKey.has(key)) {
+      rowsByKey.set(key, row);
+      continue;
+    }
+
+    const existing = rowsByKey.get(key);
+    const existingCheckoutUrl = pickString(existing?.checkout_url);
+    const incomingCheckoutUrl = pickString(row.checkout_url);
+    if (!existingCheckoutUrl && incomingCheckoutUrl) {
+      rowsByKey.set(key, row);
+    }
+  }
+
+  const rows = [...rowsByKey.values()];
+
+  if (input.dryRun) {
+    return {
+      status: "dry_run",
+      fetched: rows.length,
+      upserted: rows.length,
+      workouts: workoutCount,
+      from: input.periodFrom,
+      community_username: input.communityUsername,
+      community_id: communityId,
+    };
+  }
+
+  const upsertResult = await supabase
+    .from("sweatpals_schedule_events")
+    .upsert(rows, { onConflict: "provider,external_event_id,starts_at" })
+    .select("id");
+
+  if (upsertResult.error) throw upsertResult.error;
+
+  return {
+    status: "ok",
+    fetched: rows.length,
+    upserted: upsertResult.data?.length ?? 0,
+    workouts: workoutCount,
+    from: input.periodFrom,
+    community_username: input.communityUsername,
+    community_id: communityId,
+  };
+}
+
+async function maybeAutoSyncSchedule(
+  supabase: SupabaseClient,
+  input: {
+    communityUsername: string;
+    periodFrom: string;
+    apiBase: string;
+    autoSyncMinutes: number;
+    sourceAction: string;
+  },
+): Promise<void> {
+  const latestSyncResult = await supabase
+    .from("sweatpals_schedule_events")
+    .select("synced_at, updated_at")
+    .eq("provider", "sweatpals")
+    .eq("community_username", input.communityUsername)
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latestSyncResult.error) {
+    console.error("Failed to check schedule freshness", latestSyncResult.error.message);
+  } else {
+    const latestSyncAt = pickString(
+      latestSyncResult.data?.synced_at,
+      latestSyncResult.data?.updated_at,
+    );
+    if (latestSyncAt) {
+      const latest = new Date(latestSyncAt).getTime();
+      const cutoff = Date.now() - input.autoSyncMinutes * 60 * 1000;
+      if (!Number.isNaN(latest) && latest > cutoff) {
+        return;
+      }
+    }
+  }
+
+  try {
+    const result = await syncSweatpalsSchedule(supabase, {
+      communityUsername: input.communityUsername,
+      periodFrom: input.periodFrom,
+      limit: DEFAULT_SCHEDULE_LIMIT,
+      dryRun: false,
+      apiBase: input.apiBase,
+    });
+
+    await writeIngestionRun(supabase, {
+      provider: "sweatpals",
+      action: "sync_schedule",
+      status: "ok",
+      triggered_by: "public_auto_sync",
+      event_count: result.fetched,
+      inserted_external_events: result.upserted,
+      result_payload: {
+        source_action: input.sourceAction,
+        ...result,
+      },
+    });
+  } catch (error) {
+    console.error("Auto schedule sync failed", error instanceof Error ? error.message : error);
+    await writeIngestionRun(supabase, {
+      provider: "sweatpals",
+      action: "sync_schedule",
+      status: "error",
+      triggered_by: "public_auto_sync",
+      error_count: 1,
+      errors: [error instanceof Error ? error.message : "Unexpected auto sync error"],
+      result_payload: { source_action: input.sourceAction },
+    });
+  }
+}
+
 async function resolveAuth(
   req: Request,
   supabase: AnySupabaseClient,
@@ -366,8 +713,11 @@ async function loadEventMappings(
   if (error) throw error;
 
   for (const row of data ?? []) {
-    if (!row.featured_event_id) continue;
-    mappingByKey.set(`${row.provider}:${row.external_event_id}`, row.featured_event_id);
+    const mappedProvider = pickString(row.provider);
+    const mappedExternalEventId = pickString(row.external_event_id);
+    const mappedFeaturedEventId = pickString(row.featured_event_id);
+    if (!mappedProvider || !mappedExternalEventId || !mappedFeaturedEventId) continue;
+    mappingByKey.set(`${mappedProvider}:${mappedExternalEventId}`, mappedFeaturedEventId);
   }
 
   return mappingByKey;
@@ -390,9 +740,13 @@ async function loadExistingIdentities(
   if (error) throw error;
 
   for (const row of data ?? []) {
-    identities.set(`${row.provider}:${row.external_member_id}`, {
-      profile_id: row.profile_id,
-      linked_at: row.linked_at,
+    const mappedProvider = pickString(row.provider);
+    const mappedExternalMemberId = pickString(row.external_member_id);
+    if (!mappedProvider || !mappedExternalMemberId) continue;
+
+    identities.set(`${mappedProvider}:${mappedExternalMemberId}`, {
+      profile_id: pickString(row.profile_id),
+      linked_at: pickString(row.linked_at),
     });
   }
 
@@ -415,8 +769,11 @@ async function findProfilesByEmail(
         .limit(1)
         .maybeSingle();
 
-      if (error || !data?.id || !data.email) return;
-      results.set(data.email.toLowerCase(), data.id);
+      if (error || !data) return;
+      const profileId = pickString(data.id);
+      const profileEmail = pickString(data.email);
+      if (!profileId || !profileEmail) return;
+      results.set(profileEmail.toLowerCase(), profileId);
     }),
   );
 
@@ -628,26 +985,45 @@ serve(async (req) => {
       auth: { persistSession: false },
     });
 
-    const authResult = await resolveAuth(req, supabase);
-    if (!authResult.ok) {
-      return jsonResponse({ error: authResult.error }, authResult.status);
-    }
-
     const body = await req.json().catch(() => ({} as Record<string, unknown>));
     let action = String(body?.action || "health").toLowerCase();
     if (action === "sync") action = "ingest";
 
-    if (authResult.mode === "sync_secret" && !WEBHOOK_ALLOWED_ACTIONS.has(action)) {
+    const isPublicReadAction = PUBLIC_READ_ACTIONS.has(action);
+    let authMode: AuthMode | null = null;
+
+    if (!isPublicReadAction) {
+      const authResult = await resolveAuth(req, supabase);
+      if (!authResult.ok) {
+        const failedAuth = authResult as AuthResultFail;
+        return jsonResponse({ error: failedAuth.error }, failedAuth.status);
+      }
+
+      authMode = authResult.mode;
+    }
+
+    if (authMode === "sync_secret" && !WEBHOOK_ALLOWED_ACTIONS.has(action)) {
       return jsonResponse({ error: "Action not allowed for sync-secret clients" }, 403);
     }
 
-    if (ADMIN_ONLY_ACTIONS.has(action) && authResult.mode !== "admin_jwt") {
+    if (ADMIN_ONLY_ACTIONS.has(action) && authMode !== "admin_jwt") {
       return jsonResponse({ error: "Admin access required for this action" }, 403);
     }
 
     if (action === "health") {
       const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const [externalCount, attendanceCount, eventRollupCount, memberRollupCount, lastSyncRow, ingestedLast24h, unmappedCount] =
+      const [
+        externalCount,
+        attendanceCount,
+        eventRollupCount,
+        memberRollupCount,
+        lastSyncRow,
+        ingestedLast24h,
+        unmappedCount,
+        scheduleCount,
+        workoutScheduleCount,
+        lastScheduleSyncRow,
+      ] =
         await Promise.all([
           supabase.from("external_events").select("id", { count: "exact", head: true }),
           supabase.from("event_attendance_facts").select("id", { count: "exact", head: true }),
@@ -668,6 +1044,17 @@ serve(async (req) => {
             .select("id", { count: "exact", head: true })
             .is("event_id", null)
             .not("event_type", "like", "member_%"),
+          supabase.from("sweatpals_schedule_events").select("id", { count: "exact", head: true }),
+          supabase
+            .from("sweatpals_schedule_events")
+            .select("id", { count: "exact", head: true })
+            .eq("is_workout", true),
+          supabase
+            .from("sweatpals_schedule_events")
+            .select("synced_at, updated_at")
+            .order("synced_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
         ]);
 
       let lastWebhookAt: string | null = null;
@@ -712,10 +1099,365 @@ serve(async (req) => {
         attendance_facts_count: attendanceCount.count ?? 0,
         event_rollups_count: eventRollupCount.count ?? 0,
         member_rollups_count: memberRollupCount.count ?? 0,
+        schedule_events_count: scheduleCount.count ?? 0,
+        schedule_workouts_count: workoutScheduleCount.count ?? 0,
+        schedule_last_synced_at: pickString(
+          lastScheduleSyncRow.data?.synced_at,
+          lastScheduleSyncRow.data?.updated_at,
+        ),
         ingested_last_24h: ingestedLast24h.count ?? 0,
         unmapped_external_events: unmappedCount.count ?? 0,
         errors_last_24h: errorsLast24h,
         recent_runs: recentRuns,
+      });
+    }
+
+    if (action === "sync_schedule") {
+      const communityUsername = pickString(
+        body?.community_username,
+        Deno.env.get("SWEATPALS_COMMUNITY_USERNAME"),
+        "Men_In_The_Arena",
+      );
+      const periodFrom =
+        parseEventDate(pickString(body?.period_from, body?.from)) || new Date().toISOString();
+      const limit = clampLimit(body?.limit, DEFAULT_SCHEDULE_LIMIT, MAX_SCHEDULE_LIMIT);
+      const dryRun = Boolean(body?.dry_run);
+      const apiBase = getSweatpalsApiBase(body?.api_base);
+
+      if (!communityUsername) {
+        return jsonResponse({ error: "community_username is required" }, 400);
+      }
+
+      try {
+        const result = await syncSweatpalsSchedule(supabase, {
+          communityUsername,
+          periodFrom,
+          limit,
+          dryRun,
+          apiBase,
+        });
+
+        await writeIngestionRun(supabase, {
+          provider: "sweatpals",
+          action: "sync_schedule",
+          status: "ok",
+          triggered_by: authMode === "sync_secret" ? "webhook" : "admin_schedule_sync",
+          event_count: result.fetched,
+          inserted_external_events: result.upserted,
+          unmapped_events: 0,
+          result_payload: result,
+        });
+
+        return jsonResponse(result);
+      } catch (error) {
+        await writeIngestionRun(supabase, {
+          provider: "sweatpals",
+          action: "sync_schedule",
+          status: "error",
+          triggered_by: authMode === "sync_secret" ? "webhook" : "admin_schedule_sync",
+          error_count: 1,
+          errors: [error instanceof Error ? error.message : "Unexpected error"],
+        });
+        throw error;
+      }
+    }
+
+    if (action === "public_schedule") {
+      const communityUsername = pickString(
+        body?.community_username,
+        Deno.env.get("SWEATPALS_COMMUNITY_USERNAME"),
+        "Men_In_The_Arena",
+      );
+      const fromIso = parseEventDate(pickString(body?.from, body?.period_from)) || new Date().toISOString();
+      const limit = clampLimit(body?.limit, 30, MAX_SCHEDULE_LIMIT);
+      const workoutsOnly = body?.workouts_only === undefined ? false : Boolean(body?.workouts_only);
+      const autoSyncMinutes = clampAutoSyncMinutes(
+        body?.auto_sync_minutes ?? Deno.env.get("SWEATPALS_SCHEDULE_AUTO_SYNC_MINUTES"),
+      );
+      const apiBase = getSweatpalsApiBase(body?.api_base);
+
+      if (communityUsername) {
+        await maybeAutoSyncSchedule(supabase, {
+          communityUsername,
+          periodFrom: fromIso,
+          apiBase,
+          autoSyncMinutes,
+          sourceAction: "public_schedule",
+        });
+      }
+
+      let scheduleQuery = supabase
+        .from("sweatpals_schedule_events")
+        .select("external_event_id, title, starts_at, ends_at, location, image_url, event_url, checkout_url, alias, event_type, is_workout")
+        .eq("provider", "sweatpals")
+        .gte("starts_at", fromIso)
+        .order("starts_at", { ascending: true })
+        .limit(limit);
+
+      if (communityUsername) {
+        scheduleQuery = scheduleQuery.eq("community_username", communityUsername);
+      }
+
+      if (workoutsOnly) {
+        scheduleQuery = scheduleQuery.eq("is_workout", true);
+      }
+
+      const scheduleResult = await scheduleQuery;
+      if (scheduleResult.error) {
+        console.error("public_schedule query failed", scheduleResult.error.message);
+        return jsonResponse({
+          status: "ok",
+          items: [],
+          from: fromIso,
+          workouts_only: workoutsOnly,
+        });
+      }
+
+      return jsonResponse({
+        status: "ok",
+        from: fromIso,
+        workouts_only: workoutsOnly,
+        items: (scheduleResult.data ?? []).map((row) => ({
+          external_event_id: row.external_event_id,
+          title: row.title,
+          starts_at: row.starts_at,
+          ends_at: row.ends_at,
+          location: row.location,
+          image_url: row.image_url,
+          event_url: row.event_url,
+          checkout_url: row.checkout_url,
+          event_alias: row.alias,
+          event_type: row.event_type,
+          is_workout: row.is_workout,
+        })),
+      });
+    }
+
+    if (action === "public_next_workout") {
+      const now = new Date();
+      const communityUsername = pickString(
+        body?.community_username,
+        Deno.env.get("SWEATPALS_COMMUNITY_USERNAME"),
+        "Men_In_The_Arena",
+      );
+      const periodFrom =
+        parseEventDate(pickString(body?.from, body?.period_from)) || now.toISOString();
+      const autoSyncMinutes = clampAutoSyncMinutes(
+        body?.auto_sync_minutes ?? Deno.env.get("SWEATPALS_SCHEDULE_AUTO_SYNC_MINUTES"),
+      );
+      const apiBase = getSweatpalsApiBase(body?.api_base);
+
+      if (communityUsername) {
+        await maybeAutoSyncSchedule(supabase, {
+          communityUsername,
+          periodFrom,
+          apiBase,
+          autoSyncMinutes,
+          sourceAction: "public_next_workout",
+        });
+      }
+
+      let scheduleQuery = supabase
+        .from("sweatpals_schedule_events")
+        .select("external_event_id, title, starts_at, ends_at, location, alias, event_url, checkout_url")
+        .eq("provider", "sweatpals")
+        .eq("is_workout", true)
+        .gte("starts_at", now.toISOString())
+        .order("starts_at", { ascending: true })
+        .limit(1);
+
+      if (communityUsername) {
+        scheduleQuery = scheduleQuery.eq("community_username", communityUsername);
+      }
+
+      const scheduleResult = await scheduleQuery.maybeSingle();
+
+      if (!scheduleResult.error && scheduleResult.data) {
+        const externalEventId = scheduleResult.data.external_event_id;
+        let featuredEventId: string | null = null;
+        let destinationPath: string | null = null;
+        let destinationUrl: string | null = pickString(
+          scheduleResult.data.checkout_url,
+          scheduleResult.data.event_url,
+        );
+
+        const mappingResult = await supabase
+          .from("external_event_mappings")
+          .select("featured_event_id")
+          .eq("provider", "sweatpals")
+          .eq("external_event_id", externalEventId)
+          .eq("is_active", true)
+          .limit(1)
+          .maybeSingle();
+
+        if (!mappingResult.error) {
+          featuredEventId = pickString(mappingResult.data?.featured_event_id);
+        }
+
+        if (featuredEventId) {
+          const featuredEventResult = await supabase
+            .from("featured_events")
+            .select("event_path, hero_cta_url, registration_url")
+            .eq("id", featuredEventId)
+            .maybeSingle();
+
+          if (!featuredEventResult.error && featuredEventResult.data) {
+            destinationPath = pickString(featuredEventResult.data.event_path) || null;
+            destinationUrl = pickString(
+              featuredEventResult.data.hero_cta_url,
+              featuredEventResult.data.registration_url,
+              destinationUrl,
+            ) || null;
+          }
+        }
+
+        return jsonResponse({
+          status: "ok",
+          item: {
+            external_event_id: externalEventId,
+            featured_event_id: featuredEventId,
+            title: scheduleResult.data.title,
+            starts_at: scheduleResult.data.starts_at,
+            ends_at: scheduleResult.data.ends_at,
+            location: scheduleResult.data.location,
+            event_alias: scheduleResult.data.alias,
+            destination_path: destinationPath,
+            destination_url: destinationUrl,
+          },
+        });
+      }
+
+      if (scheduleResult.error) {
+        console.error("public_next_workout schedule lookup failed", scheduleResult.error.message);
+      }
+
+      const externalEventsResult = await supabase
+        .from("external_events")
+        .select("external_event_id, event_id, payload_json, occurred_at, event_type")
+        .eq("provider", "sweatpals")
+        .not("external_event_id", "is", null)
+        .not("event_type", "like", "member_%")
+        .order("occurred_at", { ascending: false })
+        .limit(1000);
+
+      if (externalEventsResult.error) throw externalEventsResult.error;
+
+      type NextWorkoutCandidate = {
+        external_event_id: string;
+        featured_event_id: string | null;
+        title: string;
+        starts_at: string;
+        ends_at: string | null;
+        location: string | null;
+        event_alias: string | null;
+      };
+
+      const dedupedByExternalEvent = new Map<string, NextWorkoutCandidate>();
+
+      for (const row of externalEventsResult.data ?? []) {
+        const externalEventId =
+          typeof row.external_event_id === "string" ? row.external_event_id : null;
+        if (!externalEventId || dedupedByExternalEvent.has(externalEventId)) continue;
+
+        const payload = (row.payload_json as Record<string, unknown>) || {};
+        const eventName = extractEventName(payload);
+        const eventAlias = pickString(
+          payload.event_alias,
+          payload.alias,
+          payload.eventAlias,
+          payload["Event Alias"],
+        );
+
+        if (!isWorkoutLikeEvent(eventName, eventAlias)) continue;
+
+        const startsAt = parseEventDate(
+          pickString(
+            payload.event_full_date,
+            payload.eventFullDate,
+            payload.event_date,
+            payload.eventDate,
+            payload.start_at,
+            payload.starts_at,
+            payload.startDate,
+            payload.event_short_date,
+            payload.eventShortDate,
+            payload["Event Full Date"],
+            payload["Event Short Date"],
+          ),
+        );
+        if (!startsAt) continue;
+        if (new Date(startsAt) < now) continue;
+
+        const endsAt = parseEventDate(
+          pickString(
+            payload.event_full_end_date,
+            payload.eventFullEndDate,
+            payload.end_at,
+            payload.ends_at,
+            payload.endDate,
+            payload["Event Full End Date"],
+          ),
+        );
+
+        const location = pickString(
+          payload.event_location,
+          payload.location,
+          payload.venue_name,
+          payload.venue,
+          payload["Event Location"],
+        );
+
+        dedupedByExternalEvent.set(externalEventId, {
+          external_event_id: externalEventId,
+          featured_event_id: typeof row.event_id === "string" ? row.event_id : null,
+          title: eventName || "MTA Workout",
+          starts_at: startsAt,
+          ends_at: endsAt,
+          location,
+          event_alias: eventAlias,
+        });
+      }
+
+      const nextWorkout = [...dedupedByExternalEvent.values()]
+        .sort((a, b) => a.starts_at.localeCompare(b.starts_at))[0] || null;
+
+      if (!nextWorkout) {
+        return jsonResponse({
+          status: "ok",
+          item: null,
+        });
+      }
+
+      let destinationPath: string | null = null;
+      let destinationUrl: string | null = null;
+
+      if (nextWorkout.featured_event_id) {
+        const featuredEventResult = await supabase
+          .from("featured_events")
+          .select("event_path, hero_cta_url, registration_url")
+          .eq("id", nextWorkout.featured_event_id)
+          .maybeSingle();
+
+        if (!featuredEventResult.error && featuredEventResult.data) {
+          destinationPath = pickString(featuredEventResult.data.event_path) || null;
+          destinationUrl = pickString(
+            featuredEventResult.data.hero_cta_url,
+            featuredEventResult.data.registration_url,
+          ) || null;
+        }
+      }
+
+      if (!destinationUrl && nextWorkout.event_alias) {
+        destinationUrl = buildSweatpalsEventUrls(nextWorkout.event_alias, "event", null).event_url;
+      }
+
+      return jsonResponse({
+        status: "ok",
+        item: {
+          ...nextWorkout,
+          destination_path: destinationPath,
+          destination_url: destinationUrl,
+        },
       });
     }
 
@@ -735,7 +1477,7 @@ serve(async (req) => {
           provider: "sweatpals",
           action: "ingest",
           status: "ok",
-          triggered_by: authResult.mode === "sync_secret" ? "webhook" : "admin_ingest",
+          triggered_by: authMode === "sync_secret" ? "webhook" : "admin_ingest",
           event_count: events.length,
           inserted_external_events: result.inserted_external_events,
           inserted_attendance_facts: result.inserted_attendance_facts,
@@ -754,7 +1496,7 @@ serve(async (req) => {
           provider: "sweatpals",
           action: "ingest",
           status: "error",
-          triggered_by: authResult.mode === "sync_secret" ? "webhook" : "admin_ingest",
+          triggered_by: authMode === "sync_secret" ? "webhook" : "admin_ingest",
           event_count: events.length,
           error_count: 1,
           errors: [error instanceof Error ? error.message : "Unexpected error"],

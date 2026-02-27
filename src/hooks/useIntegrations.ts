@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 const SWEATPALS_HEALTH_QUERY_KEY = ["integrations", "sweatpals", "health"];
 const SWEATPALS_MAPPINGS_QUERY_KEY = ["integrations", "sweatpals", "mappings"];
 const SWEATPALS_UNMAPPED_QUERY_KEY = ["integrations", "sweatpals", "unmapped"];
+const SWEATPALS_NEXT_WORKOUT_QUERY_KEY = ["integrations", "sweatpals", "next-workout"];
+const SWEATPALS_SCHEDULE_QUERY_KEY = ["integrations", "sweatpals", "public-schedule"];
 
 export interface SweatpalsRunSummary {
   id: string;
@@ -29,6 +31,9 @@ export interface SweatpalsHealthResponse {
   attendance_facts_count: number;
   event_rollups_count: number;
   member_rollups_count: number;
+  schedule_events_count: number;
+  schedule_workouts_count: number;
+  schedule_last_synced_at: string | null;
   ingested_last_24h: number;
   unmapped_external_events: number;
   errors_last_24h: number;
@@ -76,6 +81,42 @@ export interface SaveMappingResponse {
   linked_attendance_facts: number;
 }
 
+export interface SweatpalsNextWorkout {
+  external_event_id: string;
+  featured_event_id: string | null;
+  title: string;
+  starts_at: string;
+  ends_at: string | null;
+  location: string | null;
+  event_alias: string | null;
+  destination_path: string | null;
+  destination_url: string | null;
+}
+
+export interface SweatpalsScheduleItem {
+  external_event_id: string;
+  title: string;
+  starts_at: string;
+  ends_at: string | null;
+  location: string | null;
+  image_url: string | null;
+  event_url: string | null;
+  checkout_url: string | null;
+  event_alias: string | null;
+  event_type: string | null;
+  is_workout: boolean;
+}
+
+export interface SweatpalsScheduleSyncResponse {
+  status: "ok" | "dry_run";
+  fetched: number;
+  upserted: number;
+  workouts: number;
+  from: string;
+  community_username: string;
+  community_id: string;
+}
+
 export function useSweatpalsHealth() {
   return useQuery({
     queryKey: SWEATPALS_HEALTH_QUERY_KEY,
@@ -95,6 +136,9 @@ export function useSweatpalsHealth() {
           attendance_facts_count: 0,
           event_rollups_count: 0,
           member_rollups_count: 0,
+          schedule_events_count: 0,
+          schedule_workouts_count: 0,
+          schedule_last_synced_at: null,
           ingested_last_24h: 0,
           unmapped_external_events: 0,
           errors_last_24h: 1,
@@ -181,6 +225,85 @@ export function useSweatpalsUnmappedEvents(limit = 25) {
       return ((data as { items?: SweatpalsUnmappedEvent[] })?.items || []) as SweatpalsUnmappedEvent[];
     },
     refetchInterval: 60_000,
+  });
+}
+
+export function useSweatpalsNextWorkout() {
+  return useQuery({
+    queryKey: SWEATPALS_NEXT_WORKOUT_QUERY_KEY,
+    queryFn: async (): Promise<SweatpalsNextWorkout | null> => {
+      const { data, error } = await supabase.functions.invoke("sweatpals-sync", {
+        body: { action: "public_next_workout" },
+      });
+
+      if (error) return null;
+      return ((data as { item?: SweatpalsNextWorkout | null })?.item ?? null) as SweatpalsNextWorkout | null;
+    },
+    staleTime: 60_000,
+  });
+}
+
+export function useSweatpalsSchedule(options?: {
+  workoutsOnly?: boolean;
+  limit?: number;
+  from?: string;
+  communityUsername?: string;
+}) {
+  const workoutsOnly = options?.workoutsOnly ?? false;
+  const limit = options?.limit ?? 30;
+  const from = options?.from;
+  const communityUsername = options?.communityUsername;
+
+  return useQuery({
+    queryKey: [...SWEATPALS_SCHEDULE_QUERY_KEY, workoutsOnly, limit, from ?? null, communityUsername ?? null],
+    queryFn: async (): Promise<SweatpalsScheduleItem[]> => {
+      const { data, error } = await supabase.functions.invoke("sweatpals-sync", {
+        body: {
+          action: "public_schedule",
+          workouts_only: workoutsOnly,
+          limit,
+          from,
+          community_username: communityUsername,
+        },
+      });
+
+      if (error) throw error;
+      return ((data as { items?: SweatpalsScheduleItem[] })?.items || []) as SweatpalsScheduleItem[];
+    },
+    staleTime: 60_000,
+  });
+}
+
+export function useSyncSweatpalsSchedule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload?: {
+      community_username?: string;
+      period_from?: string;
+      limit?: number;
+      dry_run?: boolean;
+      api_base?: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke("sweatpals-sync", {
+        body: {
+          action: "sync_schedule",
+          community_username: payload?.community_username,
+          period_from: payload?.period_from,
+          limit: payload?.limit,
+          dry_run: payload?.dry_run,
+          api_base: payload?.api_base,
+        },
+      });
+
+      if (error) throw error;
+      return data as SweatpalsScheduleSyncResponse;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: SWEATPALS_HEALTH_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: SWEATPALS_NEXT_WORKOUT_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: SWEATPALS_SCHEDULE_QUERY_KEY });
+    },
   });
 }
 

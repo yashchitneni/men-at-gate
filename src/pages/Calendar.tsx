@@ -1,43 +1,36 @@
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect } from "react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon, ChevronLeft, ExternalLink, MapPin, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
-import { useEffect } from "react";
+import { useSweatpalsSchedule } from "@/hooks/useIntegrations";
 
 const Calendar = () => {
+  const {
+    data: workouts = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useSweatpalsSchedule({
+    workoutsOnly: true,
+    limit: 60,
+  });
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-  // Workout dates for the rest of 2025
-  const workoutDates = [
-    { date: 14, month: 10 }, // November 14th (month is 0-indexed)
-    { date: 28, month: 10 }, // November 28th
-    { date: 12, month: 11 }, // December 12th
-    { date: 26, month: 11 }, // December 26th
-  ];
-
-  const months = [
-    { name: "November", days: 30, startDay: 6, month: 10 }, // November 2025 starts on Saturday (6)
-    { name: "December", days: 31, startDay: 1, month: 11 }, // December 2025 starts on Monday (1)
-  ];
-
-  const isWorkoutDate = (date: number, month: number) => {
-    return workoutDates.some(wd => wd.date === date && wd.month === month);
-  };
-
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
     <div className="min-h-screen">
       <Navigation />
-      
+
       <section className="py-20 bg-subtle-gradient">
         <div className="container px-4">
           <div className="max-w-6xl mx-auto">
-            {/* Header */}
             <div className="text-center mb-12">
               <Link to="/events">
                 <Button variant="ghost" className="mb-4">
@@ -45,96 +38,120 @@ const Calendar = () => {
                   Back to Events
                 </Button>
               </Link>
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">Workout Calendar 2025</h1>
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">Workout Calendar</h1>
               <p className="text-lg text-muted-foreground">
-                Mark your calendars for our remaining workouts this year
+                Upcoming workouts pulled from SweatPals. Click any card to register.
               </p>
             </div>
 
-            {/* Event Details */}
-            <div className="bg-card p-6 rounded-lg border mb-8">
-              <div className="flex items-start gap-4">
-                <CalendarIcon className="w-6 h-6 text-accent mt-1" />
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">Twice A Month Workout</h3>
-                  <p className="text-muted-foreground mb-2">
-                    Every Other Friday at 4:00 PM
-                  </p>
-                  <p className="text-muted-foreground mb-2">
-                    📍 Squatch Frontier Fitness, East Austin
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Led by Men in our community, join us for high intensity workouts that will also have you asking yourself hard questions and meeting/making new friends within our community.
-                  </p>
-                </div>
+            <div className="bg-card p-5 rounded-lg border mb-8 flex flex-wrap items-center gap-3 justify-between">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CalendarIcon className="w-4 h-4 text-accent" />
+                <span>Showing workouts only</span>
+                <Badge variant="secondary">SweatPals Sync</Badge>
+              </div>
+              <div>
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
               </div>
             </div>
 
-            {/* Calendar Grid */}
-            <div className="grid md:grid-cols-2 gap-8">
-              {months.map((month) => (
-                <Card key={month.name} className="overflow-hidden">
-                  <CardHeader className="bg-accent/10">
-                    <CardTitle className="text-2xl text-center">{month.name} 2025</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    {/* Day names header */}
-                    <div className="grid grid-cols-7 gap-2 mb-2">
-                      {dayNames.map(day => (
-                        <div key={day} className="text-center text-sm font-semibold text-muted-foreground py-2">
-                          {day}
+            {isLoading ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <Card key={index} className="overflow-hidden">
+                    <div className="h-56 bg-muted animate-pulse" />
+                    <CardContent className="p-5 space-y-3">
+                      <div className="h-6 w-3/4 bg-muted animate-pulse rounded" />
+                      <div className="h-4 w-2/3 bg-muted animate-pulse rounded" />
+                      <div className="h-4 w-1/2 bg-muted animate-pulse rounded" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : isError ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Unable to Load Workouts</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-muted-foreground">
+                    We could not load workout events from SweatPals right now.
+                  </p>
+                  <Button onClick={() => refetch()} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                    Try Again
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : workouts.length === 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>No Upcoming Workouts</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    No future workout events are in the schedule yet.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {workouts.map((workout) => {
+                  const startsAt = new Date(workout.starts_at);
+                  const destinationUrl =
+                    workout.checkout_url ||
+                    workout.event_url ||
+                    (workout.event_alias ? `https://www.sweatpals.com/event/${workout.event_alias}` : null);
+
+                  return (
+                    <Card key={`${workout.external_event_id}-${workout.starts_at}`} className="overflow-hidden border-2 hover:border-accent/60 transition-colors">
+                      <div className="h-56 overflow-hidden bg-muted">
+                        <img
+                          src={workout.image_url || "/placeholder.svg"}
+                          alt={workout.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                      <CardContent className="p-5 space-y-3">
+                        <h3 className="text-2xl font-semibold leading-tight">{workout.title}</h3>
+
+                        <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <CalendarIcon className="w-4 h-4 mt-0.5" />
+                          <span>
+                            {format(startsAt, "EEE, MMM d")} at {format(startsAt, "h:mm a")}
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                    
-                    {/* Calendar days */}
-                    <div className="grid grid-cols-7 gap-2">
-                      {/* Empty cells for days before month starts */}
-                      {Array.from({ length: month.startDay }).map((_, i) => (
-                        <div key={`empty-${i}`} className="aspect-square" />
-                      ))}
-                      
-                      {/* Days of the month */}
-                      {Array.from({ length: month.days }).map((_, i) => {
-                        const date = i + 1;
-                        const isWorkout = isWorkoutDate(date, month.month);
-                        
-                        return (
-                          <div
-                            key={date}
-                            className={`
-                              aspect-square flex items-center justify-center rounded-lg
-                              relative
-                              ${isWorkout 
-                                ? 'bg-accent text-accent-foreground font-bold ring-2 ring-accent' 
-                                : 'bg-muted/30 hover:bg-muted/50'
-                              }
-                            `}
-                          >
-                            <span className="text-sm">{date}</span>
-                            {isWorkout && (
-                              <div className="absolute -top-1 -right-1">
-                                <Badge className="h-4 w-4 p-0 flex items-center justify-center text-xs">
-                                  💪
-                                </Badge>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
 
-            {/* Legend */}
-            <div className="mt-8 flex justify-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded bg-accent" />
-                <span className="text-sm text-muted-foreground">Workout Day</span>
+                        {workout.location && (
+                          <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <MapPin className="w-4 h-4 mt-0.5" />
+                            <span>{workout.location}</span>
+                          </div>
+                        )}
+
+                        <div className="pt-2">
+                          {destinationUrl ? (
+                            <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                              <a href={destinationUrl} target="_blank" rel="noreferrer">
+                                View on SweatPals
+                                <ExternalLink className="w-4 h-4 ml-2" />
+                              </a>
+                            </Button>
+                          ) : (
+                            <Button disabled className="w-full">
+                              Registration link unavailable
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
-            </div>
+            )}
           </div>
         </div>
       </section>

@@ -9,6 +9,7 @@ import {
   useReplaySweatpalsRollups,
   useRunSweatpalsTestIngest,
   useSaveSweatpalsMapping,
+  useSyncSweatpalsSchedule,
   useSweatpalsHealth,
   useSweatpalsMappings,
   useSweatpalsUnmappedEvents,
@@ -34,6 +35,7 @@ export default function AdminSweatpalsIntegration() {
   const { data: unmappedEvents, isLoading: unmappedLoading } = useSweatpalsUnmappedEvents();
   const runTestIngest = useRunSweatpalsTestIngest();
   const replayRollups = useReplaySweatpalsRollups();
+  const syncSchedule = useSyncSweatpalsSchedule();
   const saveMapping = useSaveSweatpalsMapping();
   const { toast } = useToast();
 
@@ -119,6 +121,22 @@ export default function AdminSweatpalsIntegration() {
     }
   }
 
+  async function handleSyncSchedule() {
+    try {
+      const result = await syncSchedule.mutateAsync();
+      toast({
+        title: "Schedule sync complete",
+        description: `${result.upserted} schedule events synced (${result.workouts} workouts).`,
+      });
+    } catch (error) {
+      toast({
+        title: "Schedule sync failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
+  }
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -191,7 +209,18 @@ export default function AdminSweatpalsIntegration() {
                           <p className="text-xs text-muted-foreground">Attendance Facts</p>
                           <p className="text-2xl font-bold">{health?.attendance_facts_count || 0}</p>
                         </div>
+                        <div className="p-3 rounded-md bg-muted">
+                          <p className="text-xs text-muted-foreground">Schedule Events</p>
+                          <p className="text-2xl font-bold">{health?.schedule_events_count || 0}</p>
+                        </div>
+                        <div className="p-3 rounded-md bg-muted">
+                          <p className="text-xs text-muted-foreground">Schedule Workouts</p>
+                          <p className="text-2xl font-bold">{health?.schedule_workouts_count || 0}</p>
+                        </div>
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        Last schedule sync: {formatTimestamp(health?.schedule_last_synced_at || null)}
+                      </p>
                     </>
                   )}
                 </CardContent>
@@ -219,6 +248,14 @@ export default function AdminSweatpalsIntegration() {
                         <RefreshCcw className="mr-2 h-4 w-4" />
                       )}
                       Replay Rollups
+                    </Button>
+                    <Button variant="outline" onClick={handleSyncSchedule} disabled={syncSchedule.isPending}>
+                      {syncSchedule.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCcw className="mr-2 h-4 w-4" />
+                      )}
+                      Sync Schedule
                     </Button>
                   </div>
 
