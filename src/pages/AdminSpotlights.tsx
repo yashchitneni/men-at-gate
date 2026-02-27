@@ -83,7 +83,6 @@ export default function AdminSpotlights() {
 
   const incompleteProfiles = useMemo(() => {
     return allProfiles
-      .filter((p) => !p.is_admin && !p.is_super_admin)
       .filter((p) => {
         const latest = latestByProfile.get(p.id);
         if (!latest) return true;
