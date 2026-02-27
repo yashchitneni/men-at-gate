@@ -148,6 +148,97 @@ export default function Workouts() {
               </p>
             </div>
 
+            {myAssignedWorkouts.length > 0 && (
+              <Card className={myAssignedWorkouts.some((w) => w.submission?.status === 'changes_requested') ? 'border-yellow-500/50' : 'border-accent/50'}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileEdit className="h-5 w-5 text-accent" />
+                    Your Assigned Workout
+                  </CardTitle>
+                  <CardDescription>
+                    You&apos;ve been selected to lead. Submit your workout plan for review.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {myAssignedWorkouts.map((assignment) => {
+                    const submission = assignment.submission;
+                    const status = submission?.status || 'not_started';
+
+                    const statusConfig = {
+                      not_started: {
+                        label: 'Not started',
+                        variant: 'outline' as const,
+                        icon: Clock,
+                        buttonText: 'Create Workout Plan',
+                      },
+                      draft: {
+                        label: 'Draft saved',
+                        variant: 'secondary' as const,
+                        icon: FileEdit,
+                        buttonText: 'Continue Draft',
+                      },
+                      submitted: {
+                        label: 'Submitted for review',
+                        variant: 'default' as const,
+                        icon: Check,
+                        buttonText: 'View Submission',
+                      },
+                      changes_requested: {
+                        label: 'Revisions needed',
+                        variant: 'destructive' as const,
+                        icon: AlertCircle,
+                        buttonText: 'Revise Your Workout',
+                      },
+                      approved: {
+                        label: 'Approved',
+                        variant: 'default' as const,
+                        icon: Check,
+                        buttonText: 'View Approved Workout',
+                      },
+                    };
+
+                    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.not_started;
+                    const StatusIcon = config.icon;
+
+                    return (
+                      <div key={assignment.id} className="p-4 bg-accent/10 rounded-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <p className="font-semibold">
+                              {assignment.schedule_event
+                                ? format(new Date(assignment.schedule_event.starts_at), 'EEEE, MMMM d, yyyy')
+                                : 'Date TBD'}
+                            </p>
+                            <Badge variant={config.variant} className="flex items-center gap-1 w-fit">
+                              <StatusIcon className="h-3 w-3" />
+                              {config.label}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {status === 'changes_requested' && submission?.admin_feedback && (
+                          <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg space-y-1">
+                            <p className="text-sm font-semibold text-yellow-700 flex items-center gap-2">
+                              <AlertCircle className="h-4 w-4" />
+                              Admin feedback:
+                            </p>
+                            <p className="text-sm text-muted-foreground line-clamp-2">{submission.admin_feedback}</p>
+                          </div>
+                        )}
+
+                        <Button asChild className={status === 'changes_requested' ? 'w-full bg-yellow-600 hover:bg-yellow-700' : 'w-full bg-accent hover:bg-accent/90'}>
+                          <Link to={`/workout-submit/${assignment.id}`}>
+                            <StatusIcon className="mr-2 h-4 w-4" />
+                            {config.buttonText}
+                          </Link>
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
+
             <div className="grid gap-6 lg:grid-cols-2">
               <Card className="border-accent/30">
                 <CardHeader className="text-center">
@@ -338,97 +429,6 @@ export default function Workouts() {
                 </CardContent>
               </Card>
             </div>
-
-            {myAssignedWorkouts.length > 0 && (
-              <Card className={myAssignedWorkouts.some((w) => w.submission?.status === 'changes_requested') ? 'border-yellow-500/50' : 'border-accent/50'}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileEdit className="h-5 w-5 text-accent" />
-                    Your Assigned Workout
-                  </CardTitle>
-                  <CardDescription>
-                    You&apos;ve been selected to lead. Submit your workout plan for review.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {myAssignedWorkouts.map((assignment) => {
-                    const submission = assignment.submission;
-                    const status = submission?.status || 'not_started';
-
-                    const statusConfig = {
-                      not_started: {
-                        label: 'Not started',
-                        variant: 'outline' as const,
-                        icon: Clock,
-                        buttonText: 'Create Workout Plan',
-                      },
-                      draft: {
-                        label: 'Draft saved',
-                        variant: 'secondary' as const,
-                        icon: FileEdit,
-                        buttonText: 'Continue Draft',
-                      },
-                      submitted: {
-                        label: 'Submitted for review',
-                        variant: 'default' as const,
-                        icon: Check,
-                        buttonText: 'View Submission',
-                      },
-                      changes_requested: {
-                        label: 'Revisions needed',
-                        variant: 'destructive' as const,
-                        icon: AlertCircle,
-                        buttonText: 'Revise Your Workout',
-                      },
-                      approved: {
-                        label: 'Approved',
-                        variant: 'default' as const,
-                        icon: Check,
-                        buttonText: 'View Approved Workout',
-                      },
-                    };
-
-                    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.not_started;
-                    const StatusIcon = config.icon;
-
-                    return (
-                      <div key={assignment.id} className="p-4 bg-accent/10 rounded-lg space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-1">
-                            <p className="font-semibold">
-                              {assignment.schedule_event
-                                ? format(new Date(assignment.schedule_event.starts_at), 'EEEE, MMMM d, yyyy')
-                                : 'Date TBD'}
-                            </p>
-                            <Badge variant={config.variant} className="flex items-center gap-1 w-fit">
-                              <StatusIcon className="h-3 w-3" />
-                              {config.label}
-                            </Badge>
-                          </div>
-                        </div>
-
-                        {status === 'changes_requested' && submission?.admin_feedback && (
-                          <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg space-y-1">
-                            <p className="text-sm font-semibold text-yellow-700 flex items-center gap-2">
-                              <AlertCircle className="h-4 w-4" />
-                              Admin feedback:
-                            </p>
-                            <p className="text-sm text-muted-foreground line-clamp-2">{submission.admin_feedback}</p>
-                          </div>
-                        )}
-
-                        <Button asChild className={status === 'changes_requested' ? 'w-full bg-yellow-600 hover:bg-yellow-700' : 'w-full bg-accent hover:bg-accent/90'}>
-                          <Link to={`/workout-submit/${assignment.id}`}>
-                            <StatusIcon className="mr-2 h-4 w-4" />
-                            {config.buttonText}
-                          </Link>
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            )}
 
             <Card>
               <CardHeader className="text-center">

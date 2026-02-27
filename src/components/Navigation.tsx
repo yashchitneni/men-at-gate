@@ -3,7 +3,7 @@ import { Menu, X, User, LogOut, Settings, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useMyPendingWorkoutActionCount } from "@/hooks/useWorkouts";
+import { useMyAssignedWorkouts, useMyPendingWorkoutActionCount } from "@/hooks/useWorkouts";
 import { AuthModal } from "@/components/AuthModal";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 const Navigation = () => {
@@ -16,6 +16,14 @@ const Navigation = () => {
     signOut
   } = useAuth();
   const { data: pendingWorkoutCount = 0 } = useMyPendingWorkoutActionCount();
+  const { data: myAssignedWorkouts = [] } = useMyAssignedWorkouts();
+
+  const actionableAssignment = myAssignedWorkouts.find((assignment) =>
+    !assignment.submission ||
+    assignment.submission.status === "draft" ||
+    assignment.submission.status === "changes_requested"
+  );
+  const actionableAssignmentPath = actionableAssignment ? `/workout-submit/${actionableAssignment.id}` : "/workouts";
 
   const handleSignOut = async () => {
     await signOut();
@@ -97,6 +105,17 @@ const Navigation = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {pendingWorkoutCount > 0 && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to={actionableAssignmentPath} className="flex items-center">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Create Workout Plan ({pendingWorkoutCount})
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="flex items-center">
                       <User className="h-4 w-4 mr-2" />
@@ -145,8 +164,8 @@ const Navigation = () => {
               Brotherhood
             </Link>
             {pendingWorkoutCount > 0 && (
-              <Link to="/workouts" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
-                Workout Tasks ({pendingWorkoutCount})
+              <Link to={actionableAssignmentPath} className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
+                Create Workout Plan ({pendingWorkoutCount})
               </Link>
             )}
             <Link to="/donate" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
