@@ -1,9 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, Megaphone, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Megaphone,
+  Pencil,
+  Plus,
+  Trash2,
+  ListTree,
+  Globe,
+  FileEdit,
+  Palette,
+} from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { useDeleteFeaturedEvent, useFeaturedEvents, useSaveFeaturedEvent } from "@/hooks/useFeaturedEvents";
+import {
+  useDeleteFeaturedEvent,
+  useFeaturedEventBlocks,
+  useFeaturedEvents,
+  useReplaceFeaturedEventBlocks,
+  useSaveFeaturedEvent,
+} from "@/hooks/useFeaturedEvents";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +30,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { FeaturedEvent } from "@/types/database.types";
+import {
+  buildEventPath,
+  buildTemplateBlocks,
+  normalizeSlug,
+  type FeaturedEventBlockDraft,
+  type FeaturedEventTemplateKey,
+} from "@/lib/featuredEventTemplates";
 
 type FeaturedEventForm = {
   id?: string;
@@ -28,11 +53,26 @@ type FeaturedEventForm = {
   hero_cta_url: string;
   registration_url: string;
   image_url: string;
+  hero_image_url: string;
+  cover_image_url: string;
   priority: string;
   start_at: string;
   end_at: string;
   is_active: boolean;
+  template_key: FeaturedEventTemplateKey;
+  publish_status: FeaturedEvent["publish_status"];
 };
+
+const BLOCK_TYPE_OPTIONS: FeaturedEventBlockDraft["block_type"][] = [
+  "hero",
+  "mission",
+  "spec_grid",
+  "schedule",
+  "sponsor_cta",
+  "quote",
+  "final_cta",
+  "gallery",
+];
 
 function toDatetimeLocal(value: string | null) {
   if (!value) return "";
@@ -55,15 +95,19 @@ const EMPTY_FORM: FeaturedEventForm = {
   summary: "",
   badge_text: "Featured Event",
   event_date_text: "",
-  event_path: "/events/marathon-ruck",
+  event_path: "",
   hero_cta_label: "View Event",
-  hero_cta_url: "/events/marathon-ruck",
-  registration_url: "https://www.sweatpals.com/event/the-weight-we-carry-overnight-ruck-hosted-by-mta/2026-05-01",
+  hero_cta_url: "",
+  registration_url: "",
   image_url: "",
+  hero_image_url: "",
+  cover_image_url: "",
   priority: "0",
   start_at: "",
   end_at: "",
   is_active: false,
+  template_key: "challenge",
+  publish_status: "draft",
 };
 
 function mapEventToForm(event: FeaturedEvent): FeaturedEventForm {
@@ -80,11 +124,31 @@ function mapEventToForm(event: FeaturedEvent): FeaturedEventForm {
     hero_cta_url: event.hero_cta_url,
     registration_url: event.registration_url || "",
     image_url: event.image_url || "",
+    hero_image_url: event.hero_image_url || "",
+    cover_image_url: event.cover_image_url || "",
     priority: String(event.priority ?? 0),
     start_at: toDatetimeLocal(event.start_at),
     end_at: toDatetimeLocal(event.end_at),
     is_active: !!event.is_active,
+    template_key: event.template_key,
+    publish_status: event.publish_status,
   };
+}
+
+function blockToJson(block: FeaturedEventBlockDraft): string {
+  return JSON.stringify(block.content_json, null, 2);
+}
+
+function hydrateTemplateBlocks(form: FeaturedEventForm): FeaturedEventBlockDraft[] {
+  return buildTemplateBlocks(form.template_key, {
+    title: form.title || "Untitled Event",
+    subtitle: form.subtitle,
+    summary: form.summary,
+    badgeText: form.badge_text,
+    dateText: form.event_date_text,
+    registrationUrl: form.registration_url,
+    heroImageUrl: form.hero_image_url || form.image_url,
+  });
 }
 
 export default function AdminFeaturedEvents() {
@@ -93,10 +157,15 @@ export default function AdminFeaturedEvents() {
   const { data: featuredEvents, isLoading } = useFeaturedEvents();
   const saveFeaturedEvent = useSaveFeaturedEvent();
   const deleteFeaturedEvent = useDeleteFeaturedEvent();
+  const replaceBlocks = useReplaceFeaturedEventBlocks();
   const { toast } = useToast();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FeaturedEventForm>(EMPTY_FORM);
+  const [blocks, setBlocks] = useState<FeaturedEventBlockDraft[]>(hydrateTemplateBlocks(EMPTY_FORM));
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+
+  const { data: editingBlocks, isLoading: blocksLoading } = useFeaturedEventBlocks(editingEventId);
 
   useEffect(() => {
     if (!authLoading && (!profile || !profile.is_admin)) {
@@ -104,27 +173,99 @@ export default function AdminFeaturedEvents() {
     }
   }, [authLoading, profile, navigate]);
 
+  useEffect(() => {
+    if (!editingEventId) return;
+    if (!editingBlocks) return;
+    if (!editingBlocks.length) return;
+
+    setBlocks(
+      editingBlocks
+        .sort((left, right) => left.position - right.position)
+        .map((block) => ({
+          id: block.id,
+          block_type: block.block_type,
+          position: block.position,
+          is_enabled: block.is_enabled,
+          content_json: block.content_json,
+          image_url: block.image_url,
+          image_confirmed: block.image_confirmed,
+        })),
+    );
+  }, [editingEventId, editingBlocks]);
+
   const sortedEvents = useMemo(
     () =>
       [...(featuredEvents || [])].sort((a, b) => {
         if (!!a.is_active !== !!b.is_active) return a.is_active ? -1 : 1;
+        if (a.publish_status !== b.publish_status) {
+          const rank = { published: 0, draft: 1, archived: 2 } as const;
+          return rank[a.publish_status] - rank[b.publish_status];
+        }
         return (b.priority || 0) - (a.priority || 0);
       }),
     [featuredEvents],
   );
 
   function openCreateDialog() {
-    setForm(EMPTY_FORM);
+    const createForm = {
+      ...EMPTY_FORM,
+      slug: "",
+      title: "",
+    };
+    setForm(createForm);
+    setBlocks(hydrateTemplateBlocks(createForm));
+    setEditingEventId(null);
     setDialogOpen(true);
   }
 
   function openEditDialog(event: FeaturedEvent) {
-    setForm(mapEventToForm(event));
+    const mapped = mapEventToForm(event);
+    setForm(mapped);
+    setBlocks(hydrateTemplateBlocks(mapped));
+    setEditingEventId(event.id);
     setDialogOpen(true);
   }
 
+  function updateBlock(index: number, patch: Partial<FeaturedEventBlockDraft>) {
+    setBlocks((previous) =>
+      previous.map((block, blockIndex) =>
+        blockIndex === index
+          ? {
+              ...block,
+              ...patch,
+            }
+          : block,
+      ),
+    );
+  }
+
+  function removeBlock(index: number) {
+    setBlocks((previous) => previous.filter((_, blockIndex) => blockIndex !== index));
+  }
+
+  function addBlock() {
+    setBlocks((previous) => [
+      ...previous,
+      {
+        block_type: "mission",
+        position: previous.length,
+        is_enabled: true,
+        content_json: {
+          heading: "New Section",
+          body: "Add section content",
+        },
+        image_url: null,
+        image_confirmed: false,
+      },
+    ]);
+  }
+
   async function handleSave() {
-    if (!form.slug.trim() || !form.title.trim() || !form.event_path.trim() || !form.hero_cta_url.trim()) {
+    const normalizedSlug = normalizeSlug(form.slug);
+    const eventPath = form.event_path.trim() || buildEventPath(normalizedSlug);
+    const ctaUrl = form.hero_cta_url.trim() || eventPath;
+
+    if (!normalizedSlug || !form.title.trim() || !eventPath || !ctaUrl) {
       toast({
         title: "Missing required fields",
         description: "Slug, title, event path, and hero CTA URL are required.",
@@ -133,35 +274,69 @@ export default function AdminFeaturedEvents() {
       return;
     }
 
+    if (form.publish_status === "published" && (!form.hero_image_url.trim() || !form.cover_image_url.trim())) {
+      toast({
+        title: "Missing required media",
+        description: "Hero image and cover image are required before publishing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const invalidJsonBlock = blocks.find((block) => !block.content_json);
+    if (invalidJsonBlock) {
+      toast({
+        title: "Invalid block content",
+        description: "One or more blocks has invalid content JSON.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      await saveFeaturedEvent.mutateAsync({
+      const savedEvent = await saveFeaturedEvent.mutateAsync({
         id: form.id,
-        slug: form.slug.trim(),
+        slug: normalizedSlug,
         title: form.title.trim(),
         subtitle: form.subtitle,
         summary: form.summary,
         badge_text: form.badge_text,
         event_date_text: form.event_date_text,
-        event_path: form.event_path.trim(),
+        event_path: eventPath,
         hero_cta_label: form.hero_cta_label,
-        hero_cta_url: form.hero_cta_url.trim(),
+        hero_cta_url: ctaUrl,
         registration_url: form.registration_url,
         image_url: form.image_url,
+        hero_image_url: form.hero_image_url,
+        cover_image_url: form.cover_image_url,
         priority: Number(form.priority || 0),
         start_at: fromDatetimeLocal(form.start_at),
         end_at: fromDatetimeLocal(form.end_at),
         is_active: form.is_active,
+        template_key: form.template_key,
+        publish_status: form.publish_status,
+      });
+
+      await replaceBlocks.mutateAsync({
+        featuredEventId: savedEvent.id,
+        blocks: blocks.map((block, index) => ({
+          ...block,
+          position: index,
+        })),
       });
 
       toast({
         title: "Featured event saved",
-        description: form.is_active
-          ? "Event saved and spotlight activated."
-          : "Event saved successfully.",
+        description:
+          form.publish_status === "published"
+            ? "Published and ready for /events/:slug rendering."
+            : "Draft saved successfully.",
       });
 
       setDialogOpen(false);
       setForm(EMPTY_FORM);
+      setBlocks(hydrateTemplateBlocks(EMPTY_FORM));
+      setEditingEventId(null);
     } catch (error: unknown) {
       toast({
         title: "Failed to save featured event",
@@ -217,7 +392,7 @@ export default function AdminFeaturedEvents() {
                   Featured Events
                 </h1>
                 <p className="text-muted-foreground">
-                  Control homepage spotlight events and CTA routing.
+                  Draft, publish, template, and spotlight control for event pages.
                 </p>
               </div>
               <Button onClick={openCreateDialog} className="bg-accent hover:bg-accent/90 text-accent-foreground">
@@ -247,13 +422,21 @@ export default function AdminFeaturedEvents() {
                           <CardTitle className="text-2xl">{event.title}</CardTitle>
                           <CardDescription className="mt-1">/{event.slug}</CardDescription>
                         </div>
-                        <Badge variant={event.is_active ? "default" : "secondary"}>
-                          {event.is_active ? "Active" : "Inactive"}
-                        </Badge>
+                        <div className="flex flex-col gap-2 items-end">
+                          <Badge variant={event.is_active ? "default" : "secondary"}>
+                            {event.is_active ? "Spotlight Active" : "Spotlight Inactive"}
+                          </Badge>
+                          <Badge variant={event.publish_status === "published" ? "default" : "outline"}>
+                            {event.publish_status}
+                          </Badge>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm">
                       <p className="text-muted-foreground">{event.summary || event.subtitle || "No summary"}</p>
+                      <p>
+                        <span className="font-semibold">Template:</span> {event.template_key}
+                      </p>
                       <p>
                         <span className="font-semibold">Path:</span> {event.event_path}
                       </p>
@@ -288,163 +471,364 @@ export default function AdminFeaturedEvents() {
       </section>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{form.id ? "Edit Featured Event" : "Create Featured Event"}</DialogTitle>
             <DialogDescription>
-              When active, this event can be spotlighted on the homepage.
+              Draft and publish template-based event pages. Spotlight applies only to published events.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                value={form.title}
-                onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug *</Label>
-              <Input
-                id="slug"
-                value={form.slug}
-                onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))}
-                placeholder="marathon-ruck"
-              />
-            </div>
+          <Tabs defaultValue="basics" className="mt-2">
+            <TabsList className="grid grid-cols-4 w-full">
+              <TabsTrigger value="basics"><FileEdit className="h-4 w-4 mr-2" />Basics</TabsTrigger>
+              <TabsTrigger value="template"><Palette className="h-4 w-4 mr-2" />Template</TabsTrigger>
+              <TabsTrigger value="blocks"><ListTree className="h-4 w-4 mr-2" />Blocks</TabsTrigger>
+              <TabsTrigger value="media"><Globe className="h-4 w-4 mr-2" />Media</TabsTrigger>
+            </TabsList>
 
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="subtitle">Subtitle</Label>
-              <Input
-                id="subtitle"
-                value={form.subtitle}
-                onChange={(e) => setForm((prev) => ({ ...prev, subtitle: e.target.value }))}
-              />
-            </div>
+            <TabsContent value="basics" className="space-y-4 mt-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
+                    value={form.title}
+                    onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="slug">Slug *</Label>
+                  <Input
+                    id="slug"
+                    value={form.slug}
+                    onChange={(e) => {
+                      const slug = normalizeSlug(e.target.value);
+                      setForm((prev) => ({
+                        ...prev,
+                        slug,
+                        event_path: prev.event_path || buildEventPath(slug),
+                        hero_cta_url: prev.hero_cta_url || buildEventPath(slug),
+                      }));
+                    }}
+                    placeholder="event-slug"
+                  />
+                </div>
 
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="summary">Summary</Label>
-              <Textarea
-                id="summary"
-                value={form.summary}
-                onChange={(e) => setForm((prev) => ({ ...prev, summary: e.target.value }))}
-                rows={3}
-              />
-            </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="subtitle">Subtitle</Label>
+                  <Input
+                    id="subtitle"
+                    value={form.subtitle}
+                    onChange={(e) => setForm((prev) => ({ ...prev, subtitle: e.target.value }))}
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="badge_text">Badge Text</Label>
-              <Input
-                id="badge_text"
-                value={form.badge_text}
-                onChange={(e) => setForm((prev) => ({ ...prev, badge_text: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="event_date_text">Event Date Label</Label>
-              <Input
-                id="event_date_text"
-                value={form.event_date_text}
-                onChange={(e) => setForm((prev) => ({ ...prev, event_date_text: e.target.value }))}
-                placeholder="May 1, 2026"
-              />
-            </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="summary">Summary</Label>
+                  <Textarea
+                    id="summary"
+                    value={form.summary}
+                    onChange={(e) => setForm((prev) => ({ ...prev, summary: e.target.value }))}
+                    rows={3}
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="event_path">Event Path *</Label>
-              <Input
-                id="event_path"
-                value={form.event_path}
-                onChange={(e) => setForm((prev) => ({ ...prev, event_path: e.target.value }))}
-                placeholder="/events/marathon-ruck"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Input
-                id="priority"
-                type="number"
-                value={form.priority}
-                onChange={(e) => setForm((prev) => ({ ...prev, priority: e.target.value }))}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="badge_text">Badge Text</Label>
+                  <Input
+                    id="badge_text"
+                    value={form.badge_text}
+                    onChange={(e) => setForm((prev) => ({ ...prev, badge_text: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="event_date_text">Event Date Label</Label>
+                  <Input
+                    id="event_date_text"
+                    value={form.event_date_text}
+                    onChange={(e) => setForm((prev) => ({ ...prev, event_date_text: e.target.value }))}
+                    placeholder="May 1, 2026"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="hero_cta_label">Hero CTA Label</Label>
-              <Input
-                id="hero_cta_label"
-                value={form.hero_cta_label}
-                onChange={(e) => setForm((prev) => ({ ...prev, hero_cta_label: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="hero_cta_url">Hero CTA URL *</Label>
-              <Input
-                id="hero_cta_url"
-                value={form.hero_cta_url}
-                onChange={(e) => setForm((prev) => ({ ...prev, hero_cta_url: e.target.value }))}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="event_path">Event Path *</Label>
+                  <Input
+                    id="event_path"
+                    value={form.event_path}
+                    onChange={(e) => setForm((prev) => ({ ...prev, event_path: e.target.value }))}
+                    placeholder="/events/marathon-ruck"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="priority">Priority</Label>
+                  <Input
+                    id="priority"
+                    type="number"
+                    value={form.priority}
+                    onChange={(e) => setForm((prev) => ({ ...prev, priority: e.target.value }))}
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="registration_url">Registration URL</Label>
-              <Input
-                id="registration_url"
-                value={form.registration_url}
-                onChange={(e) => setForm((prev) => ({ ...prev, registration_url: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="image_url">Image URL</Label>
-              <Input
-                id="image_url"
-                value={form.image_url}
-                onChange={(e) => setForm((prev) => ({ ...prev, image_url: e.target.value }))}
-                placeholder="https://..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="start_at">Start At</Label>
-              <Input
-                id="start_at"
-                type="datetime-local"
-                value={form.start_at}
-                onChange={(e) => setForm((prev) => ({ ...prev, start_at: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="end_at">End At</Label>
-              <Input
-                id="end_at"
-                type="datetime-local"
-                value={form.end_at}
-                onChange={(e) => setForm((prev) => ({ ...prev, end_at: e.target.value }))}
-              />
-            </div>
-
-            <div className="md:col-span-2 flex items-center justify-between rounded-md border p-3">
-              <div>
-                <p className="font-medium">Active Spotlight</p>
-                <p className="text-sm text-muted-foreground">
-                  Turning this on will automatically deactivate other events.
-                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="publish_status">Publish Status</Label>
+                  <select
+                    id="publish_status"
+                    className="h-10 rounded-md border bg-background px-3 text-sm w-full"
+                    value={form.publish_status}
+                    onChange={(event) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        publish_status: event.target.value as FeaturedEvent["publish_status"],
+                        is_active:
+                          event.target.value === "published" ? previous.is_active : false,
+                      }))
+                    }
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="template_key">Template</Label>
+                  <select
+                    id="template_key"
+                    className="h-10 rounded-md border bg-background px-3 text-sm w-full"
+                    value={form.template_key}
+                    onChange={(event) => {
+                      const template = event.target.value as FeaturedEventTemplateKey;
+                      setForm((previous) => ({ ...previous, template_key: template }));
+                      if (!form.id) {
+                        setBlocks(hydrateTemplateBlocks({ ...form, template_key: template }));
+                      }
+                    }}
+                  >
+                    <option value="challenge">Challenge</option>
+                    <option value="retreat">Retreat</option>
+                  </select>
+                </div>
               </div>
-              <Switch
-                checked={form.is_active}
-                onCheckedChange={(checked) => setForm((prev) => ({ ...prev, is_active: checked }))}
-              />
-            </div>
-          </div>
+            </TabsContent>
+
+            <TabsContent value="template" className="space-y-4 mt-4">
+              <div className="rounded-md border p-4 space-y-3">
+                <p className="font-medium">Template Preset</p>
+                <p className="text-sm text-muted-foreground">
+                  Use template defaults to regenerate starter blocks. Existing block edits will be replaced.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!window.confirm("Reset blocks to template defaults?")) return;
+                    setBlocks(hydrateTemplateBlocks(form));
+                  }}
+                >
+                  Reset Blocks From Template
+                </Button>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="hero_cta_label">Hero CTA Label</Label>
+                  <Input
+                    id="hero_cta_label"
+                    value={form.hero_cta_label}
+                    onChange={(e) => setForm((prev) => ({ ...prev, hero_cta_label: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="hero_cta_url">Hero CTA URL *</Label>
+                  <Input
+                    id="hero_cta_url"
+                    value={form.hero_cta_url}
+                    onChange={(e) => setForm((prev) => ({ ...prev, hero_cta_url: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="registration_url">Registration URL</Label>
+                  <Input
+                    id="registration_url"
+                    value={form.registration_url}
+                    onChange={(e) => setForm((prev) => ({ ...prev, registration_url: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="blocks" className="space-y-4 mt-4">
+              {blocksLoading && form.id ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading blocks...
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-end">
+                    <Button variant="outline" onClick={addBlock}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Block
+                    </Button>
+                  </div>
+                  <div className="space-y-4">
+                    {blocks.map((block, index) => (
+                      <div key={`${block.id || "new"}-${index}`} className="rounded-md border p-4 space-y-3">
+                        <div className="grid md:grid-cols-3 gap-3 items-end">
+                          <div className="space-y-2">
+                            <Label>Type</Label>
+                            <select
+                              className="h-10 rounded-md border bg-background px-3 text-sm w-full"
+                              value={block.block_type}
+                              onChange={(event) =>
+                                updateBlock(index, {
+                                  block_type: event.target.value as FeaturedEventBlockDraft["block_type"],
+                                })
+                              }
+                            >
+                              {BLOCK_TYPE_OPTIONS.map((type) => (
+                                <option key={type} value={type}>
+                                  {type}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Image URL</Label>
+                            <Input
+                              value={block.image_url || ""}
+                              onChange={(event) => updateBlock(index, { image_url: event.target.value || null })}
+                              placeholder="https://..."
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-3 pb-2">
+                            <Switch
+                              checked={block.is_enabled}
+                              onCheckedChange={(checked) => updateBlock(index, { is_enabled: checked })}
+                            />
+                            <span className="text-sm">Enabled</span>
+                            <Switch
+                              checked={block.image_confirmed}
+                              onCheckedChange={(checked) => updateBlock(index, { image_confirmed: checked })}
+                            />
+                            <span className="text-sm">Image Confirmed</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Content JSON</Label>
+                          <Textarea
+                            defaultValue={blockToJson(block)}
+                            onBlur={(event) => {
+                              try {
+                                const nextJson = JSON.parse(event.target.value);
+                                updateBlock(index, { content_json: nextJson });
+                              } catch {
+                                toast({
+                                  title: "Invalid JSON",
+                                  description: "Block content must be valid JSON before saving.",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                            rows={8}
+                            className="font-mono text-xs"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Tip: use valid JSON. Invalid edits are ignored until corrected.
+                          </p>
+                        </div>
+
+                        <div className="flex justify-end">
+                          <Button variant="destructive" size="sm" onClick={() => removeBlock(index)}>
+                            Remove Block
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </TabsContent>
+
+            <TabsContent value="media" className="space-y-4 mt-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="hero_image_url">Hero Image URL *</Label>
+                  <Input
+                    id="hero_image_url"
+                    value={form.hero_image_url}
+                    onChange={(e) => setForm((prev) => ({ ...prev, hero_image_url: e.target.value }))}
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cover_image_url">Cover Image URL *</Label>
+                  <Input
+                    id="cover_image_url"
+                    value={form.cover_image_url}
+                    onChange={(e) => setForm((prev) => ({ ...prev, cover_image_url: e.target.value }))}
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="image_url">Legacy/Fallback Image URL</Label>
+                  <Input
+                    id="image_url"
+                    value={form.image_url}
+                    onChange={(e) => setForm((prev) => ({ ...prev, image_url: e.target.value }))}
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="start_at">Start At</Label>
+                  <Input
+                    id="start_at"
+                    type="datetime-local"
+                    value={form.start_at}
+                    onChange={(e) => setForm((prev) => ({ ...prev, start_at: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end_at">End At</Label>
+                  <Input
+                    id="end_at"
+                    type="datetime-local"
+                    value={form.end_at}
+                    onChange={(e) => setForm((prev) => ({ ...prev, end_at: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="md:col-span-2 flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <p className="font-medium">Active Spotlight</p>
+                  <p className="text-sm text-muted-foreground">
+                    Turning this on will automatically deactivate other published events.
+                  </p>
+                </div>
+                <Switch
+                  disabled={form.publish_status !== "published"}
+                  checked={form.publish_status === "published" ? form.is_active : false}
+                  onCheckedChange={(checked) => setForm((prev) => ({ ...prev, is_active: checked }))}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
 
           <div className="flex justify-end gap-2 mt-6">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={saveFeaturedEvent.isPending}>
-              {saveFeaturedEvent.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            <Button onClick={handleSave} disabled={saveFeaturedEvent.isPending || replaceBlocks.isPending}>
+              {(saveFeaturedEvent.isPending || replaceBlocks.isPending) && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
               Save Event
             </Button>
           </div>

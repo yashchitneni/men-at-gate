@@ -81,9 +81,9 @@ const FeaturedEventSpotlight = ({ event }: FeaturedEventSpotlightProps) => {
           </div>
 
           <div className="min-h-[300px] border border-primary-foreground/20 overflow-hidden">
-            {event.image_url ? (
+            {event.cover_image_url || event.hero_image_url || event.image_url ? (
               <img
-                src={event.image_url}
+                src={event.cover_image_url || event.hero_image_url || event.image_url || ""}
                 alt={title}
                 className="w-full h-full object-cover"
               />

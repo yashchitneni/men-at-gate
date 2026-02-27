@@ -1,23 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, Activity, RefreshCcw, FlaskConical } from "lucide-react";
+import { ArrowLeft, Loader2, Activity, RefreshCcw, FlaskConical, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import Navigation from "@/components/Navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { useFeaturedEvents } from "@/hooks/useFeaturedEvents";
+import { useFeaturedEvents, usePromoteScheduleEventToFeatured } from "@/hooks/useFeaturedEvents";
 import {
   useReplaySweatpalsRollups,
   useRunSweatpalsTestIngest,
   useSaveSweatpalsMapping,
+  useSweatpalsSchedule,
   useSyncSweatpalsSchedule,
   useSweatpalsHealth,
   useSweatpalsMappings,
+  type SweatpalsScheduleItem,
   useSweatpalsUnmappedEvents,
 } from "@/hooks/useIntegrations";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { buildEventPath, normalizeSlug, type FeaturedEventTemplateKey } from "@/lib/featuredEventTemplates";
 
 function formatTimestamp(value: string | null) {
   if (!value) return "Never";
@@ -33,13 +39,22 @@ export default function AdminSweatpalsIntegration() {
   const { data: health, isLoading: healthLoading } = useSweatpalsHealth();
   const { data: mappings, isLoading: mappingsLoading } = useSweatpalsMappings();
   const { data: unmappedEvents, isLoading: unmappedLoading } = useSweatpalsUnmappedEvents();
+  const { data: scheduleEvents, isLoading: scheduleLoading } = useSweatpalsSchedule({ limit: 50 });
   const runTestIngest = useRunSweatpalsTestIngest();
   const replayRollups = useReplaySweatpalsRollups();
   const syncSchedule = useSyncSweatpalsSchedule();
   const saveMapping = useSaveSweatpalsMapping();
+  const promoteScheduleEvent = usePromoteScheduleEventToFeatured();
   const { toast } = useToast();
 
   const [selectionByExternalEvent, setSelectionByExternalEvent] = useState<Record<string, string>>({});
+  const [promotionDialogOpen, setPromotionDialogOpen] = useState(false);
+  const [promotionEvent, setPromotionEvent] = useState<SweatpalsScheduleItem | null>(null);
+  const [promotionTemplate, setPromotionTemplate] = useState<FeaturedEventTemplateKey>("challenge");
+  const [promotionSlug, setPromotionSlug] = useState("");
+  const [promotionTitle, setPromotionTitle] = useState("");
+  const [prefillFromSchedule, setPrefillFromSchedule] = useState(true);
+  const [mapOnPromotion, setMapOnPromotion] = useState(true);
 
   useEffect(() => {
     if (!authLoading && (!profile || !profile.is_admin)) {
@@ -131,6 +146,67 @@ export default function AdminSweatpalsIntegration() {
     } catch (error) {
       toast({
         title: "Schedule sync failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  function openPromotionDialog(event: SweatpalsScheduleItem) {
+    setPromotionEvent(event);
+    setPromotionTemplate("challenge");
+    setPromotionSlug(normalizeSlug(event.title));
+    setPromotionTitle(event.title);
+    setPrefillFromSchedule(true);
+    setMapOnPromotion(true);
+    setPromotionDialogOpen(true);
+  }
+
+  async function handlePromoteEvent() {
+    if (!promotionEvent) return;
+    if (!promotionSlug.trim()) {
+      toast({
+        title: "Slug is required",
+        description: "Add a slug before promoting this event.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const featuredEvent = await promoteScheduleEvent.mutateAsync({
+        scheduleEvent: {
+          external_event_id: promotionEvent.external_event_id,
+          title: promotionEvent.title,
+          starts_at: promotionEvent.starts_at,
+          location: promotionEvent.location,
+          image_url: promotionEvent.image_url,
+          event_url: promotionEvent.event_url,
+        },
+        templateKey: promotionTemplate,
+        slug: promotionSlug,
+        title: promotionTitle,
+        prefillFromSchedule,
+      });
+
+      if (mapOnPromotion) {
+        await saveMapping.mutateAsync({
+          external_event_id: promotionEvent.external_event_id,
+          featured_event_id: featuredEvent.id,
+          external_event_name: promotionEvent.title,
+          is_active: true,
+        });
+      }
+
+      toast({
+        title: "Draft featured event created",
+        description: `${featuredEvent.title} was created at ${buildEventPath(featuredEvent.slug)}.`,
+      });
+      setPromotionDialogOpen(false);
+      setPromotionEvent(null);
+    } catch (error) {
+      toast({
+        title: "Failed to promote event",
         description: error instanceof Error ? error.message : "Please try again.",
         variant: "destructive",
       });
@@ -377,9 +453,148 @@ export default function AdminSweatpalsIntegration() {
                 )}
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Synced Schedule Events</CardTitle>
+                <CardDescription>
+                  Promote a specific SweatPals event into a draft featured event. Nothing is auto-promoted.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {scheduleLoading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading synced schedule events...
+                  </div>
+                ) : !scheduleEvents?.length ? (
+                  <p className="text-sm text-muted-foreground">No synced schedule events available yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {scheduleEvents.map((event) => (
+                      <div
+                        key={`${event.external_event_id}-${event.starts_at}`}
+                        className="border rounded-md p-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"
+                      >
+                        <div>
+                          <p className="font-semibold">{event.title}</p>
+                          <p className="text-xs text-muted-foreground">{event.external_event_id}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatTimestamp(event.starts_at)} • {event.location || "Location TBA"}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={event.is_workout ? "default" : "secondary"}>
+                            {event.is_workout ? "Workout" : event.event_type || "Event"}
+                          </Badge>
+                          <Button size="sm" onClick={() => openPromotionDialog(event)}>
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            Promote to Featured Event
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
+
+      <Dialog open={promotionDialogOpen} onOpenChange={setPromotionDialogOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Promote to Featured Event</DialogTitle>
+            <DialogDescription>
+              Create a draft featured event from this synced SweatPals event.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!promotionEvent ? null : (
+            <div className="space-y-4">
+              <div className="rounded-md border p-3 bg-muted/40">
+                <p className="font-semibold">{promotionEvent.title}</p>
+                <p className="text-xs text-muted-foreground">{promotionEvent.external_event_id}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="promotion_template">Template</Label>
+                <select
+                  id="promotion_template"
+                  className="h-10 rounded-md border bg-background px-3 text-sm w-full"
+                  value={promotionTemplate}
+                  onChange={(event) => setPromotionTemplate(event.target.value as FeaturedEventTemplateKey)}
+                >
+                  <option value="challenge">Challenge (includes ruck)</option>
+                  <option value="retreat">Retreat</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="promotion_title">Title</Label>
+                <Input
+                  id="promotion_title"
+                  value={promotionTitle}
+                  onChange={(event) => setPromotionTitle(event.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="promotion_slug">Slug</Label>
+                <Input
+                  id="promotion_slug"
+                  value={promotionSlug}
+                  onChange={(event) => setPromotionSlug(normalizeSlug(event.target.value))}
+                />
+              </div>
+
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <p className="font-medium">Prefill from SweatPals</p>
+                  <p className="text-sm text-muted-foreground">
+                    Prefills title/date/image fields into the draft for faster editing.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={prefillFromSchedule}
+                  onChange={(event) => setPrefillFromSchedule(event.target.checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <p className="font-medium">Save External Mapping</p>
+                  <p className="text-sm text-muted-foreground">
+                    Link this external event ID to the new featured event now.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={mapOnPromotion}
+                  onChange={(event) => setMapOnPromotion(event.target.checked)}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setPromotionDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handlePromoteEvent}
+                  disabled={promoteScheduleEvent.isPending || saveMapping.isPending}
+                >
+                  {(promoteScheduleEvent.isPending || saveMapping.isPending) && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Create Draft Featured Event
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
