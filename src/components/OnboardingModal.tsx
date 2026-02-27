@@ -54,10 +54,16 @@ export function OnboardingModal() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
+  const derivedFirstName = profile?.first_name || profile?.full_name?.split(' ')[0] || '';
+  const derivedLastName = profile?.last_name || profile?.full_name?.split(' ').slice(1).join(' ') || '';
+  const hasLegacyRequiredProfile = Boolean(
+    derivedFirstName.trim() && derivedLastName.trim() && profile?.shirt_size,
+  );
+  const onboardingCompleted = Boolean(profile?.onboarding_completed_at) || hasLegacyRequiredProfile;
+
   const needsOnboarding = Boolean(
     profile &&
-      !profile.onboarding_completed_at &&
-      (!profile.first_name || !profile.last_name || !profile.shirt_size),
+      !onboardingCompleted,
   );
 
   useEffect(() => {

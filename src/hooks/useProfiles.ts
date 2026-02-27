@@ -137,7 +137,31 @@ export function useUpdateProfile() {
         .update(data)
         .eq('id', userId);
 
-      if (error) throw error;
+      if (!error) return;
+
+      // Backward-compatible retry for environments where new profile columns
+      // are not migrated yet (e.g. first_name / last_name / here_for).
+      if (error.code === 'PGRST204') {
+        const legacyPayload = {
+          full_name: data.full_name,
+          phone: data.phone,
+          instagram_handle: data.instagram_handle,
+          shirt_size: data.shirt_size,
+          bio: data.bio,
+          mission: data.mission,
+          role: data.role,
+        };
+
+        const { error: legacyError } = await supabase
+          .from('profiles')
+          .update(legacyPayload)
+          .eq('id', userId);
+
+        if (!legacyError) return;
+        throw legacyError;
+      }
+
+      throw error;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
