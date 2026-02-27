@@ -17,9 +17,7 @@ import heroImage from "@/assets/grit-test-hero.png";
 import ScrollReveal from "@/components/ScrollReveal";
 
 export default function MarathonRuckEvent() {
-  const { data: featuredEvent } = useFeaturedEventBySlug(MARATHON_RUCK_SLUG, {
-    publishedOnly: true,
-  });
+  const { data: featuredEvent } = useFeaturedEventBySlug(MARATHON_RUCK_SLUG);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -49,7 +47,7 @@ export default function MarathonRuckEvent() {
       <section className="relative min-h-[90vh] flex items-center pt-20 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
-            src={featuredEvent?.hero_image_url || featuredEvent?.image_url || heroImage}
+            src={featuredEvent?.image_url || heroImage}
             alt={title}
             className="w-full h-full object-cover scale-105"
             style={{ filter: "grayscale(30%) contrast(120%)" }}

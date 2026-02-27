@@ -10,7 +10,7 @@ import { eventCards } from "@/data/events";
 import { useFeaturedEvents } from "@/hooks/useFeaturedEvents";
 
 export default function EventsIndex() {
-  const { data: featuredEvents } = useFeaturedEvents({ publishedOnly: true });
+  const { data: featuredEvents } = useFeaturedEvents();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -29,7 +29,7 @@ export default function EventsIndex() {
               event.summary ||
               event.subtitle ||
               "Step into the arena and move with the brotherhood.",
-            image: event.cover_image_url || event.hero_image_url || event.image_url || eventCards[0].image,
+            image: event.image_url || eventCards[0].image,
             path: event.event_path,
             featured: event.is_active,
           }))

@@ -756,133 +756,65 @@ export type Database = {
       featured_events: {
         Row: {
           badge_text: string | null
-          cover_image_url: string | null
           created_at: string
           end_at: string | null
           event_date_text: string | null
           event_path: string
           hero_cta_label: string | null
           hero_cta_url: string
-          hero_image_url: string | null
           id: string
           image_url: string | null
           is_active: boolean
-          prefill_source_json: Json
-          publish_status: string
-          published_at: string | null
           priority: number
           registration_url: string | null
           slug: string
           start_at: string | null
           subtitle: string | null
           summary: string | null
-          template_key: string
-          theme_json: Json
           title: string
           updated_at: string
         }
         Insert: {
           badge_text?: string | null
-          cover_image_url?: string | null
           created_at?: string
           end_at?: string | null
           event_date_text?: string | null
           event_path: string
           hero_cta_label?: string | null
           hero_cta_url: string
-          hero_image_url?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
-          prefill_source_json?: Json
-          publish_status?: string
-          published_at?: string | null
           priority?: number
           registration_url?: string | null
           slug: string
           start_at?: string | null
           subtitle?: string | null
           summary?: string | null
-          template_key?: string
-          theme_json?: Json
           title: string
           updated_at?: string
         }
         Update: {
           badge_text?: string | null
-          cover_image_url?: string | null
           created_at?: string
           end_at?: string | null
           event_date_text?: string | null
           event_path?: string
           hero_cta_label?: string | null
           hero_cta_url?: string
-          hero_image_url?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
-          prefill_source_json?: Json
-          publish_status?: string
-          published_at?: string | null
           priority?: number
           registration_url?: string | null
           slug?: string
           start_at?: string | null
           subtitle?: string | null
           summary?: string | null
-          template_key?: string
-          theme_json?: Json
           title?: string
           updated_at?: string
         }
         Relationships: []
-      }
-      featured_event_blocks: {
-        Row: {
-          block_type: string
-          content_json: Json
-          created_at: string
-          featured_event_id: string
-          id: string
-          image_confirmed: boolean
-          image_url: string | null
-          is_enabled: boolean
-          position: number
-          updated_at: string
-        }
-        Insert: {
-          block_type: string
-          content_json?: Json
-          created_at?: string
-          featured_event_id: string
-          id?: string
-          image_confirmed?: boolean
-          image_url?: string | null
-          is_enabled?: boolean
-          position: number
-          updated_at?: string
-        }
-        Update: {
-          block_type?: string
-          content_json?: Json
-          created_at?: string
-          featured_event_id?: string
-          id?: string
-          image_confirmed?: boolean
-          image_url?: string | null
-          is_enabled?: boolean
-          position?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "featured_event_blocks_featured_event_id_fkey"
-            columns: ["featured_event_id"]
-            isOneToOne: false
-            referencedRelation: "featured_events"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       integration_ingestion_runs: {
         Row: {

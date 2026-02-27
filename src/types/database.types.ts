@@ -144,13 +144,6 @@ export interface Database {
           hero_cta_url: string;
           registration_url: string | null;
           image_url: string | null;
-          hero_image_url: string | null;
-          cover_image_url: string | null;
-          template_key: "challenge" | "retreat";
-          publish_status: "draft" | "published" | "archived";
-          published_at: string | null;
-          theme_json: Json;
-          prefill_source_json: Json;
           is_active: boolean;
           priority: number;
           start_at: string | null;
@@ -171,13 +164,6 @@ export interface Database {
           hero_cta_url: string;
           registration_url?: string | null;
           image_url?: string | null;
-          hero_image_url?: string | null;
-          cover_image_url?: string | null;
-          template_key?: "challenge" | "retreat";
-          publish_status?: "draft" | "published" | "archived";
-          published_at?: string | null;
-          theme_json?: Json;
-          prefill_source_json?: Json;
           is_active?: boolean;
           priority?: number;
           start_at?: string | null;
@@ -197,170 +183,10 @@ export interface Database {
           hero_cta_url?: string;
           registration_url?: string | null;
           image_url?: string | null;
-          hero_image_url?: string | null;
-          cover_image_url?: string | null;
-          template_key?: "challenge" | "retreat";
-          publish_status?: "draft" | "published" | "archived";
-          published_at?: string | null;
-          theme_json?: Json;
-          prefill_source_json?: Json;
           is_active?: boolean;
           priority?: number;
           start_at?: string | null;
           end_at?: string | null;
-          updated_at?: string;
-        };
-      };
-      featured_event_blocks: {
-        Row: {
-          id: string;
-          featured_event_id: string;
-          block_type:
-            | "hero"
-            | "mission"
-            | "spec_grid"
-            | "schedule"
-            | "sponsor_cta"
-            | "quote"
-            | "final_cta"
-            | "gallery";
-          position: number;
-          is_enabled: boolean;
-          content_json: Json;
-          image_url: string | null;
-          image_confirmed: boolean;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          featured_event_id: string;
-          block_type:
-            | "hero"
-            | "mission"
-            | "spec_grid"
-            | "schedule"
-            | "sponsor_cta"
-            | "quote"
-            | "final_cta"
-            | "gallery";
-          position: number;
-          is_enabled?: boolean;
-          content_json?: Json;
-          image_url?: string | null;
-          image_confirmed?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          featured_event_id?: string;
-          block_type?:
-            | "hero"
-            | "mission"
-            | "spec_grid"
-            | "schedule"
-            | "sponsor_cta"
-            | "quote"
-            | "final_cta"
-            | "gallery";
-          position?: number;
-          is_enabled?: boolean;
-          content_json?: Json;
-          image_url?: string | null;
-          image_confirmed?: boolean;
-          updated_at?: string;
-        };
-      };
-      spotlight_submissions: {
-        Row: {
-          id: string;
-          profile_id: string;
-          supersedes_submission_id: string | null;
-          slug: string;
-          status: "draft" | "submitted" | "needs_update" | "approved" | "published" | "rejected" | "archived";
-          display_name: string;
-          headline: string | null;
-          short_bio: string | null;
-          about_you_points: string[] | null;
-          arena_meaning: string | null;
-          why_i_joined: string | null;
-          mission: string | null;
-          favorite_accomplishments: string | null;
-          favorite_quotes: string[] | null;
-          feature_photo_urls: string[] | null;
-          instagram_handle: string | null;
-          photo_url: string | null;
-          consent_public_display: boolean;
-          admin_notes: string | null;
-          member_revision_note: string | null;
-          publish_on_date: string | null;
-          published_at: string | null;
-          is_featured: boolean;
-          feature_start_date: string | null;
-          feature_end_date: string | null;
-          reviewed_by: string | null;
-          reviewed_at: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          profile_id: string;
-          supersedes_submission_id?: string | null;
-          slug: string;
-          status?: "draft" | "submitted" | "needs_update" | "approved" | "published" | "rejected" | "archived";
-          display_name: string;
-          headline?: string | null;
-          short_bio?: string | null;
-          about_you_points?: string[] | null;
-          arena_meaning?: string | null;
-          why_i_joined?: string | null;
-          mission?: string | null;
-          favorite_accomplishments?: string | null;
-          favorite_quotes?: string[] | null;
-          feature_photo_urls?: string[] | null;
-          instagram_handle?: string | null;
-          photo_url?: string | null;
-          consent_public_display?: boolean;
-          admin_notes?: string | null;
-          member_revision_note?: string | null;
-          publish_on_date?: string | null;
-          published_at?: string | null;
-          is_featured?: boolean;
-          feature_start_date?: string | null;
-          feature_end_date?: string | null;
-          reviewed_by?: string | null;
-          reviewed_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          profile_id?: string;
-          supersedes_submission_id?: string | null;
-          slug?: string;
-          status?: "draft" | "submitted" | "needs_update" | "approved" | "published" | "rejected" | "archived";
-          display_name?: string;
-          headline?: string | null;
-          short_bio?: string | null;
-          about_you_points?: string[] | null;
-          arena_meaning?: string | null;
-          why_i_joined?: string | null;
-          mission?: string | null;
-          favorite_accomplishments?: string | null;
-          favorite_quotes?: string[] | null;
-          feature_photo_urls?: string[] | null;
-          instagram_handle?: string | null;
-          photo_url?: string | null;
-          consent_public_display?: boolean;
-          admin_notes?: string | null;
-          member_revision_note?: string | null;
-          publish_on_date?: string | null;
-          published_at?: string | null;
-          is_featured?: boolean;
-          feature_start_date?: string | null;
-          feature_end_date?: string | null;
-          reviewed_by?: string | null;
-          reviewed_at?: string | null;
           updated_at?: string;
         };
       };
@@ -390,42 +216,6 @@ export interface Database {
           open_to_carpool?: boolean;
           open_to_split_lodging?: boolean;
           notes?: string | null;
-        };
-      };
-      workout_guides: {
-        Row: {
-          id: string;
-          slug: string;
-          title: string;
-          role_scope: string;
-          version_label: string | null;
-          is_active: boolean;
-          content_json: Json;
-          updated_by: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          slug: string;
-          title: string;
-          role_scope?: string;
-          version_label?: string | null;
-          is_active?: boolean;
-          content_json?: Json;
-          updated_by?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          slug?: string;
-          title?: string;
-          role_scope?: string;
-          version_label?: string | null;
-          is_active?: boolean;
-          content_json?: Json;
-          updated_by?: string | null;
-          updated_at?: string;
         };
       };
       workout_slots: {
@@ -574,7 +364,6 @@ export interface Database {
           leader_id: string;
           assigned_by: string | null;
           status: string;
-          day_of_reminder_sent_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -584,7 +373,6 @@ export interface Database {
           leader_id: string;
           assigned_by?: string | null;
           status?: string;
-          day_of_reminder_sent_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -593,7 +381,6 @@ export interface Database {
           leader_id?: string;
           assigned_by?: string | null;
           status?: string;
-          day_of_reminder_sent_at?: string | null;
           updated_at?: string;
         };
       };
@@ -741,11 +528,9 @@ export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type MemberPhoto = Database['public']['Tables']['member_photos']['Row'];
 export type Race = Database['public']['Tables']['races']['Row'];
 export type FeaturedEvent = Database['public']['Tables']['featured_events']['Row'];
-export type FeaturedEventBlock = Database['public']['Tables']['featured_event_blocks']['Row'];
 export type RaceParticipant = Database['public']['Tables']['race_participants']['Row'];
 export type WorkoutSlot = Database['public']['Tables']['workout_slots']['Row'];
 export type WorkoutInterest = Database['public']['Tables']['workout_interest']['Row'];
-export type WorkoutGuide = Database['public']['Tables']['workout_guides']['Row'];
 export type WorkoutSubmission = Database['public']['Tables']['workout_submissions']['Row'];
 export type WorkoutLeadRequest = Database['public']['Tables']['workout_lead_requests']['Row'];
 export type WorkoutLeadAssignment = Database['public']['Tables']['workout_lead_assignments']['Row'];
