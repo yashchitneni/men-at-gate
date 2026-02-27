@@ -47,6 +47,19 @@ export type AssignedWorkoutWithSubmission = WorkoutLeadAssignmentWithContext & {
   submission: WorkoutSubmission | null;
 };
 
+export interface WorkoutHistoryItem {
+  id: string;
+  source: 'approved_submission' | 'legacy_slot';
+  starts_at: string;
+  title: string;
+  location: string | null;
+  leader_name: string | null;
+  summary: string | null;
+  workout_plan: string | null;
+  message: string | null;
+  leadership_note: string | null;
+}
+
 export interface SaveWorkoutGuideInput {
   slug: string;
   title: string;
@@ -382,6 +395,145 @@ export function useLeadableWorkouts(limit = 24) {
 
       if (error) throw error;
       return (data || []) as LeadableWorkout[];
+    },
+  });
+}
+
+export function useWorkoutHistory(limit = 24) {
+  return useQuery({
+    queryKey: ['workouts', 'history', limit],
+    queryFn: async () => {
+      const todayDate = new Date().toISOString().split('T')[0];
+      const startOfTodayIso = new Date(new Date().toDateString()).toISOString();
+
+      const { data: legacySlots, error: legacyError } = await db
+        .from('workout_slots')
+        .select('*')
+        .lt('workout_date', todayDate)
+        .order('workout_date', { ascending: false })
+        .limit(limit * 3);
+
+      if (legacyError) throw legacyError;
+
+      const legacyLeaderIds = [
+        ...new Set(
+          (legacySlots || [])
+            .map((slot) => slot.leader_id)
+            .filter(Boolean),
+        ),
+      ] as string[];
+
+      const legacyLeaders = legacyLeaderIds.length > 0
+        ? await supabaseRestFetch<Profile[]>(`public_profiles?select=*&id=in.(${legacyLeaderIds.join(',')})`)
+        : [];
+      const legacyLeaderMap = new Map(legacyLeaders.map((leader) => [leader.id, leader]));
+
+      let approvedSubmissions: WorkoutSubmission[] = [];
+      const { data: submissionsData, error: submissionsError } = await db
+        .from('workout_submissions')
+        .select('*')
+        .eq('status', 'approved')
+        .not('assignment_id', 'is', null)
+        .order('approved_at', { ascending: false });
+
+      if (submissionsError) {
+        const message = submissionsError.message?.toLowerCase() || '';
+        const isPermissionError = message.includes('permission') || message.includes('row-level security');
+        if (!isPermissionError) {
+          throw submissionsError;
+        }
+      } else {
+        approvedSubmissions = (submissionsData || []) as WorkoutSubmission[];
+      }
+
+      const history: WorkoutHistoryItem[] = [];
+      const coveredDates = new Set<string>();
+
+      if (approvedSubmissions.length > 0) {
+        const assignmentIds = [
+          ...new Set(
+            approvedSubmissions
+              .map((submission) => submission.assignment_id)
+              .filter(Boolean),
+          ),
+        ] as string[];
+
+        const { data: assignments, error: assignmentError } = await db
+          .from('workout_lead_assignments')
+          .select('*')
+          .in('id', assignmentIds);
+
+        if (assignmentError) throw assignmentError;
+
+        const scheduleEventIds = [...new Set((assignments || []).map((assignment) => assignment.schedule_event_id))];
+        const scheduleEvents = scheduleEventIds.length > 0
+          ? await db
+              .from('sweatpals_schedule_events')
+              .select('*')
+              .in('id', scheduleEventIds)
+              .lt('starts_at', startOfTodayIso)
+              .then((result: { data: SweatpalsScheduleEvent[] | null; error: Error | null }) => {
+                if (result.error) throw result.error;
+                return result.data || [];
+              })
+          : [];
+
+        const leaderIds = [...new Set((assignments || []).map((assignment) => assignment.leader_id))];
+        const leaders = leaderIds.length > 0
+          ? await supabaseRestFetch<Profile[]>(`public_profiles?select=*&id=in.(${leaderIds.join(',')})`)
+          : [];
+
+        const assignmentMap = new Map((assignments || []).map((assignment) => [assignment.id, assignment]));
+        const eventMap = new Map(scheduleEvents.map((event) => [event.id, event]));
+        const leaderMap = new Map(leaders.map((leader) => [leader.id, leader]));
+
+        for (const submission of approvedSubmissions) {
+          if (!submission.assignment_id) continue;
+
+          const assignment = assignmentMap.get(submission.assignment_id);
+          if (!assignment || assignment.status === 'cancelled') continue;
+
+          const scheduleEvent = eventMap.get(assignment.schedule_event_id);
+          if (!scheduleEvent) continue;
+
+          const workoutDate = scheduleEvent.starts_at.split('T')[0];
+          coveredDates.add(workoutDate);
+
+          history.push({
+            id: `submission-${submission.id}`,
+            source: 'approved_submission',
+            starts_at: scheduleEvent.starts_at,
+            title: scheduleEvent.title || 'Workout Session',
+            location: scheduleEvent.location || null,
+            leader_name: leaderMap.get(assignment.leader_id)?.full_name || null,
+            summary: submission.message || scheduleEvent.title || null,
+            workout_plan: submission.workout_plan || null,
+            message: submission.message || null,
+            leadership_note: submission.leadership_note || null,
+          });
+        }
+      }
+
+      for (const slot of legacySlots || []) {
+        if (coveredDates.has(slot.workout_date)) continue;
+
+        history.push({
+          id: `slot-${slot.id}`,
+          source: 'legacy_slot',
+          starts_at: `${slot.workout_date}T06:00:00.000Z`,
+          title: slot.theme || 'Workout Session',
+          location: null,
+          leader_name: slot.leader_id ? legacyLeaderMap.get(slot.leader_id)?.full_name || null : null,
+          summary: slot.description || null,
+          workout_plan: null,
+          message: slot.description || null,
+          leadership_note: null,
+        });
+      }
+
+      return history
+        .sort((a, b) => b.starts_at.localeCompare(a.starts_at))
+        .slice(0, limit);
     },
   });
 }

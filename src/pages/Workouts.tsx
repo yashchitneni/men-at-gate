@@ -6,6 +6,7 @@ import {
   useMyWorkoutLeadRequests,
   useCreateWorkoutLeadRequests,
   useCancelWorkoutLeadRequest,
+  useWorkoutHistory,
   useWorkoutGuide,
 } from '@/hooks/useWorkouts';
 import { useSweatpalsNextWorkout } from '@/hooks/useIntegrations';
@@ -27,9 +28,11 @@ import {
 } from '@/components/ui/dialog';
 import {
   Calendar,
+  ChevronRight,
   Dumbbell,
   Loader2,
   Hand,
+  History,
   Check,
   FileEdit,
   RefreshCw,
@@ -39,10 +42,10 @@ import {
   X,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { format, isAfter, startOfToday } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 export default function Workouts() {
   const { user, profile } = useAuth();
@@ -53,6 +56,7 @@ export default function Workouts() {
     refetch: refetchSweatpalsWorkout,
   } = useSweatpalsNextWorkout();
   const { data: leadableWorkouts = [], isLoading: leadableLoading } = useLeadableWorkouts(20);
+  const { data: workoutHistory = [], isLoading: historyLoading } = useWorkoutHistory(12);
   const { data: myAssignedWorkouts = [] } = useMyAssignedWorkouts();
   const { data: myLeadRequests = [] } = useMyWorkoutLeadRequests();
   const { data: leaderGuide } = useWorkoutGuide('leader_guidelines', !!user && myAssignedWorkouts.length > 0);
@@ -63,6 +67,7 @@ export default function Workouts() {
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [interestModalOpen, setInterestModalOpen] = useState(false);
+  const [selectedHistoryWorkoutId, setSelectedHistoryWorkoutId] = useState<string | null>(null);
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
 
@@ -77,6 +82,14 @@ export default function Workouts() {
   const openLeadableWorkouts = useMemo(
     () => leadableWorkouts.filter((event) => !event.is_assigned),
     [leadableWorkouts],
+  );
+  const pendingRequestEventIds = useMemo(
+    () => new Set(pendingRequests.map((request) => request.schedule_event_id)),
+    [pendingRequests],
+  );
+  const selectedHistoryWorkout = useMemo(
+    () => workoutHistory.find((workout) => workout.id === selectedHistoryWorkoutId) || null,
+    [selectedHistoryWorkoutId, workoutHistory],
   );
   const leaderGuideContent = useMemo(
     () => parseLeaderGuideContent(leaderGuide?.content_json),
@@ -164,83 +177,146 @@ export default function Workouts() {
 
       <section className="pt-24 pb-20">
         <div className="container px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-12">
-              <h1 className="text-4xl md:text-5xl font-bold font-heading mb-4">Workouts</h1>
+          <div className="max-w-5xl mx-auto space-y-8">
+            <div className="text-center max-w-3xl mx-auto space-y-3">
+              <Badge variant="outline" className="mx-auto w-fit">Every Other Friday</Badge>
+              <h1 className="text-4xl md:text-5xl font-bold font-heading">Workouts</h1>
               <p className="text-lg text-muted-foreground">
-                Every other Friday, a different brother leads us. Step up and take your turn in the arena.
+                A brother leads each session. Show up, push hard, and keep the tradition moving.
               </p>
             </div>
 
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Dumbbell className="h-5 w-5 text-accent" />
-                  Next Workout
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoadingSweatpalsWorkout ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-8 w-1/2" />
-                    <Skeleton className="h-4 w-1/3" />
-                    <Skeleton className="h-16 w-full" />
-                  </div>
-                ) : isSweatpalsWorkoutError ? (
-                  <div className="space-y-4 text-center py-4">
-                    <p className="text-sm text-muted-foreground">
-                      We couldn&apos;t load the latest workout right now.
-                    </p>
-                    <Button variant="outline" size="sm" onClick={() => refetchSweatpalsWorkout()}>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Try Again
-                    </Button>
-                  </div>
-                ) : sweatpalsNextWorkout ? (
-                  <div className="space-y-4">
-                    <Badge variant="secondary" className="w-fit">
-                      Synced from SweatPals
-                    </Badge>
-
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span className="font-medium">
-                        {format(new Date(sweatpalsNextWorkout.starts_at), 'EEEE, MMMM d, yyyy h:mm a')}
-                      </span>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card className="border-accent/30">
+                <CardHeader className="text-center">
+                  <CardTitle className="flex items-center justify-center gap-2">
+                    <Dumbbell className="h-5 w-5 text-accent" />
+                    Next Workout
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingSweatpalsWorkout ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-8 w-2/3 mx-auto" />
+                      <Skeleton className="h-4 w-1/2 mx-auto" />
+                      <Skeleton className="h-16 w-full" />
                     </div>
+                  ) : isSweatpalsWorkoutError ? (
+                    <div className="space-y-4 text-center py-4">
+                      <p className="text-sm text-muted-foreground">
+                        We couldn&apos;t load the latest workout right now.
+                      </p>
+                      <Button variant="outline" size="sm" onClick={() => refetchSweatpalsWorkout()}>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Try Again
+                      </Button>
+                    </div>
+                  ) : sweatpalsNextWorkout ? (
+                    <div className="space-y-4 text-center">
+                      <Badge variant="secondary" className="mx-auto w-fit">
+                        Synced from SweatPals
+                      </Badge>
 
-                    {sweatpalsNextWorkout.location && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        <span>{sweatpalsNextWorkout.location}</span>
+                      <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span className="font-medium">
+                          {format(new Date(sweatpalsNextWorkout.starts_at), 'EEEE, MMMM d, yyyy h:mm a')}
+                        </span>
                       </div>
-                    )}
 
-                    <div className="p-4 bg-accent/10 rounded-lg">
-                      <p className="font-semibold text-lg">{sweatpalsNextWorkout.title}</p>
-                    </div>
-
-                    <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                      {isExternalWorkoutDestination ? (
-                        <a href={nextWorkoutDestination} target="_blank" rel="noreferrer">
-                          View Workout Event
-                        </a>
-                      ) : (
-                        <Link to={nextWorkoutDestination}>View Workout Event</Link>
+                      {sweatpalsNextWorkout.location && (
+                        <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          <span>{sweatpalsNextWorkout.location}</span>
+                        </div>
                       )}
+
+                      <div className="p-4 bg-accent/10 rounded-lg text-left">
+                        <p className="font-semibold text-lg">{sweatpalsNextWorkout.title}</p>
+                      </div>
+
+                      <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                        {isExternalWorkoutDestination ? (
+                          <a href={nextWorkoutDestination} target="_blank" rel="noreferrer">
+                            View Workout Event
+                          </a>
+                        ) : (
+                          <Link to={nextWorkoutDestination}>View Workout Event</Link>
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Dumbbell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No upcoming workouts scheduled yet.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="text-center">
+                  <CardTitle className="flex items-center justify-center gap-2">
+                    <Hand className="h-5 w-5 text-accent" />
+                    Want to Lead a Workout?
+                  </CardTitle>
+                  <CardDescription>
+                    Pick the upcoming dates you can lead. Core leadership approves one brother per workout.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {pendingRequests.length > 0 && (
+                    <div className="space-y-3 p-4 bg-green-500/10 rounded-lg border border-green-500/20 text-left">
+                      <div className="flex items-center gap-2">
+                        <Check className="h-5 w-5 text-green-600" />
+                        <span className="font-medium text-green-700">
+                          You have {pendingRequests.length} pending request{pendingRequests.length > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {pendingRequests.map((request) => (
+                          <div key={request.id} className="flex items-center justify-between gap-3 text-sm">
+                            <span className="text-foreground">
+                              {request.schedule_event?.starts_at
+                                ? format(new Date(request.schedule_event.starts_at), 'EEEE, MMMM d, yyyy')
+                                : 'Date unavailable'}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCancelRequest(request.id)}
+                              disabled={cancelLeadRequest.isPending}
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Remove
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-center">
+                    <Button
+                      className="bg-accent hover:bg-accent/90"
+                      onClick={() => {
+                        if (!user) {
+                          setAuthModalOpen(true);
+                        } else {
+                          setInterestModalOpen(true);
+                        }
+                      }}
+                    >
+                      <Hand className="mr-2 h-4 w-4" />
+                      {pendingRequests.length > 0 ? 'Update Availability' : 'I Want to Lead'}
                     </Button>
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Dumbbell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No upcoming workouts scheduled yet.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
             {myAssignedWorkouts.length > 0 && (
-              <Card className={myAssignedWorkouts.some((w) => w.submission?.status === 'changes_requested') ? 'border-yellow-500/50 mb-8' : 'border-accent/50 mb-8'}>
+              <Card className={myAssignedWorkouts.some((w) => w.submission?.status === 'changes_requested') ? 'border-yellow-500/50' : 'border-accent/50'}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <FileEdit className="h-5 w-5 text-accent" />
@@ -347,131 +423,250 @@ export default function Workouts() {
             )}
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Hand className="h-5 w-5 text-accent" />
-                  Want to Lead a Workout?
+              <CardHeader className="text-center">
+                <CardTitle className="flex items-center justify-center gap-2">
+                  <History className="h-5 w-5 text-accent" />
+                  Historical Workouts
                 </CardTitle>
                 <CardDescription>
-                  Request the upcoming dates you can lead. Core leadership will approve one leader per workout.
+                  Tap any workout to see what was approved and how the session was designed.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {pendingRequests.length > 0 && (
-                  <div className="space-y-3 p-4 bg-green-500/10 rounded-lg border border-green-500/20">
-                    <div className="flex items-center gap-2">
-                      <Check className="h-5 w-5 text-green-600" />
-                      <span className="font-medium text-green-700">You have {pendingRequests.length} pending request{pendingRequests.length > 1 ? 's' : ''}</span>
-                    </div>
-                    <div className="space-y-2">
-                      {pendingRequests.map((request) => (
-                        <div key={request.id} className="flex items-center justify-between gap-3 text-sm">
-                          <span className="text-foreground">
-                            {request.schedule_event?.starts_at
-                              ? format(new Date(request.schedule_event.starts_at), 'EEEE, MMMM d, yyyy')
-                              : 'Date unavailable'}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleCancelRequest(request.id)}
-                            disabled={cancelLeadRequest.isPending}
-                          >
-                            <X className="h-3 w-3 mr-1" />
-                            Remove
-                          </Button>
-                        </div>
+              <CardContent>
+                {historyLoading ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Skeleton className="h-44 w-full" />
+                    <Skeleton className="h-44 w-full" />
+                  </div>
+                ) : workoutHistory.length === 0 ? (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <History className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                    <p>No historical workouts available yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {workoutHistory.map((workout) => (
+                        <button
+                          key={workout.id}
+                          type="button"
+                          onClick={() => setSelectedHistoryWorkoutId(workout.id)}
+                          className="text-left border rounded-lg p-4 space-y-3 transition-colors hover:border-accent/60 hover:bg-accent/5"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <Badge variant="outline">
+                              {format(new Date(workout.starts_at), 'EEE, MMM d, yyyy')}
+                            </Badge>
+                            <Badge variant={workout.source === 'approved_submission' ? 'default' : 'secondary'}>
+                              {workout.source === 'approved_submission' ? 'Approved Plan' : 'Archive Note'}
+                            </Badge>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">{workout.title}</h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                              {workout.summary || 'View details from this workout.'}
+                            </p>
+                          </div>
+                          <div className="space-y-1 text-xs text-muted-foreground">
+                            {workout.leader_name && <p>Led by {workout.leader_name}</p>}
+                            {workout.location && (
+                              <p className="inline-flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {workout.location}
+                              </p>
+                            )}
+                          </div>
+                          <p className="inline-flex items-center text-sm font-medium text-accent">
+                            View Details
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                          </p>
+                        </button>
                       ))}
+                    </div>
+
+                    <div className="flex justify-center">
+                      <Button variant="outline" asChild>
+                        <Link to="/workouts/archive">Browse Full Archive</Link>
+                      </Button>
                     </div>
                   </div>
                 )}
-
-                <Button
-                  className="bg-accent hover:bg-accent/90"
-                  onClick={() => {
-                    if (!user) {
-                      setAuthModalOpen(true);
-                    } else {
-                      setInterestModalOpen(true);
-                    }
-                  }}
-                >
-                  <Hand className="mr-2 h-4 w-4" />
-                  {pendingRequests.length > 0 ? 'Update Availability' : 'I Want to Lead'}
-                </Button>
-
-                <Dialog open={interestModalOpen} onOpenChange={setInterestModalOpen}>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Lead a Workout</DialogTitle>
-                      <DialogDescription>
-                        Select which upcoming workouts you can lead.
-                      </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4 pt-4">
-                      <div className="space-y-2">
-                        <Label>Available Dates *</Label>
-                        {leadableLoading ? (
-                          <div className="space-y-2">
-                            <Skeleton className="h-14 w-full" />
-                            <Skeleton className="h-14 w-full" />
-                          </div>
-                        ) : openLeadableWorkouts.length === 0 ? (
-                          <p className="text-sm text-muted-foreground py-4 text-center">
-                            No open workout dates available right now.
-                          </p>
-                        ) : (
-                          <div className="space-y-2 max-h-56 overflow-y-auto">
-                            {openLeadableWorkouts.map((event) => (
-                              <label
-                                key={event.schedule_event_id}
-                                className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/5 transition-colors"
-                              >
-                                <Checkbox
-                                  checked={selectedEventIds.includes(event.schedule_event_id)}
-                                  onCheckedChange={() => toggleDate(event.schedule_event_id)}
-                                />
-                                <div>
-                                  <p className="font-medium">
-                                    {format(new Date(event.starts_at), 'EEEE, MMMM d, yyyy')}
-                                  </p>
-                                  {event.location && (
-                                    <p className="text-xs text-muted-foreground">{event.location}</p>
-                                  )}
-                                </div>
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="notes">Notes (optional)</Label>
-                        <Textarea
-                          id="notes"
-                          placeholder="Any other details you want to share..."
-                          value={notes}
-                          onChange={(event) => setNotes(event.target.value)}
-                        />
-                      </div>
-
-                      <Button
-                        className="w-full bg-accent hover:bg-accent/90"
-                        onClick={handleExpressInterest}
-                        disabled={createLeadRequests.isPending || openLeadableWorkouts.length === 0}
-                      >
-                        {createLeadRequests.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Submit Interest ({selectedEventIds.length} selected)
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
               </CardContent>
             </Card>
 
+            <Dialog open={interestModalOpen} onOpenChange={setInterestModalOpen}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Lead a Workout</DialogTitle>
+                  <DialogDescription>
+                    Pick the dates you can lead. You can choose multiple upcoming workouts.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Available Dates *</Label>
+                    {selectedEventIds.length > 0 && (
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedEventIds([])}>
+                        Clear selection
+                      </Button>
+                    )}
+                  </div>
+
+                  {leadableLoading ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-20 w-full" />
+                      <Skeleton className="h-20 w-full" />
+                    </div>
+                  ) : openLeadableWorkouts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-6 text-center">
+                      No open workout dates available right now.
+                    </p>
+                  ) : (
+                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                      {openLeadableWorkouts.map((event) => {
+                        const isSelected = selectedEventIds.includes(event.schedule_event_id);
+                        const isAlreadyRequested = pendingRequestEventIds.has(event.schedule_event_id);
+
+                        return (
+                          <button
+                            key={event.schedule_event_id}
+                            type="button"
+                            onClick={() => toggleDate(event.schedule_event_id)}
+                            className={cn(
+                              'w-full rounded-lg border p-3 text-left transition-colors',
+                              isSelected
+                                ? 'border-accent bg-accent/10'
+                                : 'border-border hover:border-accent/40 hover:bg-accent/5',
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="font-medium">
+                                  {format(new Date(event.starts_at), 'EEEE, MMMM d, yyyy')}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {format(new Date(event.starts_at), 'h:mm a')}
+                                </p>
+                                {event.location && (
+                                  <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    {event.location}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {isAlreadyRequested && <Badge variant="secondary">Pending</Badge>}
+                                <Badge variant={isSelected ? 'default' : 'outline'}>
+                                  {isSelected ? 'Selected' : 'Select'}
+                                </Badge>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notes (optional)</Label>
+                    <Textarea
+                      id="notes"
+                      placeholder="Anything leadership should know?"
+                      value={notes}
+                      onChange={(event) => setNotes(event.target.value)}
+                    />
+                  </div>
+
+                  <Button
+                    className="w-full bg-accent hover:bg-accent/90"
+                    onClick={handleExpressInterest}
+                    disabled={createLeadRequests.isPending || openLeadableWorkouts.length === 0}
+                  >
+                    {createLeadRequests.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Submit Interest ({selectedEventIds.length} selected)
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog
+              open={!!selectedHistoryWorkout}
+              onOpenChange={(open) => {
+                if (!open) {
+                  setSelectedHistoryWorkoutId(null);
+                }
+              }}
+            >
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{selectedHistoryWorkout?.title || 'Workout Details'}</DialogTitle>
+                  <DialogDescription className="space-y-1">
+                    {selectedHistoryWorkout && (
+                      <>
+                        <span className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          {format(new Date(selectedHistoryWorkout.starts_at), 'EEEE, MMMM d, yyyy')}
+                        </span>
+                        {selectedHistoryWorkout.location && (
+                          <span className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            {selectedHistoryWorkout.location}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </DialogDescription>
+                </DialogHeader>
+
+                {selectedHistoryWorkout && (
+                  <div className="space-y-5 pt-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <Badge variant={selectedHistoryWorkout.source === 'approved_submission' ? 'default' : 'secondary'}>
+                        {selectedHistoryWorkout.source === 'approved_submission' ? 'Final Approved Workout' : 'Archive Workout'}
+                      </Badge>
+                      {selectedHistoryWorkout.leader_name && (
+                        <p className="text-xs text-muted-foreground">Led by {selectedHistoryWorkout.leader_name}</p>
+                      )}
+                    </div>
+
+                    {selectedHistoryWorkout.workout_plan && (
+                      <div>
+                        <h4 className="font-semibold mb-2">1. The Workout</h4>
+                        <div className="p-3 bg-muted rounded-lg whitespace-pre-wrap text-sm font-mono">
+                          {selectedHistoryWorkout.workout_plan}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedHistoryWorkout.message && (
+                      <div>
+                        <h4 className="font-semibold mb-2">2. The Message</h4>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedHistoryWorkout.message}</p>
+                      </div>
+                    )}
+
+                    {selectedHistoryWorkout.leadership_note && (
+                      <div>
+                        <h4 className="font-semibold mb-2">3. Leadership Approach</h4>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {selectedHistoryWorkout.leadership_note}
+                        </p>
+                      </div>
+                    )}
+
+                    {!selectedHistoryWorkout.workout_plan && !selectedHistoryWorkout.message && !selectedHistoryWorkout.leadership_note && (
+                      <div className="p-3 bg-muted rounded-lg text-sm text-muted-foreground whitespace-pre-wrap">
+                        {selectedHistoryWorkout.summary || 'No additional details were submitted for this workout.'}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+
             {profile?.is_admin && (
-              <div className="mt-8 text-center">
+              <div className="text-center">
                 <Button variant="outline" asChild>
                   <Link to="/admin/workouts">Manage Workouts (Admin)</Link>
                 </Button>
