@@ -23,7 +23,11 @@ interface FeaturedMemberProps {
 export default function FeaturedMember({ featuredMember, isLoading = false }: FeaturedMemberProps) {
   if (isLoading || !featuredMember) return null;
 
-  const spotlightText = featuredMember.short_bio?.trim() || featuredMember.why_i_joined?.trim() || null;
+  const spotlightText =
+    featuredMember.arena_meaning?.trim() ||
+    featuredMember.short_bio?.trim() ||
+    featuredMember.why_i_joined?.trim() ||
+    null;
 
   return (
     <section className="py-20 bg-muted/30">

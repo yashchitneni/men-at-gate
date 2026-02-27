@@ -22,7 +22,7 @@ const Men = () => {
       return coreRoster.map(profile => ({
         id: profile.id,
         name: profile.full_name || 'Unknown',
-        photo: profile.primary_photo?.photo_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop&crop=face',
+        photo: profile.primary_photo?.photo_url || '/placeholder.svg',
         role: profile.role || 'Member',
         bio: profile.bio || '',
         mission: profile.mission || '',

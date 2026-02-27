@@ -6,8 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useBrotherhoodProfileBySlug } from "@/hooks/useSpotlights";
 
-const FALLBACK_MEMBER_IMAGE =
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=900&fit=crop&crop=face";
+function initialsFromName(name: string) {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!parts.length) return "M";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
 
 export default function BrotherhoodProfile() {
   const { slug = "" } = useParams<{ slug: string }>();
@@ -52,11 +60,17 @@ export default function BrotherhoodProfile() {
             <div className="grid md:grid-cols-[340px_1fr] gap-8 md:gap-12">
               <div>
                 <div className="rounded-2xl overflow-hidden border">
-                  <img
-                    src={member.photo_url || FALLBACK_MEMBER_IMAGE}
-                    alt={member.display_name}
-                    className="w-full aspect-[4/5] object-cover"
-                  />
+                  {member.photo_url ? (
+                    <img
+                      src={member.photo_url}
+                      alt={member.display_name}
+                      className="w-full aspect-[4/5] object-cover"
+                    />
+                  ) : (
+                    <div className="w-full aspect-[4/5] flex items-center justify-center bg-gradient-to-br from-accent/20 via-background to-foreground/20 text-2xl font-black tracking-tight">
+                      {initialsFromName(member.display_name)}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -89,10 +103,57 @@ export default function BrotherhoodProfile() {
                   </div>
                 )}
 
+                {member.arena_meaning && (
+                  <div className="mt-8 border-l-4 border-accent pl-5 py-1">
+                    <h2 className="text-sm uppercase tracking-widest text-muted-foreground font-semibold mb-2">What this means for me</h2>
+                    <p className="text-lg italic text-foreground/85">{member.arena_meaning}</p>
+                  </div>
+                )}
+
+                {member.about_you_points && member.about_you_points.length > 0 && (
+                  <div className="mt-8">
+                    <h2 className="text-sm uppercase tracking-widest text-muted-foreground font-semibold mb-2">About Me</h2>
+                    <ul className="list-disc pl-5 text-lg leading-relaxed text-foreground/90">
+                      {member.about_you_points.map((point, index) => (
+                        <li key={`${point}-${index}`}>{point}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 {member.mission && (
                   <div className="mt-8">
                     <h2 className="text-sm uppercase tracking-widest text-muted-foreground font-semibold mb-2">Mission</h2>
                     <p className="text-lg leading-relaxed text-foreground/90">{member.mission}</p>
+                  </div>
+                )}
+
+                {member.favorite_accomplishments && (
+                  <div className="mt-8">
+                    <h2 className="text-sm uppercase tracking-widest text-muted-foreground font-semibold mb-2">Favorite Accomplishments</h2>
+                    <p className="text-lg leading-relaxed text-foreground/90">{member.favorite_accomplishments}</p>
+                  </div>
+                )}
+
+                {member.favorite_quotes && member.favorite_quotes.length > 0 && (
+                  <div className="mt-8">
+                    <h2 className="text-sm uppercase tracking-widest text-muted-foreground font-semibold mb-2">Favorite Quotes</h2>
+                    <div className="space-y-3">
+                      {member.favorite_quotes.map((quote, index) => (
+                        <p key={`${quote}-${index}`} className="text-foreground/80 italic">“{quote}”</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {member.feature_photo_urls && member.feature_photo_urls.length > 0 && (
+                  <div className="mt-8">
+                    <h2 className="text-sm uppercase tracking-widest text-muted-foreground font-semibold mb-3">Spotlight Photos</h2>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {member.feature_photo_urls.map((photoUrl) => (
+                        <img key={photoUrl} src={photoUrl} alt={member.display_name} className="rounded-lg w-full aspect-[4/5] object-cover" />
+                      ))}
+                    </div>
                   </div>
                 )}
 

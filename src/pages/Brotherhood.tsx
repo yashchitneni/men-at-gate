@@ -7,8 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { findActiveFeaturedProfile, useBrotherhoodDirectory } from "@/hooks/useSpotlights";
 
-const FALLBACK_MEMBER_IMAGE =
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=900&fit=crop&crop=face";
+
+function initialsFromName(name: string) {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!parts.length) return "M";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
 
 export default function Brotherhood() {
   const { data: members = [], isLoading } = useBrotherhoodDirectory();
@@ -38,11 +47,17 @@ export default function Brotherhood() {
                   <Card className="mb-10 overflow-hidden border-accent/40">
                     <div className="grid md:grid-cols-[280px_1fr]">
                       <div className="h-72 md:h-full">
-                        <img
-                          src={featured.photo_url || FALLBACK_MEMBER_IMAGE}
-                          alt={featured.display_name}
-                          className="w-full h-full object-cover"
-                        />
+                        {featured.photo_url ? (
+                          <img
+                            src={featured.photo_url}
+                            alt={featured.display_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-accent/20 via-background to-foreground/20 text-3xl font-black tracking-tight">
+                            {initialsFromName(featured.display_name)}
+                          </div>
+                        )}
                       </div>
                       <CardContent className="p-8 flex flex-col justify-center gap-4">
                         <div className="flex items-center gap-2">
@@ -51,10 +66,10 @@ export default function Brotherhood() {
                         </div>
                         <h2 className="text-3xl font-black font-heading uppercase tracking-tight">{featured.display_name}</h2>
                         {featured.headline && <p className="text-lg text-foreground/80">{featured.headline}</p>}
-                        {featured.why_i_joined && (
+                        {(featured.arena_meaning || featured.why_i_joined) && (
                           <p className="text-muted-foreground leading-relaxed">
                             <Quote className="inline h-4 w-4 mr-1 text-accent" />
-                            {featured.why_i_joined}
+                            {featured.arena_meaning || featured.why_i_joined}
                           </p>
                         )}
                         <div>
@@ -76,14 +91,20 @@ export default function Brotherhood() {
                 ) : (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {members.map((member) => (
-                      <Link key={member.spotlight_submission_id} to={`/brotherhood/${member.slug}`}>
+                    <Link key={member.spotlight_submission_id} to={`/brotherhood/${member.slug}`}>
                         <Card className="overflow-hidden hover:border-accent/50 transition-colors h-full">
                           <div className="aspect-[4/5] overflow-hidden">
-                            <img
-                              src={member.photo_url || FALLBACK_MEMBER_IMAGE}
-                              alt={member.display_name}
-                              className="w-full h-full object-cover"
-                            />
+                            {member.photo_url ? (
+                              <img
+                                src={member.photo_url}
+                                alt={member.display_name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-accent/20 via-background to-foreground/20 text-3xl font-black tracking-tight">
+                                {initialsFromName(member.display_name)}
+                              </div>
+                            )}
                           </div>
                           <CardContent className="p-5">
                             <div className="flex items-center gap-2 mb-2">
@@ -94,7 +115,7 @@ export default function Brotherhood() {
                               <p className="text-sm font-medium text-accent mb-2">{member.profile_role}</p>
                             )}
                             <p className="text-sm text-muted-foreground line-clamp-3">
-                              {member.short_bio || member.why_i_joined || "Read this member spotlight."}
+                              {member.arena_meaning || member.short_bio || member.why_i_joined || "Read this member spotlight."}
                             </p>
                           </CardContent>
                         </Card>

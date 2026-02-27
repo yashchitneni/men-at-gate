@@ -13,6 +13,26 @@ const SUBMITTED_STATUSES = new Set<SpotlightSubmission["status"]>([
   "published",
 ]);
 
+function normalizeTextArray(values: unknown, maxItems?: number) {
+  if (!Array.isArray(values)) return [];
+
+  const normalized = values
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter(Boolean);
+
+  return typeof maxItems === "number" ? normalized.slice(0, maxItems) : normalized;
+}
+
+function getSpotlightStoryText(profile: PublicBrotherhoodProfile) {
+  return (
+    profile.arena_meaning?.trim() ||
+    profile.short_bio?.trim() ||
+    profile.mission?.trim() ||
+    profile.why_i_joined?.trim() ||
+    ""
+  );
+}
+
 function normalizeHandle(handle?: string | null) {
   if (!handle) return null;
   const trimmed = handle.replace("@", "").trim();
@@ -78,7 +98,7 @@ export function selectHomepageTestimonials(
 
   return [...profiles]
     .filter((profile) => profile.profile_id !== excludeProfileId)
-    .filter((profile) => Boolean(profile.why_i_joined?.trim()))
+    .filter((profile) => Boolean(getSpotlightStoryText(profile)))
     .sort((a, b) => {
       const dateDiff = profilePublishSortValue(b) - profilePublishSortValue(a);
       if (dateDiff !== 0) return dateDiff;
@@ -91,8 +111,13 @@ interface SpotlightFormPayload {
   display_name: string;
   headline?: string | null;
   short_bio: string;
+  about_you_points?: string[];
   why_i_joined: string;
   mission: string;
+  arena_meaning: string;
+  favorite_accomplishments: string;
+  favorite_quotes?: string[];
+  feature_photo_urls?: string[];
   instagram_handle?: string | null;
   photo_url: string;
   consent_public_display: boolean;
@@ -117,9 +142,14 @@ async function saveSpotlightSubmission({
     slug: buildSpotlightSlug(form.display_name, profileId),
     display_name: form.display_name.trim(),
     headline: form.headline?.trim() || null,
+    about_you_points: normalizeTextArray(form.about_you_points),
     short_bio: form.short_bio.trim(),
     why_i_joined: form.why_i_joined.trim(),
     mission: form.mission.trim(),
+    arena_meaning: form.arena_meaning.trim(),
+    favorite_accomplishments: form.favorite_accomplishments.trim(),
+    favorite_quotes: normalizeTextArray(form.favorite_quotes, 2),
+    feature_photo_urls: normalizeTextArray(form.feature_photo_urls, 3),
     instagram_handle: normalizeHandle(form.instagram_handle),
     photo_url: form.photo_url,
     consent_public_display: form.consent_public_display,
@@ -212,6 +242,9 @@ export function useSubmitMySpotlight() {
 
       if (!form.display_name.trim() || !form.short_bio.trim() || !form.why_i_joined.trim() || !form.photo_url) {
         throw new Error("Complete all required spotlight fields before submitting.");
+      }
+      if (!form.arena_meaning.trim()) {
+        throw new Error("Add what Men in the Arena has meant for you before submitting.");
       }
 
       return saveSpotlightSubmission({ ...payload, mode: "submit" });
@@ -400,6 +433,7 @@ export function isSubmissionReadyForPublish(submission: SpotlightSubmission) {
     Boolean(submission.photo_url) &&
     Boolean(submission.display_name?.trim()) &&
     Boolean(submission.short_bio?.trim()) &&
+    Boolean(submission.arena_meaning?.trim()) &&
     Boolean(submission.why_i_joined?.trim()) &&
     SUBMITTED_STATUSES.has(submission.status)
   );

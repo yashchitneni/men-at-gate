@@ -22,11 +22,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, Save, Trophy, Dumbbell, Sparkles, Upload } from 'lucide-react';
+import { Loader2, User, Save, Trophy, Dumbbell, Sparkles, Upload, Plus, X } from 'lucide-react';
 import { format } from 'date-fns';
 import type { SpotlightSubmission } from '@/types/database.types';
 
 const SHIRT_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
+const MAX_ABOUT_YOU_POINTS = 5;
+const MAX_SPOTLIGHT_QUOTES = 2;
+const MAX_FEATURE_PHOTOS = 3;
 
 function spotlightStatusLabel(status: SpotlightSubmission['status'] | null) {
   if (!status) return 'Not submitted';
@@ -41,6 +44,17 @@ function spotlightStatusVariant(status: SpotlightSubmission['status'] | null) {
   if (status === 'submitted') return 'secondary' as const;
   if (status === 'needs_update' || status === 'rejected') return 'destructive' as const;
   return 'outline' as const;
+}
+
+function normalizeTextList(values: string[], maxItems = 0) {
+  const normalized = values
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+  return maxItems > 0 ? normalized.slice(0, maxItems) : normalized;
+}
+
+function dedupePhotoUrls(photoUrls: string[]) {
+  return Array.from(new Set(photoUrls.filter(Boolean)));
 }
 
 export default function Profile() {
@@ -66,15 +80,22 @@ export default function Profile() {
   const [spotlightDisplayName, setSpotlightDisplayName] = useState('');
   const [spotlightHeadline, setSpotlightHeadline] = useState('');
   const [spotlightShortBio, setSpotlightShortBio] = useState('');
+  const [spotlightAboutYouPoints, setSpotlightAboutYouPoints] = useState<string[]>(['', '', '']);
   const [spotlightWhyJoined, setSpotlightWhyJoined] = useState('');
   const [spotlightMission, setSpotlightMission] = useState('');
+  const [spotlightArenaMeaning, setSpotlightArenaMeaning] = useState('');
+  const [spotlightAccomplishments, setSpotlightAccomplishments] = useState('');
+  const [spotlightFavoriteQuotes, setSpotlightFavoriteQuotes] = useState<string[]>(['', '']);
   const [spotlightInstagram, setSpotlightInstagram] = useState('');
+  const [spotlightFeaturePhotoUrls, setSpotlightFeaturePhotoUrls] = useState<string[]>([]);
   const [spotlightConsent, setSpotlightConsent] = useState(false);
 
   const primaryHeadshotUrl =
     profileWithPhotos?.primary_photo?.photo_url ||
     spotlightSubmission?.photo_url ||
     '';
+
+  const availableSpotlightPhotos = profileWithPhotos?.photos?.filter((photo) => photo.photo_url !== primaryHeadshotUrl) || [];
 
   // Redirect if not logged in
   useEffect(() => {
@@ -101,8 +122,13 @@ export default function Profile() {
       setSpotlightDisplayName(spotlightSubmission.display_name || profile.full_name || '');
       setSpotlightHeadline(spotlightSubmission.headline || '');
       setSpotlightShortBio(spotlightSubmission.short_bio || '');
+      setSpotlightAboutYouPoints(normalizeTextList(spotlightSubmission.about_you_points || [], MAX_ABOUT_YOU_POINTS));
       setSpotlightWhyJoined(spotlightSubmission.why_i_joined || '');
       setSpotlightMission(spotlightSubmission.mission || '');
+      setSpotlightArenaMeaning(spotlightSubmission.arena_meaning || '');
+      setSpotlightAccomplishments(spotlightSubmission.favorite_accomplishments || '');
+      setSpotlightFavoriteQuotes(normalizeTextList(spotlightSubmission.favorite_quotes || [], MAX_SPOTLIGHT_QUOTES));
+      setSpotlightFeaturePhotoUrls(dedupePhotoUrls(spotlightSubmission.feature_photo_urls || []).slice(0, MAX_FEATURE_PHOTOS));
       setSpotlightInstagram(spotlightSubmission.instagram_handle || profile.instagram_handle || '');
       setSpotlightConsent(spotlightSubmission.consent_public_display);
       return;
@@ -111,8 +137,13 @@ export default function Profile() {
     setSpotlightDisplayName(profile.full_name || '');
     setSpotlightHeadline('');
     setSpotlightShortBio(profile.bio || '');
+    setSpotlightAboutYouPoints(['', '', '']);
     setSpotlightWhyJoined('');
     setSpotlightMission(profile.mission || '');
+    setSpotlightArenaMeaning('');
+    setSpotlightAccomplishments('');
+    setSpotlightFavoriteQuotes(['', '']);
+    setSpotlightFeaturePhotoUrls([]);
     setSpotlightInstagram(profile.instagram_handle || '');
     setSpotlightConsent(false);
   }, [profile, spotlightSubmission]);
@@ -171,6 +202,68 @@ export default function Profile() {
     }
   }
 
+  function updateAboutYouPoint(index: number, value: string) {
+    setSpotlightAboutYouPoints((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  }
+
+  function addAboutYouPoint() {
+    setSpotlightAboutYouPoints((prev) =>
+      prev.length >= MAX_ABOUT_YOU_POINTS ? prev : [...prev, ''],
+    );
+  }
+
+  function removeAboutYouPoint(index: number) {
+    setSpotlightAboutYouPoints((prev) => {
+      const next = prev.filter((_, currentIndex) => currentIndex !== index);
+      return next.length ? next : [''];
+    });
+  }
+
+  function updateFavoriteQuote(index: number, value: string) {
+    setSpotlightFavoriteQuotes((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  }
+
+  function addFavoriteQuote() {
+    setSpotlightFavoriteQuotes((prev) =>
+      prev.length >= MAX_SPOTLIGHT_QUOTES ? prev : [...prev, ''],
+    );
+  }
+
+  function removeFavoriteQuote(index: number) {
+    setSpotlightFavoriteQuotes((prev) => {
+      const next = prev.filter((_, currentIndex) => currentIndex !== index);
+      return next.length ? next : [''];
+    });
+  }
+
+  function toggleFeaturePhoto(photoUrl: string) {
+    setSpotlightFeaturePhotoUrls((prev) => {
+      const alreadySelected = prev.includes(photoUrl);
+
+      if (alreadySelected) {
+        return prev.filter((url) => url !== photoUrl);
+      }
+
+      if (prev.length >= MAX_FEATURE_PHOTOS) {
+        return prev;
+      }
+
+      return [...prev, photoUrl];
+    });
+  }
+
+  const normalizedAboutYouPoints = normalizeTextList(spotlightAboutYouPoints);
+  const normalizedFavoriteQuotes = normalizeTextList(spotlightFavoriteQuotes, MAX_SPOTLIGHT_QUOTES);
+  const normalizedFeaturePhotoUrls = dedupePhotoUrls(spotlightFeaturePhotoUrls).slice(0, MAX_FEATURE_PHOTOS);
+
   async function handleSaveSpotlightDraft() {
     if (!user) return;
 
@@ -182,8 +275,13 @@ export default function Profile() {
           display_name: spotlightDisplayName,
           headline: spotlightHeadline,
           short_bio: spotlightShortBio,
+          about_you_points: normalizedAboutYouPoints,
           why_i_joined: spotlightWhyJoined,
           mission: spotlightMission,
+          arena_meaning: spotlightArenaMeaning,
+          favorite_accomplishments: spotlightAccomplishments,
+          favorite_quotes: normalizedFavoriteQuotes,
+          feature_photo_urls: normalizedFeaturePhotoUrls,
           instagram_handle: spotlightInstagram,
           photo_url: primaryHeadshotUrl,
           consent_public_display: spotlightConsent,
@@ -223,8 +321,13 @@ export default function Profile() {
           display_name: spotlightDisplayName,
           headline: spotlightHeadline,
           short_bio: spotlightShortBio,
+          about_you_points: normalizedAboutYouPoints,
           why_i_joined: spotlightWhyJoined,
           mission: spotlightMission,
+          arena_meaning: spotlightArenaMeaning,
+          favorite_accomplishments: spotlightAccomplishments,
+          favorite_quotes: normalizedFavoriteQuotes,
+          feature_photo_urls: normalizedFeaturePhotoUrls,
           instagram_handle: spotlightInstagram,
           photo_url: primaryHeadshotUrl,
           consent_public_display: spotlightConsent,
@@ -474,6 +577,150 @@ export default function Profile() {
                         maxLength={500}
                         placeholder="What brought you to Men in the Arena"
                       />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>About You (optional, 3-5 points)</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Add a few quick points to help others know you better.
+                      </p>
+                      <div className="space-y-2">
+                        {spotlightAboutYouPoints.map((point, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={point}
+                              onChange={(event) => updateAboutYouPoint(index, event.target.value)}
+                              placeholder="Write a short bullet point"
+                            />
+                            {spotlightAboutYouPoints.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeAboutYouPoint(index)}
+                                aria-label="Remove bullet"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addAboutYouPoint}
+                        disabled={spotlightAboutYouPoints.length >= MAX_ABOUT_YOU_POINTS}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add point
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="spotlightArenaMeaning">What has Men in the Arena meant for you?</Label>
+                      <Textarea
+                        id="spotlightArenaMeaning"
+                        value={spotlightArenaMeaning}
+                        onChange={(event) => setSpotlightArenaMeaning(event.target.value)}
+                        rows={3}
+                        maxLength={500}
+                        placeholder="How this community has changed you"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="spotlightAccomplishments">Favorite accomplishments</Label>
+                      <Textarea
+                        id="spotlightAccomplishments"
+                        value={spotlightAccomplishments}
+                        onChange={(event) => setSpotlightAccomplishments(event.target.value)}
+                        rows={3}
+                        maxLength={500}
+                        placeholder="Recent wins, moments, and moments of growth"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Favorite Quotes (optional, up to 2)</Label>
+                      <div className="space-y-2">
+                        {spotlightFavoriteQuotes.map((quote, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={quote}
+                              onChange={(event) => updateFavoriteQuote(index, event.target.value)}
+                              placeholder="A quote that inspires you"
+                            />
+                            {spotlightFavoriteQuotes.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeFavoriteQuote(index)}
+                                aria-label="Remove quote"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addFavoriteQuote}
+                        disabled={spotlightFavoriteQuotes.length >= MAX_SPOTLIGHT_QUOTES}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add quote
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Spotlight Photos (optional, up to 3)</Label>
+                      <p className="text-xs text-muted-foreground">
+                        These appear with your spotlight, in addition to your headshot.
+                      </p>
+                      {availableSpotlightPhotos.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No extra photos yet. Upload photos to your profile first if you want to add more.
+                        </p>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-2">
+                          {availableSpotlightPhotos.map((photo) => {
+                            const isSelected = spotlightFeaturePhotoUrls.includes(photo.photo_url);
+                            return (
+                              <button
+                                type="button"
+                                key={photo.id}
+                                onClick={() => toggleFeaturePhoto(photo.photo_url)}
+                                disabled={
+                                  uploadPhoto.isPending ||
+                                  (!isSelected && spotlightFeaturePhotoUrls.length >= MAX_FEATURE_PHOTOS)
+                                }
+                                className={`relative group rounded-lg overflow-hidden border-2 ${
+                                  isSelected ? "border-accent" : "border-muted"
+                                }`}
+                              >
+                                <img
+                                  src={photo.photo_url}
+                                  alt="Spotlight option"
+                                  className="w-full aspect-square object-cover"
+                                />
+                                <span
+                                  className={`absolute inset-0 bg-black/30 flex items-center justify-center text-xs text-white ${
+                                    isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                  }`}
+                                >
+                                  {isSelected ? "Selected" : "Select"}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">

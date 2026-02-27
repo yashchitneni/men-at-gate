@@ -275,7 +275,7 @@ export default function AdminSpotlights() {
                             </div>
 
                             <p className="text-sm text-foreground/90 leading-relaxed">
-                              {submission.why_i_joined || submission.short_bio || "No spotlight story provided yet."}
+                              {submission.arena_meaning || submission.why_i_joined || submission.short_bio || "No spotlight story provided yet."}
                             </p>
 
                             <div>

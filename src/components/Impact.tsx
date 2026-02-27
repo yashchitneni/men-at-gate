@@ -17,7 +17,13 @@ interface ImpactProps {
 }
 
 function getStorySnippet(testimonial: PublicBrotherhoodProfile) {
-  return testimonial.why_i_joined?.trim() || testimonial.short_bio?.trim() || testimonial.mission?.trim() || "";
+  return (
+    testimonial.arena_meaning?.trim() ||
+    testimonial.short_bio?.trim() ||
+    testimonial.why_i_joined?.trim() ||
+    testimonial.mission?.trim() ||
+    ""
+  );
 }
 
 const Impact = ({ testimonials, isLoading = false }: ImpactProps) => {
@@ -104,11 +110,24 @@ const Impact = ({ testimonials, isLoading = false }: ImpactProps) => {
           </DialogHeader>
 
           <div className="space-y-6">
-            {selectedTestimonial?.why_i_joined && (
-              <p className="text-xl leading-relaxed text-gray-200 font-light">"{selectedTestimonial.why_i_joined}"</p>
+            {selectedTestimonial?.arena_meaning && (
+              <p className="text-xl leading-relaxed text-gray-200 font-light">"{selectedTestimonial.arena_meaning}"</p>
             )}
             {selectedTestimonial?.short_bio && (
-              <p className="text-gray-300 leading-relaxed">{selectedTestimonial.short_bio}</p>
+              <p className="text-gray-300 leading-relaxed italic">{selectedTestimonial.short_bio}</p>
+            )}
+            {!selectedTestimonial?.arena_meaning && selectedTestimonial?.why_i_joined && (
+              <p className="text-xl leading-relaxed text-gray-200 font-light">"{selectedTestimonial.why_i_joined}"</p>
+            )}
+            {selectedTestimonial?.favorite_quotes && selectedTestimonial.favorite_quotes.length > 0 && (
+              <div className="space-y-2">
+                {selectedTestimonial.favorite_quotes.map((quote, index) => (
+                  <p key={`${quote}-${index}`} className="text-gray-300 leading-relaxed italic">“{quote}”</p>
+                ))}
+              </div>
+            )}
+            {selectedTestimonial?.favorite_accomplishments && (
+              <p className="text-gray-300 leading-relaxed">{selectedTestimonial.favorite_accomplishments}</p>
             )}
             {selectedTestimonial?.mission && (
               <p className="text-gray-300 leading-relaxed italic">{selectedTestimonial.mission}</p>

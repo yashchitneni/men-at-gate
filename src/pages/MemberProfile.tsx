@@ -34,8 +34,7 @@ export default function MemberProfile() {
     );
   }
 
-  const photoUrl = profile.primary_photo?.photo_url || 
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=700&fit=crop&crop=face';
+  const photoUrl = profile.primary_photo?.photo_url || '/placeholder.svg';
 
   return (
     <div className="min-h-screen bg-background">
