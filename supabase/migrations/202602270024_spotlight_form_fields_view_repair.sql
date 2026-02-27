@@ -1,5 +1,5 @@
--- Add spotlight form fields requested for the profile-based spotlight workflow.
--- These fields are optional except where the app enforces validation.
+-- Recreate public_brotherhood_profiles view after schema expansion.
+-- CREATE OR REPLACE VIEW fails when existing view columns are in a different order/name set.
 
 ALTER TABLE public.spotlight_submissions
   ADD COLUMN IF NOT EXISTS about_you_points TEXT[] NULL,
