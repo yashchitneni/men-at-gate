@@ -197,7 +197,11 @@ export default function WorkoutSubmit() {
                     )}
                   </div>
 
-                  <Accordion type="multiple" defaultValue={leaderGuideContent.sections.slice(0, 2).map((section) => section.id)}>
+                  <Accordion
+                    type="single"
+                    collapsible
+                    defaultValue={leaderGuideContent.sections[0]?.id}
+                  >
                     {leaderGuideContent.sections.map((section) => (
                       <AccordionItem key={section.id} value={section.id}>
                         <AccordionTrigger className="text-left">{section.title}</AccordionTrigger>
