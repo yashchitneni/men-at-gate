@@ -378,9 +378,11 @@ export default function AdminWorkouts() {
                               <Badge variant={assignment ? 'default' : 'secondary'}>
                                 {assignment ? 'Assigned' : 'Needs Leader'}
                               </Badge>
-                              <Badge variant="outline">
-                                {requestCount} pending request{requestCount === 1 ? '' : 's'}
-                              </Badge>
+                              {requestCount > 0 && (
+                                <Badge variant="outline">
+                                  {requestCount} pending request{requestCount === 1 ? '' : 's'}
+                                </Badge>
+                              )}
                             </div>
                           </div>
 
@@ -391,27 +393,34 @@ export default function AdminWorkouts() {
                           )}
 
                           <div className="flex flex-wrap gap-2">
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedScheduleEventId(workout.schedule_event_id);
-                                setRequestsModalOpen(true);
-                              }}
-                            >
-                              <Users className="h-4 w-4 mr-2" />
-                              Review Requests
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                setSelectedScheduleEventId(workout.schedule_event_id);
-                                setSelectedLeaderId(assignment?.leader_id || '');
-                                setAssignModalOpen(true);
-                              }}
-                              className="bg-accent hover:bg-accent/90"
-                            >
-                              <UserPlus className="h-4 w-4 mr-2" />
-                              Assign Leader
-                            </Button>
+                            {requestCount > 0 && (
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedScheduleEventId(workout.schedule_event_id);
+                                  setRequestsModalOpen(true);
+                                }}
+                              >
+                                <Users className="h-4 w-4 mr-2" />
+                                Review Requests
+                              </Button>
+                            )}
+                            {(requestCount > 0 || !assignment) && (
+                              <Button
+                                onClick={() => {
+                                  setSelectedScheduleEventId(workout.schedule_event_id);
+                                  setSelectedLeaderId(assignment?.leader_id || '');
+                                  setAssignModalOpen(true);
+                                }}
+                                className="bg-accent hover:bg-accent/90"
+                              >
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                Assign Leader
+                              </Button>
+                            )}
+                            {requestCount === 0 && assignment && (
+                              <p className="text-sm text-muted-foreground">No open actions for this workout.</p>
+                            )}
                           </div>
                         </div>
                       );
