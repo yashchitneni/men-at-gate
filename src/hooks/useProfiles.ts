@@ -46,11 +46,19 @@ export function useAllProfiles() {
   return useQuery({
     queryKey: ['profiles', 'all'],
     queryFn: async () => {
-      const profiles = await supabaseRestFetch<Profile[]>(
-        'profiles?order=created_at.desc'
-      );
-      
-      const photos = await supabaseRestFetch<MemberPhoto[]>('member_photos?select=*');
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (profilesError) throw profilesError;
+
+      const { data: photos, error: photosError } = await supabase
+        .from('member_photos')
+        .select('*');
+
+      if (photosError) throw photosError;
+
       const photosByUser = photos.reduce((acc, photo) => {
         if (!acc[photo.user_id]) acc[photo.user_id] = [];
         acc[photo.user_id].push(photo);
@@ -71,16 +79,21 @@ export function useProfile(userId: string) {
   return useQuery({
     queryKey: ['profiles', userId],
     queryFn: async () => {
-      const profiles = await supabaseRestFetch<Profile[]>(
-        `profiles?id=eq.${userId}`
-      );
-      
-      if (!profiles.length) throw new Error('Profile not found');
-      const profile = profiles[0];
-      
-      const photos = await supabaseRestFetch<MemberPhoto[]>(
-        `member_photos?user_id=eq.${userId}`
-      );
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+      if (!profile) throw new Error('Profile not found');
+
+      const { data: photos, error: photosError } = await supabase
+        .from('member_photos')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (photosError) throw photosError;
       
       return {
         ...profile,
