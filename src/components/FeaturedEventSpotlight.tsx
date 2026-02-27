@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import type { FeaturedEvent } from "@/types/database.types";
 import { isExternalUrl } from "@/lib/url";
 import { Link } from "react-router-dom";
-import { useCommunityActivitySummary } from "@/hooks/useCommunityInsights";
 import { DEFAULT_MARATHON_RUCK_IMAGE_URL, MARATHON_RUCK_SLUG } from "@/data/events";
 
 interface FeaturedEventSpotlightProps {
@@ -10,7 +9,6 @@ interface FeaturedEventSpotlightProps {
 }
 
 const FeaturedEventSpotlight = ({ event }: FeaturedEventSpotlightProps) => {
-  const { data: communitySummary } = useCommunityActivitySummary();
   if (!event) return null;
 
   const destination = event.hero_cta_url || event.event_path;
@@ -22,20 +20,6 @@ const FeaturedEventSpotlight = ({ event }: FeaturedEventSpotlightProps) => {
     event.slug === MARATHON_RUCK_SLUG
       ? DEFAULT_MARATHON_RUCK_IMAGE_URL
       : event.image_url;
-  const activityMetrics = [
-    {
-      label: "Attending This Week",
-      value: communitySummary?.attendees_7d ?? 0,
-    },
-    {
-      label: "Racers This Month",
-      value: communitySummary?.racers_month ?? 0,
-    },
-    {
-      label: "Workouts Led (30d)",
-      value: communitySummary?.workouts_led_30d ?? 0,
-    },
-  ];
 
   return (
     <section className="py-20 bg-primary text-primary-foreground relative overflow-hidden">
@@ -55,20 +39,6 @@ const FeaturedEventSpotlight = ({ event }: FeaturedEventSpotlightProps) => {
             )}
             <p className="text-primary-foreground/80 leading-relaxed mb-8">{eventSummary}</p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-              {activityMetrics.map((metric) => (
-                <div
-                  key={metric.label}
-                  className="border border-primary-foreground/20 bg-black/20 p-3"
-                >
-                  <p className="text-xs uppercase tracking-[0.2em] text-primary-foreground/60 mb-1">
-                    {metric.label}
-                  </p>
-                  <p className="text-2xl font-heading font-black">{metric.value}</p>
-                </div>
-              ))}
-            </div>
-
             <div className="flex flex-wrap gap-4">
               <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
                 {isExternalUrl(destination) ? (
@@ -79,7 +49,12 @@ const FeaturedEventSpotlight = ({ event }: FeaturedEventSpotlightProps) => {
                   <Link to={destination}>{event.hero_cta_label || "View Event"}</Link>
                 )}
               </Button>
-              <Button asChild variant="outline" size="lg" className="border-primary-foreground/40">
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              >
                 <Link to="/events">All Events</Link>
               </Button>
             </div>
