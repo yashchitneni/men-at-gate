@@ -11,14 +11,22 @@ import {
   useAllWorkoutSubmissions,
   useApproveSubmission,
   useRequestSubmissionChanges,
+  useWorkoutGuide,
+  useUpsertWorkoutGuide,
   type WorkoutSubmissionWithContext,
 } from '@/hooks/useWorkouts';
+import {
+  type LeaderGuideSection,
+  parseLeaderGuideContent,
+  toLeaderGuideJson,
+} from '@/lib/workoutGuides';
 import { useAllProfiles } from '@/hooks/useProfiles';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -60,27 +68,42 @@ export default function AdminWorkouts() {
   const { data: assignments = [] } = useWorkoutLeadAssignments('assigned');
   const { data: allProfiles = [] } = useAllProfiles();
   const { data: submissions = [], isLoading: submissionsLoading } = useAllWorkoutSubmissions();
+  const { data: leaderGuide, isLoading: guideLoading } = useWorkoutGuide('leader_guidelines', !!profile?.is_admin);
 
   const approveLeadRequest = useApproveWorkoutLeadRequest();
   const rejectLeadRequest = useRejectWorkoutLeadRequest();
   const assignLeaderDirect = useAssignWorkoutLeaderDirect();
   const approveSubmission = useApproveSubmission();
   const requestChanges = useRequestSubmissionChanges();
+  const upsertWorkoutGuide = useUpsertWorkoutGuide();
 
   const [requestsModalOpen, setRequestsModalOpen] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [submissionModalOpen, setSubmissionModalOpen] = useState(false);
+  const [guideModalOpen, setGuideModalOpen] = useState(false);
 
   const [selectedScheduleEventId, setSelectedScheduleEventId] = useState<string | null>(null);
   const [selectedLeaderId, setSelectedLeaderId] = useState('');
   const [selectedSubmission, setSelectedSubmission] = useState<WorkoutSubmissionWithContext | null>(null);
   const [adminFeedback, setAdminFeedback] = useState('');
+  const [guideTitle, setGuideTitle] = useState('Workout Leader Guidelines');
+  const [guideVersionLabel, setGuideVersionLabel] = useState('v1');
+  const [guidePurpose, setGuidePurpose] = useState('');
+  const [guideSections, setGuideSections] = useState<LeaderGuideSection[]>([]);
 
   useEffect(() => {
     if (!authLoading && (!profile || !profile.is_admin)) {
       navigate('/workouts');
     }
   }, [profile, authLoading, navigate]);
+
+  useEffect(() => {
+    const content = parseLeaderGuideContent(leaderGuide?.content_json);
+    setGuideTitle(leaderGuide?.title || 'Workout Leader Guidelines');
+    setGuideVersionLabel(leaderGuide?.version_label || 'v1');
+    setGuidePurpose(content.purpose);
+    setGuideSections(content.sections.map((section) => ({ ...section })));
+  }, [leaderGuide]);
 
   const requestsByEvent = useMemo(() => {
     const map = new Map<string, typeof pendingRequests>();
@@ -200,6 +223,88 @@ export default function AdminWorkouts() {
       toast({
         title: 'Error',
         description: 'Failed to request changes.',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  function updateSection(sectionId: string, patch: Partial<LeaderGuideSection>) {
+    setGuideSections((sections) =>
+      sections.map((section) => (section.id === sectionId ? { ...section, ...patch } : section)),
+    );
+  }
+
+  function addSection() {
+    const next = guideSections.length + 1;
+    setGuideSections((sections) => [
+      ...sections,
+      {
+        id: `section_${next}`,
+        title: `New Section ${next}`,
+        summary: '',
+        checklist: [],
+        success_criteria: [],
+      },
+    ]);
+  }
+
+  function removeSection(sectionId: string) {
+    setGuideSections((sections) => sections.filter((section) => section.id !== sectionId));
+  }
+
+  async function handleSaveGuide() {
+    const normalizedSections = guideSections
+      .map((section) => ({
+        ...section,
+        id: section.id.trim(),
+        title: section.title.trim(),
+        summary: section.summary.trim(),
+        checklist: section.checklist.map((item) => item.trim()).filter((item) => item.length > 0),
+        success_criteria: section.success_criteria.map((item) => item.trim()).filter((item) => item.length > 0),
+      }))
+      .filter((section) => section.id.length > 0 && section.title.length > 0);
+
+    if (!guideTitle.trim()) {
+      toast({
+        title: 'Guide title required',
+        description: 'Add a title before saving.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (normalizedSections.length === 0) {
+      toast({
+        title: 'At least one section is required',
+        description: 'Add at least one guide section before saving.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await upsertWorkoutGuide.mutateAsync({
+        slug: 'leader_guidelines',
+        title: guideTitle.trim(),
+        roleScope: 'leader',
+        versionLabel: guideVersionLabel.trim() || null,
+        isActive: true,
+        contentJson: toLeaderGuideJson({
+          purpose: guidePurpose.trim(),
+          sections: normalizedSections,
+        }),
+      });
+
+      toast({
+        title: 'Guide saved',
+        description: 'Leader guidance content was updated.',
+      });
+
+      setGuideModalOpen(false);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to save guide content.',
         variant: 'destructive',
       });
     }
@@ -381,6 +486,178 @@ export default function AdminWorkouts() {
                 )}
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Leader Guide Content</CardTitle>
+                <CardDescription>
+                  This content appears inside the leader submission flow and reminder emails.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {guideLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <Badge variant="outline">Slug: leader_guidelines</Badge>
+                      <Badge variant="secondary">{guideSections.length} sections</Badge>
+                      {leaderGuide?.version_label && <Badge variant="outline">{leaderGuide.version_label}</Badge>}
+                      {leaderGuide?.updated_at && (
+                        <span className="text-muted-foreground">
+                          Updated {format(new Date(leaderGuide.updated_at), 'MMM d, yyyy h:mm a')}
+                        </span>
+                      )}
+                    </div>
+                    <Button onClick={() => setGuideModalOpen(true)} className="bg-accent hover:bg-accent/90">
+                      Edit Leader Guide
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Dialog open={guideModalOpen} onOpenChange={setGuideModalOpen}>
+              <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Edit Leader Guide</DialogTitle>
+                  <DialogDescription>
+                    Update the in-app guidance shown to assigned workout leaders.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-6 pt-2">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="guide-title">Guide title</Label>
+                      <Input
+                        id="guide-title"
+                        value={guideTitle}
+                        onChange={(event) => setGuideTitle(event.target.value)}
+                        placeholder="Workout Leader Guidelines"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="guide-version">Version label</Label>
+                      <Input
+                        id="guide-version"
+                        value={guideVersionLabel}
+                        onChange={(event) => setGuideVersionLabel(event.target.value)}
+                        placeholder="v1"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="guide-purpose">Purpose</Label>
+                    <Textarea
+                      id="guide-purpose"
+                      value={guidePurpose}
+                      onChange={(event) => setGuidePurpose(event.target.value)}
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-base">Sections</Label>
+                      <Button type="button" variant="outline" size="sm" onClick={addSection}>
+                        Add Section
+                      </Button>
+                    </div>
+
+                    {guideSections.map((section) => (
+                      <div key={section.id} className="border rounded-lg p-4 space-y-3">
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label>Section id</Label>
+                            <Input
+                              value={section.id}
+                              onChange={(event) => updateSection(section.id, { id: event.target.value })}
+                              placeholder="before_workout"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Section title</Label>
+                            <Input
+                              value={section.title}
+                              onChange={(event) => updateSection(section.id, { title: event.target.value })}
+                              placeholder="Before the Workout"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Summary</Label>
+                          <Textarea
+                            value={section.summary}
+                            onChange={(event) => updateSection(section.id, { summary: event.target.value })}
+                            rows={2}
+                          />
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label>Checklist (one item per line)</Label>
+                            <Textarea
+                              value={section.checklist.join('\n')}
+                              onChange={(event) =>
+                                updateSection(section.id, {
+                                  checklist: event.target.value
+                                    .split('\n')
+                                    .map((item) => item.trim())
+                                    .filter((item) => item.length > 0),
+                                })
+                              }
+                              rows={6}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Success criteria (one item per line)</Label>
+                            <Textarea
+                              value={section.success_criteria.join('\n')}
+                              onChange={(event) =>
+                                updateSection(section.id, {
+                                  success_criteria: event.target.value
+                                    .split('\n')
+                                    .map((item) => item.trim())
+                                    .filter((item) => item.length > 0),
+                                })
+                              }
+                              rows={6}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeSection(section.id)}
+                            disabled={guideSections.length <= 1}
+                          >
+                            Remove Section
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-2 border-t">
+                    <Button variant="outline" onClick={() => setGuideModalOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleSaveGuide} disabled={upsertWorkoutGuide.isPending} className="bg-accent hover:bg-accent/90">
+                      {upsertWorkoutGuide.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Save Guide
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             <Dialog open={requestsModalOpen} onOpenChange={setRequestsModalOpen}>
               <DialogContent className="max-w-xl">

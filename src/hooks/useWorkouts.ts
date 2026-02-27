@@ -9,6 +9,7 @@ import type {
   WorkoutLeadAssignment,
   SweatpalsScheduleEvent,
   UpcomingLeadableWorkout,
+  Json,
 } from '@/types/database.types';
 import { supabaseRestFetch } from '@/lib/supabaseHttp';
 
@@ -45,6 +46,28 @@ export type WorkoutSubmissionWithContext = WorkoutSubmission & {
 export type AssignedWorkoutWithSubmission = WorkoutLeadAssignmentWithContext & {
   submission: WorkoutSubmission | null;
 };
+
+export interface SaveWorkoutGuideInput {
+  slug: string;
+  title: string;
+  roleScope?: 'leader' | 'host' | 'admin' | 'shared';
+  versionLabel?: string | null;
+  isActive?: boolean;
+  contentJson: Json;
+}
+
+export interface WorkoutGuideRecord {
+  id: string;
+  slug: string;
+  title: string;
+  role_scope: string;
+  version_label: string | null;
+  is_active: boolean;
+  content_json: Json;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 // Fetch upcoming workout (next one)
 export function useUpcomingWorkout() {
@@ -359,6 +382,71 @@ export function useLeadableWorkouts(limit = 24) {
 
       if (error) throw error;
       return (data || []) as LeadableWorkout[];
+    },
+  });
+}
+
+export function useWorkoutGuide(slug: string, enabled = true) {
+  return useQuery({
+    queryKey: ['workouts', 'guide', slug],
+    queryFn: async () => {
+      const { data, error } = await db
+        .from('workout_guides')
+        .select('*')
+        .eq('slug', slug)
+        .eq('is_active', true)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return (data || null) as WorkoutGuideRecord | null;
+    },
+    enabled: enabled && !!slug,
+  });
+}
+
+export function useUpsertWorkoutGuide() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      slug,
+      title,
+      roleScope = 'leader',
+      versionLabel,
+      isActive = true,
+      contentJson,
+    }: SaveWorkoutGuideInput) => {
+      const {
+        data: { user },
+      } = await db.auth.getUser();
+      if (!user) throw new Error('Must be logged in');
+
+      const { data, error } = await db
+        .from('workout_guides')
+        .upsert(
+          {
+            slug,
+            title,
+            role_scope: roleScope,
+            version_label: versionLabel || null,
+            is_active: isActive,
+            content_json: contentJson,
+            updated_by: user.id,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'slug' },
+        )
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      return data as WorkoutGuideRecord;
+    },
+    onSuccess: (guide) => {
+      queryClient.invalidateQueries({ queryKey: ['workouts', 'guide'] });
+      queryClient.setQueryData(['workouts', 'guide', guide.slug], guide);
     },
   });
 }

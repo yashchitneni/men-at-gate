@@ -6,8 +6,10 @@ import {
   useMyWorkoutLeadRequests,
   useCreateWorkoutLeadRequests,
   useCancelWorkoutLeadRequest,
+  useWorkoutGuide,
 } from '@/hooks/useWorkouts';
 import { useSweatpalsNextWorkout } from '@/hooks/useIntegrations';
+import { getLeaderChecklist, parseLeaderGuideContent } from '@/lib/workoutGuides';
 import { AuthModal } from '@/components/AuthModal';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
@@ -47,6 +49,7 @@ export default function Workouts() {
   const { data: leadableWorkouts = [], isLoading: leadableLoading } = useLeadableWorkouts(20);
   const { data: myAssignedWorkouts = [] } = useMyAssignedWorkouts();
   const { data: myLeadRequests = [] } = useMyWorkoutLeadRequests();
+  const { data: leaderGuide } = useWorkoutGuide('leader_guidelines', !!user && myAssignedWorkouts.length > 0);
 
   const createLeadRequests = useCreateWorkoutLeadRequests();
   const cancelLeadRequest = useCancelWorkoutLeadRequest();
@@ -68,6 +71,14 @@ export default function Workouts() {
   const openLeadableWorkouts = useMemo(
     () => leadableWorkouts.filter((event) => !event.is_assigned),
     [leadableWorkouts],
+  );
+  const leaderGuideContent = useMemo(
+    () => parseLeaderGuideContent(leaderGuide?.content_json),
+    [leaderGuide?.content_json],
+  );
+  const leaderQuickChecklist = useMemo(
+    () => getLeaderChecklist(leaderGuideContent, 3),
+    [leaderGuideContent],
   );
 
   useEffect(() => {
@@ -278,6 +289,22 @@ export default function Workouts() {
                               {config.label}
                             </Badge>
                           </div>
+                        </div>
+
+                        <div className="rounded-lg border bg-background/80 p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-semibold">Leader Brief</p>
+                            {leaderGuide?.updated_at && (
+                              <p className="text-xs text-muted-foreground">
+                                Updated {format(new Date(leaderGuide.updated_at), 'MMM d')}
+                              </p>
+                            )}
+                          </div>
+                          <ul className="space-y-1 text-xs text-muted-foreground">
+                            {leaderQuickChecklist.map((item, index) => (
+                              <li key={`${assignment.id}-brief-${index}`}>• {item}</li>
+                            ))}
+                          </ul>
                         </div>
 
                         {status === 'changes_requested' && submission?.admin_feedback && (

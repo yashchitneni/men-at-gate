@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
   useMyWorkoutAssignment,
   useMyWorkoutSubmission,
   useSaveWorkoutSubmission,
+  useWorkoutGuide,
 } from '@/hooks/useWorkouts';
+import { parseLeaderGuideContent } from '@/lib/workoutGuides';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -13,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Save, Send, Calendar, CheckCircle, AlertCircle, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
@@ -23,6 +26,7 @@ export default function WorkoutSubmit() {
   const { user, loading: authLoading } = useAuth();
   const { data: assignment, isLoading: assignmentLoading } = useMyWorkoutAssignment(assignmentId || '');
   const { data: existingSubmission, isLoading: submissionLoading } = useMyWorkoutSubmission(assignmentId || '');
+  const { data: leaderGuide } = useWorkoutGuide('leader_guidelines', !!assignmentId && !!user);
   const saveSubmission = useSaveWorkoutSubmission();
   const { toast } = useToast();
 
@@ -95,6 +99,11 @@ export default function WorkoutSubmit() {
       });
     }
   }
+
+  const leaderGuideContent = useMemo(
+    () => parseLeaderGuideContent(leaderGuide?.content_json),
+    [leaderGuide?.content_json],
+  );
 
   if (authLoading || assignmentLoading || submissionLoading) {
     return (
@@ -176,6 +185,49 @@ export default function WorkoutSubmit() {
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{existingSubmission.admin_feedback}</p>
                   </div>
                 )}
+
+                <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div>
+                      <p className="font-semibold">Leader Brief</p>
+                      <p className="text-sm text-muted-foreground">{leaderGuideContent.purpose}</p>
+                    </div>
+                    {leaderGuide?.updated_at && (
+                      <Badge variant="outline">Updated {format(new Date(leaderGuide.updated_at), 'MMM d, yyyy')}</Badge>
+                    )}
+                  </div>
+
+                  <Accordion type="multiple" defaultValue={leaderGuideContent.sections.slice(0, 2).map((section) => section.id)}>
+                    {leaderGuideContent.sections.map((section) => (
+                      <AccordionItem key={section.id} value={section.id}>
+                        <AccordionTrigger className="text-left">{section.title}</AccordionTrigger>
+                        <AccordionContent className="space-y-3">
+                          <p className="text-sm text-muted-foreground">{section.summary}</p>
+                          {section.checklist.length > 0 && (
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Checklist</p>
+                              <ul className="space-y-1 text-sm text-muted-foreground">
+                                {section.checklist.map((item, index) => (
+                                  <li key={`${section.id}-item-${index}`}>• {item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {section.success_criteria.length > 0 && (
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Success Criteria</p>
+                              <ul className="space-y-1 text-sm text-muted-foreground">
+                                {section.success_criteria.map((item, index) => (
+                                  <li key={`${section.id}-success-${index}`}>• {item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="workoutPlan" className="text-base font-semibold">
