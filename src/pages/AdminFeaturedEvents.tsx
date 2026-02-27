@@ -83,6 +83,8 @@ function toDatetimeLocal(value: string | null) {
   )}:${pad(date.getMinutes())}`;
 }
 
+type ImageField = "hero_image_url" | "cover_image_url" | "image_url";
+
 const EDITOR_STEPS = ["Event Setup", "Page Content", "Images", "Publish"] as const;
 
 const EMPTY_FORM: FeaturedEventForm = {
@@ -240,21 +242,49 @@ export default function AdminFeaturedEvents() {
     setBlocks((previous) => previous.filter((_, blockIndex) => blockIndex !== index));
   }
 
-  function addBlock() {
-    setBlocks((previous) => [
-      ...previous,
-      {
-        block_type: "mission",
-        position: previous.length,
-        is_enabled: true,
-        content_json: {
-          heading: "New Section",
-          body: "Add section content",
-        },
-        image_url: null,
-        image_confirmed: false,
-      },
-    ]);
+  function previousStep() {
+    setActiveStep((previous) => Math.max(previous - 1, 0));
+  }
+
+  async function handleImageUpload(field: ImageField, file: File | null) {
+    if (!file) return;
+
+    try {
+      setUploadingImageField(field);
+
+      const fileExt = file.name.split(".").pop() || "jpg";
+      const safeSlug = normalizeSlug(form.slug) || "draft-event";
+      const filePath = `featured-events/${safeSlug}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("member-photos")
+        .upload(filePath, file, { upsert: false });
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("member-photos").getPublicUrl(filePath);
+
+      setForm((previous) => ({
+        ...previous,
+        [field]: publicUrl,
+        ...(field === "hero_image_url" && !previous.image_url ? { image_url: publicUrl } : {}),
+      }));
+
+      toast({
+        title: "Image uploaded",
+        description: "Image URL has been filled in for this event.",
+      });
+    } catch (error: unknown) {
+      toast({
+        title: "Image upload failed",
+        description: error instanceof Error ? error.message : "Please try uploading again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImageField(null);
+    }
   }
 
   async function handleSave() {
