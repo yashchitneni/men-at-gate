@@ -45,30 +45,44 @@ function getPreferredEnv(names: string[], fallback: string): string {
   return fallback;
 }
 
-function buildReminderEmail(args: { memberName: string; profileUrl: string }) {
+function getFirstName(inputName: string | null | undefined, email: string): string {
+  const fullName = (inputName || "").trim();
+  if (fullName.length > 0) {
+    const first = fullName.split(/\s+/)[0]?.trim();
+    if (first) return first;
+  }
+
+  const localPart = email.split("@")[0]?.trim() || "";
+  const cleaned = localPart.replace(/[._-]+/g, " ").trim();
+  const first = cleaned.split(/\s+/)[0]?.trim();
+  return first || "brother";
+}
+
+function buildReminderEmail(args: { firstName: string; profileUrl: string }) {
   const subject = "Complete your Men in the Arena spotlight profile";
 
   const text = [
-    `Hey ${args.memberName},`,
+    `Hey ${args.firstName},`,
     "",
-    "We want to feature you in the Men in the Arena brotherhood directory.",
+    "We'd love to feature you in the Men in the Arena brotherhood directory.",
     "",
-    "Please complete your spotlight profile so we can publish your page:",
-    args.profileUrl,
+    "Your spotlight profile only takes a couple of minutes:",
+    `Complete my profile: ${args.profileUrl}`,
     "",
-    "Once submitted, an admin will review and schedule your spotlight.",
+    "Once you submit it, our team will review it and schedule your spotlight.",
     "",
-    "- Men in the Arena",
+    "Appreciate you,",
+    "Men in the Arena",
   ].join("\n");
 
   const html = `
     <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111;">
-      <p>Hey ${args.memberName},</p>
-      <p>We want to feature you in the Men in the Arena brotherhood directory.</p>
-      <p>Please complete your spotlight profile so we can publish your page:</p>
+      <p>Hey ${args.firstName},</p>
+      <p>We'd love to feature you in the Men in the Arena brotherhood directory.</p>
+      <p>Your spotlight profile only takes a couple of minutes:</p>
       <p><a href="${args.profileUrl}">Complete my profile</a></p>
-      <p>Once submitted, an admin will review and schedule your spotlight.</p>
-      <p>- Men in the Arena</p>
+      <p>Once you submit it, our team will review it and schedule your spotlight.</p>
+      <p>Appreciate you,<br />Men in the Arena</p>
     </div>
   `;
 
@@ -171,8 +185,9 @@ serve(async (req) => {
     }
 
     const profileUrl = `${appBaseUrl.replace(/\/$/, "")}/profile`;
+    const firstName = getFirstName(targetProfile.full_name, targetProfile.email);
     const emailContent = buildReminderEmail({
-      memberName: targetProfile.full_name || "brother",
+      firstName,
       profileUrl,
     });
 
