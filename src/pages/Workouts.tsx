@@ -16,8 +16,6 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
@@ -66,10 +64,8 @@ export default function Workouts() {
   const { toast } = useToast();
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [interestModalOpen, setInterestModalOpen] = useState(false);
   const [selectedHistoryWorkoutId, setSelectedHistoryWorkoutId] = useState<string | null>(null);
-  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
-  const [notes, setNotes] = useState('');
+  const [requestingEventId, setRequestingEventId] = useState<string | null>(null);
 
   const pendingRequests = useMemo(() => {
     const today = startOfToday();
@@ -100,54 +96,31 @@ export default function Workouts() {
     [leaderGuideContent],
   );
 
-  useEffect(() => {
-    if (!interestModalOpen) return;
-    setSelectedEventIds(pendingRequests.map((request) => request.schedule_event_id));
-  }, [interestModalOpen, pendingRequests]);
-
-  function toggleDate(scheduleEventId: string) {
-    setSelectedEventIds((prev) =>
-      prev.includes(scheduleEventId)
-        ? prev.filter((id) => id !== scheduleEventId)
-        : [...prev, scheduleEventId],
-    );
-  }
-
-  async function handleExpressInterest() {
+  async function handleLeadDate(scheduleEventId: string) {
     if (!user) {
       setAuthModalOpen(true);
       return;
     }
 
-    if (selectedEventIds.length === 0) {
-      toast({
-        title: 'Select at least one date',
-        description: "Please pick which dates you're available.",
-        variant: 'destructive',
-      });
-      return;
-    }
-
     try {
+      setRequestingEventId(scheduleEventId);
       await createLeadRequests.mutateAsync({
         userId: user.id,
-        scheduleEventIds: selectedEventIds,
-        notes: notes || undefined,
+        scheduleEventIds: [scheduleEventId],
       });
 
       toast({
         title: "You're on the list!",
-        description: 'Core leadership will review your request.',
+        description: 'Core leadership will review your request for this workout.',
       });
-
-      setInterestModalOpen(false);
-      setNotes('');
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to submit. Please try again.',
+        description: 'Failed to submit your lead request. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setRequestingEventId(null);
     }
   }
 
@@ -261,7 +234,7 @@ export default function Workouts() {
                     Want to Lead a Workout?
                   </CardTitle>
                   <CardDescription>
-                    Pick the upcoming dates you can lead. Core leadership approves one brother per workout.
+                    See open dates below and request to lead directly. Core leadership approves one brother per workout.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -296,21 +269,81 @@ export default function Workouts() {
                     </div>
                   )}
 
-                  <div className="flex justify-center">
-                    <Button
-                      className="bg-accent hover:bg-accent/90"
-                      onClick={() => {
-                        if (!user) {
-                          setAuthModalOpen(true);
-                        } else {
-                          setInterestModalOpen(true);
-                        }
-                      }}
-                    >
-                      <Hand className="mr-2 h-4 w-4" />
-                      {pendingRequests.length > 0 ? 'Update Availability' : 'I Want to Lead'}
-                    </Button>
-                  </div>
+                  {leadableLoading ? (
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <Skeleton className="h-28 w-full" />
+                      <Skeleton className="h-28 w-full" />
+                      <Skeleton className="h-28 w-full" />
+                      <Skeleton className="h-28 w-full" />
+                    </div>
+                  ) : openLeadableWorkouts.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No open workout dates available right now.</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {openLeadableWorkouts.map((event) => {
+                        const isAlreadyRequested = pendingRequestEventIds.has(event.schedule_event_id);
+                        const isRequestingThis = requestingEventId === event.schedule_event_id;
+                        return (
+                          <div
+                            key={event.schedule_event_id}
+                            className={cn(
+                              'rounded-lg border p-3 space-y-3 text-left',
+                              isAlreadyRequested ? 'border-green-500/30 bg-green-500/10' : 'border-border',
+                            )}
+                          >
+                            <div>
+                              <p className="font-semibold">
+                                {format(new Date(event.starts_at), 'EEEE, MMM d, yyyy')}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {format(new Date(event.starts_at), 'h:mm a')}
+                              </p>
+                              {event.location && (
+                                <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {event.location}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex items-center justify-between gap-2">
+                              {isAlreadyRequested ? (
+                                <>
+                                  <Badge variant="secondary">Pending</Badge>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const request = pendingRequests.find(
+                                        (entry) => entry.schedule_event_id === event.schedule_event_id,
+                                      );
+                                      if (request) void handleCancelRequest(request.id);
+                                    }}
+                                    disabled={cancelLeadRequest.isPending}
+                                  >
+                                    <X className="h-3 w-3 mr-1" />
+                                    Remove
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  className="bg-accent hover:bg-accent/90"
+                                  onClick={() => void handleLeadDate(event.schedule_event_id)}
+                                  disabled={isRequestingThis || createLeadRequests.isPending}
+                                >
+                                  {isRequestingThis && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                                  Lead Workout
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -493,102 +526,6 @@ export default function Workouts() {
                 )}
               </CardContent>
             </Card>
-
-            <Dialog open={interestModalOpen} onOpenChange={setInterestModalOpen}>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Lead a Workout</DialogTitle>
-                  <DialogDescription>
-                    Pick the dates you can lead. You can choose multiple upcoming workouts.
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4 pt-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Available Dates *</Label>
-                    {selectedEventIds.length > 0 && (
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedEventIds([])}>
-                        Clear selection
-                      </Button>
-                    )}
-                  </div>
-
-                  {leadableLoading ? (
-                    <div className="space-y-2">
-                      <Skeleton className="h-20 w-full" />
-                      <Skeleton className="h-20 w-full" />
-                    </div>
-                  ) : openLeadableWorkouts.length === 0 ? (
-                    <p className="text-sm text-muted-foreground py-6 text-center">
-                      No open workout dates available right now.
-                    </p>
-                  ) : (
-                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                      {openLeadableWorkouts.map((event) => {
-                        const isSelected = selectedEventIds.includes(event.schedule_event_id);
-                        const isAlreadyRequested = pendingRequestEventIds.has(event.schedule_event_id);
-
-                        return (
-                          <button
-                            key={event.schedule_event_id}
-                            type="button"
-                            onClick={() => toggleDate(event.schedule_event_id)}
-                            className={cn(
-                              'w-full rounded-lg border p-3 text-left transition-colors',
-                              isSelected
-                                ? 'border-accent bg-accent/10'
-                                : 'border-border hover:border-accent/40 hover:bg-accent/5',
-                            )}
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="font-medium">
-                                  {format(new Date(event.starts_at), 'EEEE, MMMM d, yyyy')}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {format(new Date(event.starts_at), 'h:mm a')}
-                                </p>
-                                {event.location && (
-                                  <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
-                                    <MapPin className="h-3 w-3" />
-                                    {event.location}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {isAlreadyRequested && <Badge variant="secondary">Pending</Badge>}
-                                <Badge variant={isSelected ? 'default' : 'outline'}>
-                                  {isSelected ? 'Selected' : 'Select'}
-                                </Badge>
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Notes (optional)</Label>
-                    <Textarea
-                      id="notes"
-                      placeholder="Anything leadership should know?"
-                      value={notes}
-                      onChange={(event) => setNotes(event.target.value)}
-                    />
-                  </div>
-
-                  <Button
-                    className="w-full bg-accent hover:bg-accent/90"
-                    onClick={handleExpressInterest}
-                    disabled={createLeadRequests.isPending || openLeadableWorkouts.length === 0}
-                  >
-                    {createLeadRequests.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Submit Interest ({selectedEventIds.length} selected)
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
 
             <Dialog
               open={!!selectedHistoryWorkout}
