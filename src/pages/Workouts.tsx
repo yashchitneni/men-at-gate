@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUpcomingWorkout, useWorkoutSlots, useMyWorkoutInterest, useExpressInterest, useCancelInterest, useMyAssignedWorkouts } from '@/hooks/useWorkouts';
 import { useAttendanceLeaderboard, useWorkoutLeaderLeaderboard } from '@/hooks/useCommunityInsights';
+import { useSweatpalsNextWorkout } from '@/hooks/useIntegrations';
 import { AuthModal } from '@/components/AuthModal';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
@@ -20,7 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Calendar, User, Dumbbell, Loader2, Hand, Check, FileEdit, AlertCircle, Clock, Trophy, Flame } from 'lucide-react';
+import { Calendar, User, Dumbbell, Loader2, Hand, Check, FileEdit, AlertCircle, Clock, Trophy, Flame, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
@@ -30,6 +31,7 @@ import { Link } from 'react-router-dom';
 export default function Workouts() {
   const { user, profile } = useAuth();
   const { data: upcomingWorkout, isLoading } = useUpcomingWorkout();
+  const { data: sweatpalsNextWorkout, isLoading: isLoadingSweatpalsWorkout } = useSweatpalsNextWorkout();
   const { data: allSlots } = useWorkoutSlots();
   const { data: myAssignedWorkouts } = useMyAssignedWorkouts();
   const { data: myInterest } = useMyWorkoutInterest();
@@ -46,6 +48,9 @@ export default function Workouts() {
 
   // Filter to only show open slots (no leader assigned)
   const openSlots = allSlots?.filter(slot => !slot.leader_id && slot.status === 'open') || [];
+  const nextWorkoutDestination = sweatpalsNextWorkout?.destination_path || sweatpalsNextWorkout?.destination_url || '/events';
+  const isExternalWorkoutDestination = /^https?:\/\//.test(nextWorkoutDestination);
+  const isNextWorkoutLoading = isLoadingSweatpalsWorkout && isLoading;
 
   function toggleDate(date: string) {
     setSelectedDates(prev => 
@@ -135,11 +140,48 @@ export default function Workouts() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
+                {isNextWorkoutLoading ? (
                   <div className="space-y-4">
                     <Skeleton className="h-8 w-1/2" />
                     <Skeleton className="h-4 w-1/3" />
                     <Skeleton className="h-16 w-full" />
+                  </div>
+                ) : sweatpalsNextWorkout ? (
+                  <div className="space-y-4">
+                    <Badge variant="secondary" className="w-fit">
+                      Synced from SweatPals
+                    </Badge>
+
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      <span className="font-medium">
+                        {format(new Date(sweatpalsNextWorkout.starts_at), 'EEEE, MMMM d, yyyy h:mm a')}
+                      </span>
+                    </div>
+
+                    {sweatpalsNextWorkout.location && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <MapPin className="h-4 w-4" />
+                        <span>{sweatpalsNextWorkout.location}</span>
+                      </div>
+                    )}
+
+                    <div className="p-4 bg-accent/10 rounded-lg">
+                      <p className="font-semibold text-lg">{sweatpalsNextWorkout.title}</p>
+                      {sweatpalsNextWorkout.event_alias && (
+                        <p className="text-sm text-muted-foreground mt-1">{sweatpalsNextWorkout.event_alias}</p>
+                      )}
+                    </div>
+
+                    <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                      {isExternalWorkoutDestination ? (
+                        <a href={nextWorkoutDestination} target="_blank" rel="noreferrer">
+                          View Workout Event
+                        </a>
+                      ) : (
+                        <Link to={nextWorkoutDestination}>View Workout Event</Link>
+                      )}
+                    </Button>
                   </div>
                 ) : upcomingWorkout ? (
                   <div className="space-y-4">

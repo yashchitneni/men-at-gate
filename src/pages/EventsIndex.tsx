@@ -8,11 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin } from "lucide-react";
 import { eventCards } from "@/data/events";
 import { useFeaturedEvents } from "@/hooks/useFeaturedEvents";
-import { useCommunityActivitySummary } from "@/hooks/useCommunityInsights";
 
 export default function EventsIndex() {
   const { data: featuredEvents } = useFeaturedEvents();
-  const { data: communitySummary } = useCommunityActivitySummary();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -55,27 +53,6 @@ export default function EventsIndex() {
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 Big moments, hard challenges, and brotherhood on mission. Start with the featured event, then explore what is next.
               </p>
-            </div>
-
-            <div className="grid sm:grid-cols-3 gap-4 mb-10">
-              <Card className="border-accent/30">
-                <CardContent className="pt-6">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Attending This Week</p>
-                  <p className="text-3xl font-heading font-black">{communitySummary?.attendees_7d ?? 0}</p>
-                </CardContent>
-              </Card>
-              <Card className="border-accent/30">
-                <CardContent className="pt-6">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Racers This Month</p>
-                  <p className="text-3xl font-heading font-black">{communitySummary?.racers_month ?? 0}</p>
-                </CardContent>
-              </Card>
-              <Card className="border-accent/30">
-                <CardContent className="pt-6">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Workouts Led (30d)</p>
-                  <p className="text-3xl font-heading font-black">{communitySummary?.workouts_led_30d ?? 0}</p>
-                </CardContent>
-              </Card>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8">

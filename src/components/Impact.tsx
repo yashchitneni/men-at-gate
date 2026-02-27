@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import heroWorkoutImage from "@/assets/hero-workout.jpg";
 
 const Impact = () => {
   const [selectedTestimonial, setSelectedTestimonial] = useState<number | null>(null);
@@ -41,7 +42,7 @@ const Impact = () => {
         <div className="absolute inset-0 bg-black/80 z-10" /> {/* Dark overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black z-10" />
         <img
-          src="/lovable-uploads/hero-workout.jpg"
+          src={heroWorkoutImage}
           alt="Men in the Arena Brotherhood"
           className="w-full h-full object-cover object-center opacity-60 grayscale"
         />
