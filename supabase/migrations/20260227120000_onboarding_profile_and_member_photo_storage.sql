@@ -20,7 +20,7 @@ WHERE full_name IS NOT NULL
 
 -- Keep full_name in sync for migrated and future records.
 UPDATE public.profiles
-SET full_name = trim(concat_ws(' ', NULLIF(trim(first_name), ''), NULLIF(trim(last_name), ''))
+SET full_name = trim(concat_ws(' ', NULLIF(trim(first_name), ''), NULLIF(trim(last_name), '')))
 WHERE (full_name IS NULL OR trim(full_name) = '')
   AND (first_name IS NOT NULL OR last_name IS NOT NULL);
 
@@ -76,13 +76,13 @@ WITH (security_invoker = false) AS
 SELECT
   id,
   full_name,
-  first_name,
-  last_name,
   instagram_handle,
   is_core_member,
   role,
   bio,
-  mission
+  mission,
+  first_name,
+  last_name
 FROM public.profiles;
 
 CREATE OR REPLACE VIEW public.core_roster
@@ -90,13 +90,13 @@ WITH (security_invoker = false) AS
 SELECT
   p.id,
   p.full_name,
-  p.first_name,
-  p.last_name,
   p.role,
   p.bio,
   p.mission,
   p.instagram_handle,
-  mp.photo_url AS primary_photo_url
+  mp.photo_url AS primary_photo_url,
+  p.first_name,
+  p.last_name
 FROM public.profiles p
 LEFT JOIN public.member_photos mp ON mp.user_id = p.id AND mp.is_primary = true
 WHERE p.is_core_member = true;
