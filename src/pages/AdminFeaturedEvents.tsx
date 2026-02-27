@@ -13,7 +13,6 @@ import {
   Palette,
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useDeleteFeaturedEvent,
@@ -84,10 +83,7 @@ function toDatetimeLocal(value: string | null) {
   )}:${pad(date.getMinutes())}`;
 }
 
-function fromDatetimeLocal(value: string) {
-  if (!value) return null;
-  return new Date(value).toISOString();
-}
+const EDITOR_STEPS = ["Event Setup", "Page Content", "Images", "Publish"] as const;
 
 const EMPTY_FORM: FeaturedEventForm = {
   slug: "",
@@ -165,7 +161,6 @@ export default function AdminFeaturedEvents() {
   const [form, setForm] = useState<FeaturedEventForm>(EMPTY_FORM);
   const [blocks, setBlocks] = useState<FeaturedEventBlockDraft[]>(hydrateTemplateBlocks(EMPTY_FORM));
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
-  const [uploadingImageField, setUploadingImageField] = useState<ImageField | null>(null);
 
   const { data: editingBlocks, isLoading: blocksLoading } = useFeaturedEventBlocks(editingEventId);
 
@@ -260,47 +255,6 @@ export default function AdminFeaturedEvents() {
         image_confirmed: false,
       },
     ]);
-  }
-
-  async function handleImageUpload(field: ImageField, file: File | null) {
-    if (!file) return;
-
-    try {
-      setUploadingImageField(field);
-
-      const fileExt = file.name.split(".").pop() || "jpg";
-      const safeSlug = normalizeSlug(form.slug) || "draft-event";
-      const filePath = `events/${safeSlug}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from(FEATURED_EVENTS_BUCKET)
-        .upload(filePath, file, { upsert: false });
-
-      if (uploadError) throw uploadError;
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from(FEATURED_EVENTS_BUCKET).getPublicUrl(filePath);
-
-      setForm((previous) => ({
-        ...previous,
-        [field]: publicUrl,
-        ...(field === "hero_image_url" && !previous.image_url ? { image_url: publicUrl } : {}),
-      }));
-
-      toast({
-        title: "Image uploaded",
-        description: "Image URL has been filled in for this event.",
-      });
-    } catch (error: unknown) {
-      toast({
-        title: "Image upload failed",
-        description: error instanceof Error ? error.message : "Please try uploading again.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingImageField(null);
-    }
   }
 
   async function handleSave() {
@@ -635,22 +589,146 @@ export default function AdminFeaturedEvents() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="template_key">Template</Label>
-                  <select
-                    id="template_key"
-                    className="h-10 rounded-md border bg-background px-3 text-sm w-full"
-                    value={form.template_key}
-                    onChange={(event) => {
-                      const template = event.target.value as FeaturedEventTemplateKey;
-                      setForm((previous) => ({ ...previous, template_key: template }));
-                      if (!form.id) {
-                        setBlocks(hydrateTemplateBlocks({ ...form, template_key: template }));
+                  <Label htmlFor="quote_author">Quote author</Label>
+                  <Input
+                    id="quote_author"
+                    value={form.quote_author}
+                    onChange={(event) => setForm((previous) => ({ ...previous, quote_author: event.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="final_heading">Final section heading</Label>
+                  <Input
+                    id="final_heading"
+                    value={form.final_heading}
+                    onChange={(event) => setForm((previous) => ({ ...previous, final_heading: event.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="final_body">Final section body</Label>
+                  <Textarea
+                    id="final_body"
+                    value={form.final_body}
+                    onChange={(event) => setForm((previous) => ({ ...previous, final_body: event.target.value }))}
+                    rows={3}
+                  />
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="final_cta_label">Final CTA label</Label>
+                    <Input
+                      id="final_cta_label"
+                      value={form.final_cta_label}
+                      onChange={(event) => setForm((previous) => ({ ...previous, final_cta_label: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="final_cta_url">Final CTA URL</Label>
+                    <Input
+                      id="final_cta_url"
+                      value={form.final_cta_url}
+                      onChange={(event) => setForm((previous) => ({ ...previous, final_cta_url: event.target.value }))}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeStep === 2 && (
+              <>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="hero_image_url">Hero image URL *</Label>
+                    <Input
+                      id="hero_image_url"
+                      value={form.hero_image_url}
+                      onChange={(event) => setForm((previous) => ({ ...previous, hero_image_url: event.target.value }))}
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cover_image_url">Cover image URL *</Label>
+                    <Input
+                      id="cover_image_url"
+                      value={form.cover_image_url}
+                      onChange={(event) => setForm((previous) => ({ ...previous, cover_image_url: event.target.value }))}
+                      placeholder="https://..."
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="image_url">Legacy/fallback image URL</Label>
+                    <Input
+                      id="image_url"
+                      value={form.image_url}
+                      onChange={(event) => setForm((previous) => ({ ...previous, image_url: event.target.value }))}
+                      placeholder="https://..."
+                    />
+                  </div>
+                </div>
+
+                {(form.hero_image_url || form.image_url) && (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {form.hero_image_url || form.image_url ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">Hero preview</p>
+                        <img
+                          src={form.hero_image_url || form.image_url}
+                          alt="Hero preview"
+                          className="w-full rounded-md border border-muted"
+                        />
+                      </div>
+                    ) : null}
+                    {form.cover_image_url ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">Cover preview</p>
+                        <img src={form.cover_image_url} alt="Cover preview" className="w-full rounded-md border border-muted" />
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeStep === 3 && (
+              <>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="publish_status">Publish status</Label>
+                    <select
+                      id="publish_status"
+                      className="h-10 rounded-md border bg-background px-3 text-sm w-full"
+                      value={form.publish_status}
+                      onChange={(event) =>
+                        setForm((previous) => ({
+                          ...previous,
+                          publish_status: event.target.value as FeaturedEvent["publish_status"],
+                          is_active: event.target.value === "published" ? previous.is_active : false,
+                        }))
                       }
-                    }}
-                  >
-                    <option value="challenge">Challenge</option>
-                    <option value="retreat">Retreat</option>
-                  </select>
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="published">Published</option>
+                      <option value="archived">Archived</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="publish-start">Publish visibility window</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        id="publish-start"
+                        type="datetime-local"
+                        value={form.start_at}
+                        onChange={(event) => setForm((previous) => ({ ...previous, start_at: event.target.value }))}
+                      />
+                      <Input
+                        id="publish-end"
+                        type="datetime-local"
+                        value={form.end_at}
+                        onChange={(event) => setForm((previous) => ({ ...previous, end_at: event.target.value }))}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </TabsContent>
