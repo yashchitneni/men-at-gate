@@ -17,6 +17,8 @@ export function useCoreRoster() {
       return coreMembers.map(member => ({
         id: member.id,
         full_name: member.full_name,
+        first_name: member.first_name,
+        last_name: member.last_name,
         role: member.role,
         bio: member.bio,
         mission: member.mission,
@@ -117,9 +119,14 @@ export function useUpdateProfile() {
       userId: string;
       data: {
         full_name?: string;
+        first_name?: string;
+        last_name?: string;
         phone?: string;
         instagram_handle?: string;
         shirt_size?: string;
+        here_for?: string[];
+        here_for_other?: string | null;
+        onboarding_completed_at?: string;
         bio?: string;
         mission?: string;
         role?: string;

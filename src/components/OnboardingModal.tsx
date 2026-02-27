@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Select,
   SelectContent,
@@ -20,19 +21,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, ArrowRight, ArrowLeft, Check, User, Target, Dumbbell } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2, Camera, ArrowRight, ArrowLeft, Check, User, Dumbbell } from 'lucide-react';
 
 const SHIRT_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
-const FITNESS_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Elite'];
-const GOALS = [
-  'Build discipline',
-  'Get stronger',
-  'Run a marathon',
-  'Find accountability',
-  'Make friends',
-  'Lead workouts',
-  'Complete a challenge',
+const HERE_FOR_OPTIONS = [
+  'Get pushed hard',
+  'Grow as a leader',
+  'Show up for my family better',
   'Other',
 ];
 
@@ -49,48 +44,85 @@ export function OnboardingModal() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // Form data
   const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [shirtSize, setShirtSize] = useState('');
   const [instagramHandle, setInstagramHandle] = useState('');
   const [bio, setBio] = useState('');
-  const [fitnessLevel, setFitnessLevel] = useState('');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [otherGoal, setOtherGoal] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  const needsOnboarding = profile && !profile.shirt_size && !profile.instagram_handle;
+  const needsOnboarding = Boolean(
+    profile &&
+      !profile.onboarding_completed_at &&
+      (!profile.first_name || !profile.last_name || !profile.shirt_size),
+  );
 
   useEffect(() => {
     if (needsOnboarding && user) {
-      const name = profile?.full_name || user.user_metadata?.full_name || '';
-      setFirstName(name.split(' ')[0] || '');
+      const seededLast = profile?.last_name || profile?.full_name?.split(' ').slice(1).join(' ') || '';
+      const seededFirst = profile?.first_name || profile?.full_name?.split(' ')[0] || '';
+
+      setFirstName(seededFirst);
+      setLastName(seededLast);
+      setShirtSize(profile?.shirt_size || '');
+      setInstagramHandle(profile?.instagram_handle || '');
+      setBio(profile?.bio || '');
+      setOtherGoal('');
+      setSelectedGoals(profile?.here_for || []);
       setOpen(true);
+    } else {
+      setOpen(false);
     }
   }, [needsOnboarding, user, profile]);
 
   function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) {
-      setPhotoFile(file);
-      const reader = new FileReader();
-      reader.onload = () => setPhotoPreview(reader.result as string);
-      reader.readAsDataURL(file);
+    if (!file) {
+      return;
     }
+
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setPhotoPreview(reader.result as string);
+    reader.readAsDataURL(file);
   }
 
   function toggleGoal(goal: string) {
-    setSelectedGoals(prev =>
-      prev.includes(goal) ? prev.filter(g => g !== goal) : [...prev, goal]
-    );
+    setSelectedGoals((prev) => {
+      const isSelected = prev.includes(goal);
+      if (isSelected) return prev.filter((entry) => entry !== goal);
+      return [...prev, goal];
+    });
   }
 
   async function handleSubmit() {
-    if (!user || !firstName.trim()) return;
+    if (!user || !firstName.trim() || !lastName.trim() || !shirtSize) return;
+
+    const wantsOther = selectedGoals.includes('Other');
+    if (wantsOther && !otherGoal.trim()) {
+      toast({
+        title: 'Tell us more',
+        description: 'Add a short note when selecting Other.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (selectedGoals.length === 0) {
+      toast({
+        title: 'Complete profile intent',
+        description: 'Choose at least one reason you are here.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Upload photo if selected
       if (photoFile) {
         await uploadPhoto.mutateAsync({
           userId: user.id,
@@ -99,19 +131,23 @@ export function OnboardingModal() {
         });
       }
 
-      const existingName = profile?.full_name || user.user_metadata?.full_name || '';
-      const nameParts = existingName.split(' ');
-      const lastName = nameParts.slice(1).join(' ');
-      const fullName = lastName ? `${firstName.trim()} ${lastName}` : firstName.trim();
+      const trimmedFirstName = firstName.trim();
+      const trimmedLastName = lastName.trim();
+      const fullName = `${trimmedFirstName} ${trimmedLastName}`.trim();
 
       await updateProfile.mutateAsync({
         userId: user.id,
         data: {
           full_name: fullName,
-          shirt_size: shirtSize || null,
-          instagram_handle: instagramHandle.replace('@', '').trim() || null,
+          first_name: trimmedFirstName,
+          last_name: trimmedLastName,
+          shirt_size: shirtSize,
           bio: bio.trim() || null,
-          mission: selectedGoals.length > 0 ? selectedGoals.join(', ') : null,
+          mission: selectedGoals.join(', '),
+          here_for: selectedGoals,
+          here_for_other: wantsOther ? otherGoal.trim() : null,
+          instagram_handle: instagramHandle.replace('@', '').trim() || null,
+          onboarding_completed_at: new Date().toISOString(),
         },
       });
 
@@ -119,8 +155,8 @@ export function OnboardingModal() {
       setOpen(false);
 
       toast({
-        title: "You're in! 🤝",
-        description: 'Welcome to the brotherhood. Time to show up.',
+        title: "You're in!",
+        description: 'Welcome to the brotherhood. Good to have you.',
       });
     } catch {
       toast({
@@ -135,23 +171,28 @@ export function OnboardingModal() {
 
   if (!user || !needsOnboarding) return null;
 
-  const canProceed = step === 1 ? firstName.trim().length > 0 : true;
+  const canProceedStep1 = firstName.trim().length > 0 && lastName.trim().length > 0;
+  const canProceedStep2 = shirtSize.length > 0;
+  const canProceedStep3 = (() => {
+    if (selectedGoals.length === 0) return false;
+    if (selectedGoals.includes('Other')) {
+      return otherGoal.trim().length > 0;
+    }
+    return true;
+  })();
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent
-        className="sm:max-w-md overflow-hidden"
+        className="sm:max-w-lg overflow-hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        {/* Progress bar */}
         <div className="flex gap-1.5 mb-2">
-          {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+          {Array.from({ length: TOTAL_STEPS }, (_, index) => (
             <div
-              key={i}
-              className={`h-1 rounded-full flex-1 transition-colors ${
-                i < step ? 'bg-accent' : 'bg-muted'
-              }`}
+              key={index}
+              className={`h-1 rounded-full flex-1 transition-colors ${index < step ? 'bg-accent' : 'bg-muted'}`}
             />
           ))}
         </div>
@@ -164,20 +205,18 @@ export function OnboardingModal() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
           >
-            {/* Step 1: Photo + Name */}
             {step === 1 && (
               <div className="space-y-5">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-heading flex items-center gap-2">
                     <Camera className="h-6 w-6 text-accent" />
-                    Show Your Face
+                    Welcome to Men in the Arena
                   </DialogTitle>
                   <DialogDescription>
-                    The brotherhood needs to know who you are.
+                    Tell us your name and add a face so leaders can recognize you.
                   </DialogDescription>
                 </DialogHeader>
 
-                {/* Photo upload */}
                 <div className="flex justify-center">
                   <button
                     type="button"
@@ -185,7 +224,7 @@ export function OnboardingModal() {
                     className="relative w-28 h-28 rounded-full border-2 border-dashed border-accent/50 hover:border-accent transition-colors flex items-center justify-center overflow-hidden group"
                   >
                     {photoPreview ? (
-                      <img src={photoPreview} alt="" className="w-full h-full object-cover" />
+                      <img src={photoPreview} alt="Onboarding profile" className="w-full h-full object-cover" />
                     ) : (
                       <div className="text-center">
                         <Camera className="h-8 w-8 text-accent/50 mx-auto group-hover:text-accent transition-colors" />
@@ -203,23 +242,33 @@ export function OnboardingModal() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>First Name *</Label>
+                  <Label>First Name</Label>
                   <Input
                     placeholder="Your first name"
                     value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
+                    onChange={(event) => setFirstName(event.target.value)}
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Instagram Handle</Label>
+                  <Label>Last Name</Label>
+                  <Input
+                    placeholder="Your last name"
+                    value={lastName}
+                    onChange={(event) => setLastName(event.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Instagram</Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
                     <Input
                       placeholder="yourhandle"
                       value={instagramHandle}
-                      onChange={(e) => setInstagramHandle(e.target.value)}
+                      onChange={(event) => setInstagramHandle(event.target.value)}
                       className="pl-8"
                     />
                   </div>
@@ -227,16 +276,15 @@ export function OnboardingModal() {
               </div>
             )}
 
-            {/* Step 2: Bio + Shirt Size */}
             {step === 2 && (
               <div className="space-y-5">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-heading flex items-center gap-2">
                     <User className="h-6 w-6 text-accent" />
-                    Tell Your Story
+                    About You
                   </DialogTitle>
                   <DialogDescription>
-                    What should the brothers know about you?
+                    Share your short bio and shirt size.
                   </DialogDescription>
                 </DialogHeader>
 
@@ -245,7 +293,7 @@ export function OnboardingModal() {
                   <Textarea
                     placeholder="Dad of 2. Morning runner. Here to be better."
                     value={bio}
-                    onChange={(e) => setBio(e.target.value)}
+                    onChange={(event) => setBio(event.target.value)}
                     maxLength={200}
                     className="resize-none"
                     rows={3}
@@ -257,7 +305,7 @@ export function OnboardingModal() {
                   <Label>T-Shirt Size</Label>
                   <Select value={shirtSize} onValueChange={setShirtSize}>
                     <SelectTrigger>
-                      <SelectValue placeholder="For merch drops 👕" />
+                      <SelectValue placeholder="For gear drop" />
                     </SelectTrigger>
                     <SelectContent>
                       {SHIRT_SIZES.map((size) => (
@@ -269,78 +317,98 @@ export function OnboardingModal() {
               </div>
             )}
 
-            {/* Step 3: Fitness Level */}
             {step === 3 && (
               <div className="space-y-5">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-heading flex items-center gap-2">
                     <Dumbbell className="h-6 w-6 text-accent" />
-                    Where You At
+                    What are you here for?
                   </DialogTitle>
                   <DialogDescription>
-                    No judgment. Just so we know how to push you.
+                    Pick what matters most to you. Choose all that apply.
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="grid grid-cols-2 gap-3">
-                  {FITNESS_LEVELS.map((level) => (
-                    <button
-                      key={level}
-                      type="button"
-                      onClick={() => setFitnessLevel(level)}
-                      className={`p-4 rounded-xl border text-center transition-all ${
-                        fitnessLevel === level
-                          ? 'border-accent bg-accent/10 text-accent font-semibold'
-                          : 'border-border hover:border-accent/50'
-                      }`}
-                    >
-                      {level}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Goals */}
-            {step === 4 && (
-              <div className="space-y-5">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-heading flex items-center gap-2">
-                    <Target className="h-6 w-6 text-accent" />
-                    Your Goals
-                  </DialogTitle>
-                  <DialogDescription>
-                    What are you here for? Pick all that apply.
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {GOALS.map((goal) => (
+                <div className="space-y-2">
+                  {HERE_FOR_OPTIONS.map((goal) => (
                     <button
                       key={goal}
                       type="button"
                       onClick={() => toggleGoal(goal)}
-                      className={`p-3 rounded-lg border text-sm text-left transition-all ${
+                      className={`w-full rounded-lg border p-3 text-left transition-all ${
                         selectedGoals.includes(goal)
                           ? 'border-accent bg-accent/10 text-accent font-medium'
                           : 'border-border hover:border-accent/50'
                       }`}
                     >
-                      {selectedGoals.includes(goal) && <Check className="h-3 w-3 inline mr-1" />}
-                      {goal}
+                      <span className="inline-flex items-center gap-2">
+                        {selectedGoals.includes(goal) ? <Check className="h-3 w-3" /> : <span className="h-3 w-3" />} 
+                        {goal}
+                      </span>
                     </button>
                   ))}
                 </div>
+
+                {selectedGoals.includes('Other') && (
+                  <div className="space-y-2">
+                    <Label>Tell us what else you're here for</Label>
+                    <Textarea
+                      placeholder="What do you want to get out of Men in the Arena?"
+                      value={otherGoal}
+                      onChange={(event) => setOtherGoal(event.target.value)}
+                      rows={2}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="space-y-5">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-heading">
+                    You&apos;re all set
+                  </DialogTitle>
+                  <DialogDescription>
+                    We&apos;ll use this to tailor your path and connect you with leadership opportunities.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="rounded-lg border border-accent/30 bg-accent/5 p-4 space-y-2">
+                  <p className="text-sm font-medium">Review</p>
+                  <p className="text-sm text-muted-foreground">Name: {firstName} {lastName}</p>
+                  <p className="text-sm text-muted-foreground">Shirt Size: {shirtSize}</p>
+                  <p className="text-sm text-muted-foreground">Goals: {selectedGoals.join(', ')}</p>
+                  {otherGoal && (
+                    <p className="text-sm text-muted-foreground">Other goal: {otherGoal}</p>
+                  )}
+                </div>
+
+                <Button
+                  type="button"
+                  className="w-full bg-accent hover:bg-accent/90"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                  Finish Setup
+                </Button>
               </div>
             )}
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation */}
         <div className="flex justify-between mt-4">
           {step > 1 ? (
-            <Button variant="ghost" size="sm" onClick={() => setStep(s => s - 1)} disabled={loading}>
-              <ArrowLeft className="h-4 w-4 mr-1" /> Back
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setStep((current) => current - 1)}
+              disabled={loading}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back
             </Button>
           ) : (
             <div />
@@ -348,21 +416,18 @@ export function OnboardingModal() {
 
           {step < TOTAL_STEPS ? (
             <Button
-              onClick={() => setStep(s => s + 1)}
-              disabled={!canProceed}
-              className="bg-accent hover:bg-accent/90"
+              type="button"
+              onClick={() => setStep((current) => current + 1)}
+              disabled={
+                (step === 1 && !canProceedStep1) ||
+                (step === 2 && !canProceedStep2) ||
+                (step === 3 && !canProceedStep3)
+              }
             >
               Next <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={loading || !firstName.trim()}
-              className="bg-accent hover:bg-accent/90"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-              I'm In 🤝
-            </Button>
+            <div />
           )}
         </div>
       </DialogContent>

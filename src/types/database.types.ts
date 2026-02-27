@@ -14,8 +14,13 @@ export interface Database {
           id: string;
           email: string;
           full_name: string | null;
+          first_name: string | null;
+          last_name: string | null;
           phone: string | null;
+          here_for: string[] | null;
+          here_for_other: string | null;
           instagram_handle: string | null;
+          onboarding_completed_at: string | null;
           shirt_size: string | null;
           is_admin: boolean;
           is_super_admin: boolean;
@@ -30,8 +35,13 @@ export interface Database {
           id: string;
           email: string;
           full_name?: string | null;
+          first_name?: string | null;
+          last_name?: string | null;
+          here_for?: string[] | null;
+          here_for_other?: string | null;
           phone?: string | null;
           instagram_handle?: string | null;
+          onboarding_completed_at?: string | null;
           shirt_size?: string | null;
           is_admin?: boolean;
           is_super_admin?: boolean;
@@ -45,8 +55,13 @@ export interface Database {
         Update: {
           email?: string;
           full_name?: string | null;
+          first_name?: string | null;
+          last_name?: string | null;
+          here_for?: string[] | null;
+          here_for_other?: string | null;
           phone?: string | null;
           instagram_handle?: string | null;
+          onboarding_completed_at?: string | null;
           shirt_size?: string | null;
           is_admin?: boolean;
           is_super_admin?: boolean;
@@ -654,6 +669,8 @@ export interface Database {
         Row: {
           id: string;
           full_name: string | null;
+          first_name: string | null;
+          last_name: string | null;
           role: string | null;
           bio: string | null;
           mission: string | null;

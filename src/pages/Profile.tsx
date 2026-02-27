@@ -28,6 +28,7 @@ import type { SpotlightSubmission } from '@/types/database.types';
 
 const SHIRT_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 const MAX_ABOUT_YOU_POINTS = 5;
+const MIN_ABOUT_YOU_POINTS = 3;
 const MAX_SPOTLIGHT_QUOTES = 2;
 const MAX_FEATURE_PHOTOS = 3;
 const MAX_TOTAL_PROFILE_PHOTOS = 4;
@@ -54,6 +55,14 @@ function normalizeTextList(values: string[], maxItems = 0) {
   return maxItems > 0 ? normalized.slice(0, maxItems) : normalized;
 }
 
+function ensureMinimumItems(values: string[], minItems: number, fillValue = '') {
+  const padded = [...values];
+  while (padded.length < minItems) {
+    padded.push(fillValue);
+  }
+  return padded;
+}
+
 function dedupePhotoUrls(photoUrls: string[]) {
   return Array.from(new Set(photoUrls.filter(Boolean)));
 }
@@ -73,7 +82,8 @@ export default function Profile() {
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const spotlightPhotoInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [instagramHandle, setInstagramHandle] = useState('');
   const [shirtSize, setShirtSize] = useState('');
@@ -91,6 +101,11 @@ export default function Profile() {
   const [spotlightInstagram, setSpotlightInstagram] = useState('');
   const [spotlightFeaturePhotoUrls, setSpotlightFeaturePhotoUrls] = useState<string[]>([]);
   const [spotlightConsent, setSpotlightConsent] = useState(false);
+
+  const profileDisplayName = [firstName, lastName]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(' ');
 
   const primaryHeadshotUrl =
     profileWithPhotos?.primary_photo?.photo_url ||
@@ -110,7 +125,8 @@ export default function Profile() {
   // Populate profile form data
   useEffect(() => {
     if (profile) {
-      setFullName(profile.full_name || '');
+      setFirstName(profile.first_name || profile.full_name?.split(' ')[0] || '');
+      setLastName(profile.last_name || profile.full_name?.split(' ').slice(1).join(' ') || '');
       setPhone(profile.phone || '');
       setInstagramHandle(profile.instagram_handle || '');
       setShirtSize(profile.shirt_size || '');
@@ -122,10 +138,15 @@ export default function Profile() {
     if (!profile) return;
 
     if (spotlightSubmission) {
-      setSpotlightDisplayName(spotlightSubmission.display_name || profile.full_name || '');
+      setSpotlightDisplayName(
+        spotlightSubmission.display_name
+          || (profile.full_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim()),
+      );
       setSpotlightHeadline(spotlightSubmission.headline || '');
       setSpotlightShortBio(spotlightSubmission.short_bio || '');
-      setSpotlightAboutYouPoints(normalizeTextList(spotlightSubmission.about_you_points || [], MAX_ABOUT_YOU_POINTS));
+      setSpotlightAboutYouPoints(
+        ensureMinimumItems(normalizeTextList(spotlightSubmission.about_you_points || [], MAX_ABOUT_YOU_POINTS), MIN_ABOUT_YOU_POINTS),
+      );
       setSpotlightWhyJoined(spotlightSubmission.why_i_joined || '');
       setSpotlightMission(spotlightSubmission.mission || '');
       setSpotlightArenaMeaning(spotlightSubmission.arena_meaning || '');
@@ -137,10 +158,10 @@ export default function Profile() {
       return;
     }
 
-    setSpotlightDisplayName(profile.full_name || '');
+    setSpotlightDisplayName((profile.full_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim()).trim());
     setSpotlightHeadline('');
     setSpotlightShortBio(profile.bio || '');
-    setSpotlightAboutYouPoints(['', '', '']);
+    setSpotlightAboutYouPoints(ensureMinimumItems([], MIN_ABOUT_YOU_POINTS));
     setSpotlightWhyJoined('');
     setSpotlightMission(profile.mission || '');
     setSpotlightArenaMeaning('');
@@ -153,12 +174,16 @@ export default function Profile() {
 
   async function handleSave() {
     if (!user) return;
+    const trimmedFirstName = firstName.trim();
+    const trimmedLastName = lastName.trim();
 
     try {
       await updateProfile.mutateAsync({
         userId: user.id,
         data: {
-          full_name: fullName,
+          first_name: trimmedFirstName || undefined,
+          last_name: trimmedLastName || undefined,
+          full_name: [trimmedFirstName, trimmedLastName].filter(Boolean).join(' ') || undefined,
           phone: phone || undefined,
           instagram_handle: instagramHandle.replace('@', '').trim() || undefined,
           shirt_size: shirtSize || undefined,
@@ -267,8 +292,8 @@ export default function Profile() {
 
   function removeAboutYouPoint(index: number) {
     setSpotlightAboutYouPoints((prev) => {
-      const next = prev.filter((_, currentIndex) => currentIndex !== index);
-      return next.length ? next : [''];
+      if (prev.length <= MIN_ABOUT_YOU_POINTS) return prev;
+      return prev.filter((_, currentIndex) => currentIndex !== index);
     });
   }
 
@@ -353,6 +378,15 @@ export default function Profile() {
   async function handleSubmitSpotlight() {
     if (!user) return;
 
+    if (normalizedAboutYouPoints.length < MIN_ABOUT_YOU_POINTS) {
+      toast({
+        title: 'Add about-you bullets',
+        description: `Add at least ${MIN_ABOUT_YOU_POINTS} quick points about you.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!primaryHeadshotUrl) {
       toast({
         title: 'Headshot required',
@@ -384,8 +418,8 @@ export default function Profile() {
       });
 
       toast({
-        title: 'Submitted',
-        description: 'Your spotlight profile has been submitted.',
+        title: 'Submitted for review',
+        description: 'Your spotlight profile has been sent for review.',
       });
     } catch (error) {
       toast({
@@ -460,16 +494,35 @@ export default function Profile() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="fullName">Full Name</Label>
+                      <Label htmlFor="firstName">First Name</Label>
                       {isEditing ? (
-                        <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                        <Input
+                          id="firstName"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          placeholder="First name"
+                        />
                       ) : (
-                        <p className="text-lg">{profile?.full_name || '-'}</p>
+                        <p className="text-lg">{profileDisplayName || '-'}</p>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
+                      <Label htmlFor="lastName">Last Name</Label>
+                      {isEditing ? (
+                        <Input
+                          id="lastName"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          placeholder="Last name"
+                        />
+                      ) : (
+                        <p className="text-lg">{lastName || '-'}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone (optional)</Label>
                       {isEditing ? (
                         <Input
                           id="phone"
@@ -481,6 +534,9 @@ export default function Profile() {
                       ) : (
                         <p className="text-lg">{profile?.phone || '-'}</p>
                       )}
+                      <p className="text-xs text-muted-foreground">
+                        Optional. Share one if you want text updates from leadership.
+                      </p>
                     </div>
 
                     <div className="space-y-2">
@@ -541,19 +597,15 @@ export default function Profile() {
                       </Badge>
                     </div>
                     <CardDescription>
-                      Complete this once, then admins can feature you on the public Brotherhood directory.
+                      Short bio + 3-5 quick points helps admins feature you in the Brotherhood.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-5">
                     <div className="rounded-lg border border-accent/30 bg-accent/5 p-4 space-y-3">
-                      <p className="text-lg font-medium">
-                        We are honored to highlight the men who consistently step into the arena.
-                      </p>
+                      <p className="text-lg font-medium">Spotlight Profile Builder</p>
                       <p className="text-muted-foreground">
-                        Please take 5-10 minutes to thoughtfully answer the questions below. Your responses will be
-                        used to create a Member Spotlight feature across MTA platforms.
+                        Fill this once, then leadership can feature your story on the public Brotherhood directory.
                       </p>
-                      <p className="text-muted-foreground">Answer with depth, authenticity, and ownership.</p>
                     </div>
 
                     <div className="space-y-3">
@@ -574,12 +626,12 @@ export default function Profile() {
                             onClick={() => photoInputRef.current?.click()}
                             disabled={uploadPhoto.isPending}
                           >
-                            {uploadPhoto.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            ) : (
-                              <Upload className="h-4 w-4 mr-2" />
-                            )}
-                            Upload headshot
+                        {uploadPhoto.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Upload className="h-4 w-4 mr-2" />
+                        )}
+                            Upload Headshot
                           </Button>
                           <p className="text-xs text-muted-foreground">
                             This uses your primary profile photo for public spotlight pages.
@@ -623,7 +675,7 @@ export default function Profile() {
                         onChange={(e) => setSpotlightShortBio(e.target.value)}
                         rows={3}
                         maxLength={320}
-                        placeholder="A short paragraph that introduces who you are."
+                        placeholder="Who are you in one short paragraph?"
                       />
                     </div>
 
@@ -640,9 +692,9 @@ export default function Profile() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>ABOUT YOU: If you had to describe who you are and what you do in 3-5 bullet points, what would they be?</Label>
+                      <Label>About You: 3-5 quick points</Label>
                       <p className="text-xs text-muted-foreground">
-                        Think roles, passions, career, mission, or anything that showcases who you are.
+                        Think roles, strengths, mission, and what drives you. Keep each point short.
                       </p>
                       <div className="space-y-2">
                         {spotlightAboutYouPoints.map((point, index) => (
@@ -652,7 +704,7 @@ export default function Profile() {
                               onChange={(event) => updateAboutYouPoint(index, event.target.value)}
                               placeholder="Add a bullet point about you"
                             />
-                            {spotlightAboutYouPoints.length > 1 && (
+                            {spotlightAboutYouPoints.length > MIN_ABOUT_YOU_POINTS && (
                               <Button
                                 type="button"
                                 variant="outline"
@@ -865,7 +917,7 @@ export default function Profile() {
                         disabled={submitSpotlight.isPending || saveSpotlightDraft.isPending}
                       >
                         {submitSpotlight.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                        Submit
+                        Submit for review
                       </Button>
                       <Button type="button" variant="ghost" asChild>
                         <Link to="/brotherhood">View Public Directory</Link>
