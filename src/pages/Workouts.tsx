@@ -51,7 +51,7 @@ export default function Workouts() {
     isError: isSweatpalsWorkoutError,
     refetch: refetchSweatpalsWorkout,
   } = useSweatpalsNextWorkout();
-  const { data: leadableWorkouts = [], isLoading: leadableLoading } = useLeadableWorkouts(20);
+  const { data: leadableWorkouts = [], isLoading: leadableLoading } = useLeadableWorkouts(12);
   const { data: workoutHistory = [], isLoading: historyLoading } = useWorkoutHistory(12);
   const { data: myAssignedWorkouts = [] } = useMyAssignedWorkouts();
   const { data: myLeadRequests = [] } = useMyWorkoutLeadRequests();
@@ -270,67 +270,69 @@ export default function Workouts() {
                       <p>No open workout dates available right now.</p>
                     </div>
                   ) : (
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {openLeadableWorkouts.map((event) => {
-                        const isAlreadyRequested = pendingRequestEventIds.has(event.schedule_event_id);
-                        const isRequestingThis = requestingEventId === event.schedule_event_id;
-                        return (
-                          <div
-                            key={event.schedule_event_id}
-                            className={cn(
-                              'rounded-lg border p-3 space-y-3 text-left',
-                              isAlreadyRequested ? 'border-green-500/30 bg-green-500/10' : 'border-border',
-                            )}
-                          >
-                            <div>
-                              <p className="font-semibold">
-                                {format(new Date(event.starts_at), 'EEEE, MMM d, yyyy')}
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {format(new Date(event.starts_at), 'h:mm a')}
-                              </p>
-                              {event.location && (
-                                <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
-                                  <MapPin className="h-3 w-3" />
-                                  {event.location}
+                    <div className="max-h-[34rem] overflow-y-auto pr-1">
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {openLeadableWorkouts.map((event) => {
+                          const isAlreadyRequested = pendingRequestEventIds.has(event.schedule_event_id);
+                          const isRequestingThis = requestingEventId === event.schedule_event_id;
+                          return (
+                            <div
+                              key={event.schedule_event_id}
+                              className={cn(
+                                'rounded-lg border p-3 space-y-3 text-left',
+                                isAlreadyRequested ? 'border-green-500/30 bg-green-500/10' : 'border-border',
+                              )}
+                            >
+                              <div>
+                                <p className="font-semibold">
+                                  {format(new Date(event.starts_at), 'EEEE, MMM d, yyyy')}
                                 </p>
-                              )}
-                            </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {format(new Date(event.starts_at), 'h:mm a')}
+                                </p>
+                                {event.location && (
+                                  <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    {event.location}
+                                  </p>
+                                )}
+                              </div>
 
-                            <div className="flex items-center justify-between gap-2">
-                              {isAlreadyRequested ? (
-                                <>
-                                  <Badge variant="secondary">Pending</Badge>
+                              <div className="flex items-center justify-between gap-2">
+                                {isAlreadyRequested ? (
+                                  <>
+                                    <Badge variant="secondary">Pending</Badge>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        const request = pendingRequests.find(
+                                          (entry) => entry.schedule_event_id === event.schedule_event_id,
+                                        );
+                                        if (request) void handleCancelRequest(request.id);
+                                      }}
+                                      disabled={cancelLeadRequest.isPending}
+                                    >
+                                      <X className="h-3 w-3 mr-1" />
+                                      Remove
+                                    </Button>
+                                  </>
+                                ) : (
                                   <Button
-                                    variant="ghost"
                                     size="sm"
-                                    onClick={() => {
-                                      const request = pendingRequests.find(
-                                        (entry) => entry.schedule_event_id === event.schedule_event_id,
-                                      );
-                                      if (request) void handleCancelRequest(request.id);
-                                    }}
-                                    disabled={cancelLeadRequest.isPending}
+                                    className="bg-accent hover:bg-accent/90"
+                                    onClick={() => void handleLeadDate(event.schedule_event_id)}
+                                    disabled={isRequestingThis || createLeadRequests.isPending}
                                   >
-                                    <X className="h-3 w-3 mr-1" />
-                                    Remove
+                                    {isRequestingThis && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                                    Lead Workout
                                   </Button>
-                                </>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  className="bg-accent hover:bg-accent/90"
-                                  onClick={() => void handleLeadDate(event.schedule_event_id)}
-                                  disabled={isRequestingThis || createLeadRequests.isPending}
-                                >
-                                  {isRequestingThis && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                                  Lead Workout
-                                </Button>
-                              )}
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </CardContent>
