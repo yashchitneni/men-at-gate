@@ -18,7 +18,8 @@ interface AuthContextType {
   profile: Profile | null;
   session: Session | null;
   loading: boolean;
-  signInWithEmail: (email: string, redirectPath?: string) => Promise<{ error: Error | null }>;
+  signInWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUpWithPassword: (email: string, password: string, redirectPath?: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: (redirectPath?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -175,6 +176,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let loadingResolved = false;
+
+    const resolveLoading = () => {
+      if (!mounted || loadingResolved) return;
+      loadingResolved = true;
+      setLoading(false);
+    };
+
+    const loadingTimeout = window.setTimeout(() => {
+      console.warn('Auth initialization timed out; continuing without blocking UI');
+      resolveLoading();
+    }, 8000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, nextSession) => {
@@ -184,9 +197,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         try {
           setAuthState(nextSession);
+          resolveLoading();
 
           if (nextSession?.user) {
-            await fetchProfile(nextSession.user.id);
+            void fetchProfile(nextSession.user.id);
           } else {
             setProfile(null);
           }
@@ -194,9 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error('Auth state change error:', error);
           setProfile(null);
         } finally {
-          if (mounted) {
-            setLoading(false);
-          }
+          resolveLoading();
         }
 
         if (event === 'SIGNED_IN' && (hasOAuthHashTokens() || hasOAuthQueryParams())) {
@@ -231,7 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error('Session initialization error:', sessionError);
           if (!mounted) return;
           clearAuthState();
-          if (mounted) setLoading(false);
+          resolveLoading();
           return;
         }
       }
@@ -240,9 +252,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         setAuthState(currentSession);
+        resolveLoading();
 
         if (currentSession?.user) {
-          await fetchProfile(currentSession.user.id);
+          void fetchProfile(currentSession.user.id);
         } else {
           setProfile(null);
         }
@@ -254,7 +267,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Session initialization error:', error);
         clearAuthState();
       } finally {
-        if (mounted) setLoading(false);
+        resolveLoading();
       }
     };
 
@@ -262,13 +275,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
+      window.clearTimeout(loadingTimeout);
       subscription.unsubscribe();
     };
   }, []);
 
-  async function signInWithEmail(email: string, redirectPath?: string) {
-    const { error } = await supabase.auth.signInWithOtp({
+  async function signInWithPassword(email: string, password: string) {
+    const { error } = await supabase.auth.signInWithPassword({
       email,
+      password,
+    });
+    return { error };
+  }
+
+  async function signUpWithPassword(email: string, password: string, redirectPath?: string) {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
       options: {
         emailRedirectTo: getAuthRedirectUrl(redirectPath),
       },
@@ -311,7 +334,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       session,
       loading,
-      signInWithEmail,
+      signInWithPassword,
+      signUpWithPassword,
       signInWithGoogle,
       signOut,
       refreshProfile,
