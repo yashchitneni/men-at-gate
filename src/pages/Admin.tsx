@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useWorkoutSlots, useWorkoutInterest } from '@/hooks/useWorkouts';
+import { useWorkoutSlots } from '@/hooks/useWorkouts';
 import { useRaces } from '@/hooks/useRaces';
 import { useAllProfiles } from '@/hooks/useProfiles';
-import { useFeaturedEvents } from '@/hooks/useFeaturedEvents';
 import { useSpotlightSubmissions } from '@/hooks/useSpotlights';
 import { useRunSweatpalsTestIngest, useSweatpalsHealth } from '@/hooks/useIntegrations';
 import Navigation from '@/components/Navigation';
@@ -16,10 +15,8 @@ import {
   Dumbbell, 
   Users, 
   Trophy, 
-  Calendar,
   ChevronRight,
   AlertCircle,
-  Megaphone,
   Activity,
   Star,
 } from 'lucide-react';
@@ -30,10 +27,8 @@ export default function Admin() {
   const navigate = useNavigate();
   const { profile, loading: authLoading } = useAuth();
   const { data: workoutSlots } = useWorkoutSlots();
-  const { data: workoutInterest } = useWorkoutInterest();
   const { data: races } = useRaces();
   const { data: allProfiles } = useAllProfiles();
-  const { data: featuredEvents } = useFeaturedEvents();
   const { data: spotlights } = useSpotlightSubmissions({ enabled: !!profile?.is_admin });
   const { data: sweatpalsHealth } = useSweatpalsHealth();
   const runSweatpalsTestIngest = useRunSweatpalsTestIngest();
@@ -60,10 +55,8 @@ export default function Admin() {
     isAfter(new Date(s.workout_date), today) || 
     format(new Date(s.workout_date), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
   ) || [];
-  const pendingInterest = workoutInterest?.filter(i => i.status === 'pending') || [];
   const unassignedSlots = upcomingWorkouts.filter(s => !s.leader_id);
   const upcomingRaces = races?.length || 0;
-  const activeFeaturedEvents = featuredEvents?.filter(e => e.is_active).length || 0;
   const approvedSpotlights = spotlights?.filter(s => s.status === 'approved' || s.status === 'published').length || 0;
   const totalMembers = allProfiles?.length || 0;
   const coreMembers = allProfiles?.filter(p => p.is_core_member).length || 0;
@@ -71,7 +64,7 @@ export default function Admin() {
 
   // Get next workout
   const nextWorkout = upcomingWorkouts[0];
-  const needsAttention = unassignedSlots.length > 0 || pendingInterest.length > 0;
+  const needsAttention = unassignedSlots.length > 0;
 
   async function handleTestIngest() {
     try {
@@ -108,17 +101,9 @@ export default function Admin() {
               <div className="mb-6 p-4 bg-accent/10 border border-accent/20 rounded-lg flex items-center gap-3">
                 <AlertCircle className="h-5 w-5 text-accent" />
                 <div className="flex-1">
-                  {unassignedSlots.length > 0 && (
-                    <span className="text-sm">
-                      {unassignedSlots.length} workout slot{unassignedSlots.length > 1 ? 's' : ''} need a leader.
-                    </span>
-                  )}
-                  {unassignedSlots.length > 0 && pendingInterest.length > 0 && ' '}
-                  {pendingInterest.length > 0 && (
-                    <span className="text-sm">
-                      {pendingInterest.length} pending interest request{pendingInterest.length > 1 ? 's' : ''}.
-                    </span>
-                  )}
+                  <span className="text-sm">
+                    {unassignedSlots.length} workout slot{unassignedSlots.length > 1 ? 's' : ''} need a leader.
+                  </span>
                 </div>
                 <Button size="sm" asChild>
                   <Link to="/admin/workouts">View</Link>
@@ -126,97 +111,10 @@ export default function Admin() {
               </div>
             )}
 
-            {/* Quick Stats */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-7 gap-4 mb-8">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Upcoming Workouts</p>
-                      <p className="text-3xl font-bold">{upcomingWorkouts.length}</p>
-                    </div>
-                    <Dumbbell className="h-8 w-8 text-muted-foreground/30" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Pending Interest</p>
-                      <p className="text-3xl font-bold">{pendingInterest.length}</p>
-                    </div>
-                    <Calendar className="h-8 w-8 text-muted-foreground/30" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Active Races</p>
-                      <p className="text-3xl font-bold">{upcomingRaces}</p>
-                    </div>
-                    <Trophy className="h-8 w-8 text-muted-foreground/30" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Members</p>
-                      <p className="text-3xl font-bold">{totalMembers}</p>
-                    </div>
-                    <Users className="h-8 w-8 text-muted-foreground/30" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Active Featured Events</p>
-                      <p className="text-3xl font-bold">{activeFeaturedEvents}</p>
-                    </div>
-                    <Megaphone className="h-8 w-8 text-muted-foreground/30" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Approved Spotlights</p>
-                      <p className="text-3xl font-bold">{approvedSpotlights}</p>
-                    </div>
-                    <Star className="h-8 w-8 text-muted-foreground/30" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">SweatPals Sync</p>
-                      <p className="text-lg font-bold">{integrationHealthy ? 'Healthy' : 'Needs Attention'}</p>
-                    </div>
-                    <Activity className="h-8 w-8 text-muted-foreground/30" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
             {/* Management Cards */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Workouts */}
-              <Card className="hover:border-accent/50 transition-colors">
+              <Card className="hover:border-accent/50 transition-colors h-full flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Dumbbell className="h-5 w-5 text-accent" />
@@ -226,7 +124,7 @@ export default function Admin() {
                     Schedule workout slots, assign leaders, review submissions
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex flex-col flex-1">
                   {nextWorkout && (
                     <div className="mb-4 p-3 bg-muted rounded-lg">
                       <p className="text-xs text-muted-foreground mb-1">Next Workout</p>
@@ -240,7 +138,7 @@ export default function Admin() {
                       </div>
                     </div>
                   )}
-                  <Button className="w-full" asChild>
+                  <Button className="w-full mt-auto" asChild>
                     <Link to="/admin/workouts">
                       Go to Workouts
                       <ChevronRight className="ml-2 h-4 w-4" />
@@ -250,7 +148,7 @@ export default function Admin() {
               </Card>
 
               {/* Members */}
-              <Card className="hover:border-accent/50 transition-colors">
+              <Card className="hover:border-accent/50 transition-colors h-full flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Users className="h-5 w-5 text-accent" />
@@ -260,7 +158,7 @@ export default function Admin() {
                     View all members, set core members, manage admins
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex flex-col flex-1">
                   <div className="mb-4 p-3 bg-muted rounded-lg">
                     <div className="grid grid-cols-2 gap-4 text-center">
                       <div>
@@ -273,7 +171,7 @@ export default function Admin() {
                       </div>
                     </div>
                   </div>
-                  <Button className="w-full" variant="outline" asChild>
+                  <Button className="w-full mt-auto" variant="outline" asChild>
                     <Link to="/admin/members">
                       Go to Members
                       <ChevronRight className="ml-2 h-4 w-4" />
@@ -283,7 +181,7 @@ export default function Admin() {
               </Card>
 
               {/* Races */}
-              <Card className="hover:border-accent/50 transition-colors">
+              <Card className="hover:border-accent/50 transition-colors h-full flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-accent" />
@@ -293,12 +191,12 @@ export default function Admin() {
                     View race board, edit races, see participation
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex flex-col flex-1">
                   <div className="mb-4 p-3 bg-muted rounded-lg">
                     <p className="text-xs text-muted-foreground mb-1">Upcoming Races</p>
                     <p className="text-2xl font-bold">{upcomingRaces}</p>
                   </div>
-                  <Button className="w-full" variant="outline" asChild>
+                  <Button className="w-full mt-auto" variant="outline" asChild>
                     <Link to="/races">
                       Go to Races
                       <ChevronRight className="ml-2 h-4 w-4" />
@@ -307,33 +205,8 @@ export default function Admin() {
                 </CardContent>
               </Card>
 
-              {/* Featured Events */}
-              <Card className="hover:border-accent/50 transition-colors">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Megaphone className="h-5 w-5 text-accent" />
-                    Featured Events
-                  </CardTitle>
-                  <CardDescription>
-                    Spotlight flagship events on homepage and control event CTAs
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4 p-3 bg-muted rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Currently Active</p>
-                    <p className="text-2xl font-bold">{activeFeaturedEvents}</p>
-                  </div>
-                  <Button className="w-full" variant="outline" asChild>
-                    <Link to="/admin/events">
-                      Manage Events
-                      <ChevronRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-
               {/* Spotlights */}
-              <Card className="hover:border-accent/50 transition-colors">
+              <Card className="hover:border-accent/50 transition-colors h-full flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Star className="h-5 w-5 text-accent" />
@@ -343,12 +216,12 @@ export default function Admin() {
                     Moderate profile submissions and schedule who gets featured each week
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex flex-col flex-1">
                   <div className="mb-4 p-3 bg-muted rounded-lg">
                     <p className="text-xs text-muted-foreground mb-1">Ready to Publish</p>
                     <p className="text-2xl font-bold">{approvedSpotlights}</p>
                   </div>
-                  <Button className="w-full" variant="outline" asChild>
+                  <Button className="w-full mt-auto" variant="outline" asChild>
                     <Link to="/admin/spotlights">
                       Manage Spotlights
                       <ChevronRight className="ml-2 h-4 w-4" />
@@ -358,7 +231,7 @@ export default function Admin() {
               </Card>
 
               {/* Integrations */}
-              <Card className="hover:border-accent/50 transition-colors md:col-span-2 lg:col-span-5">
+              <Card className="hover:border-accent/50 transition-colors md:col-span-2 lg:col-span-4">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Activity className="h-5 w-5 text-accent" />
