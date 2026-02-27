@@ -1,7 +1,6 @@
-import { Quote, X } from "lucide-react";
+import { Quote } from "lucide-react";
 import ScrollReveal from "@/components/ScrollReveal";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -10,30 +9,21 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import heroWorkoutImage from "@/assets/hero-workout.jpg";
+import type { PublicBrotherhoodProfile } from "@/types/database.types";
 
-const Impact = () => {
-  const [selectedTestimonial, setSelectedTestimonial] = useState<number | null>(null);
+interface ImpactProps {
+  testimonials: PublicBrotherhoodProfile[];
+  isLoading?: boolean;
+}
 
-  const testimonials = [
-    {
-      quote: "Brothers who show up for each other when it matters most. This group has leveled me up in every way.",
-      fullQuote: "Men in the Arena quickly became my community when I moved to Austin. It was the group of men I didn't know I needed. Brothers who show up for each other when it matters most. This group has leveled me up in every way: fitness, mindset, leadership, and personal growth. I'm proud to help organize and lead it, and I truly believe there's a place for every man here.",
-      author: "Jake Morsch",
-      role: "Member since 2022"
-    },
-    {
-      quote: "The honesty and brotherhood here are unlike anything I've been part of. It's a lifeline.",
-      fullQuote: "Men in the Arena has been a place for me to reset, connect, and push myself with other men who want to grow. It challenged me not just as an athlete but as a leader. Leading four workouts taught me how to motivate, guide, and hold others accountable while being stretched myself. The honesty and brotherhood here are unlike anything I've been part of.",
-      author: "Robin",
-      role: "Member since 2023"
-    },
-    {
-      quote: "For the first time in 15 years, I felt welcomed, seen, and connected with men who actually knew my name.",
-      fullQuote: "In April 2023, I was coming out of a breakup and a divorce, feeling lost and without any real community. Finding Men in the Arena on Eventbrite changed everything. I showed up once and haven't stopped since. For the first time in 15 years, I felt welcomed, seen, and connected with men who actually knew my name. MTA gave me the brotherhood and support I didn't even realize I needed.",
-      author: "Blair",
-      role: "Member since 2021"
-    }
-  ];
+function getStorySnippet(testimonial: PublicBrotherhoodProfile) {
+  return testimonial.why_i_joined?.trim() || testimonial.short_bio?.trim() || testimonial.mission?.trim() || "";
+}
+
+const Impact = ({ testimonials, isLoading = false }: ImpactProps) => {
+  const [selectedTestimonialId, setSelectedTestimonialId] = useState<string | null>(null);
+  const selectedTestimonial =
+    testimonials.find((testimonial) => testimonial.spotlight_submission_id === selectedTestimonialId) || null;
 
   return (
     <section className="relative py-32 bg-black text-white overflow-hidden min-h-[800px] flex items-center">
@@ -60,48 +50,69 @@ const Impact = () => {
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {testimonials.map((testimonial, index) => (
-            <div key={index} className="relative z-10">
-              <ScrollReveal delay={index * 100} animation="slide-up">
-                <div
-                  className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 transition-all duration-300 group flex flex-col cursor-pointer relative overflow-hidden hover:bg-white/10 hover:border-white/20 h-full"
-                  onClick={() => setSelectedTestimonial(index)}
-                >
-                  <Quote className="w-10 h-10 text-accent/50 group-hover:text-accent transition-colors mb-6" />
+        {isLoading ? (
+          <div className="max-w-3xl mx-auto text-center text-gray-400">
+            Loading member stories...
+          </div>
+        ) : testimonials.length === 0 ? (
+          <div className="max-w-3xl mx-auto text-center text-gray-400">
+            Member stories will appear here once spotlights are published.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {testimonials.map((testimonial, index) => (
+              <div key={testimonial.spotlight_submission_id} className="relative z-10">
+                <ScrollReveal delay={index * 100} animation="slide-up">
+                  <button
+                    type="button"
+                    className="w-full text-left bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 transition-all duration-300 group flex flex-col cursor-pointer relative overflow-hidden hover:bg-white/10 hover:border-white/20 h-full"
+                    onClick={() => setSelectedTestimonialId(testimonial.spotlight_submission_id)}
+                  >
+                    <Quote className="w-10 h-10 text-accent/50 group-hover:text-accent transition-colors mb-6" />
 
-                  <p className="text-lg md:text-xl font-light leading-relaxed mb-8 flex-1 text-gray-200">
-                    "{testimonial.quote}"
-                  </p>
+                    <p className="text-lg md:text-xl font-light leading-relaxed mb-8 flex-1 text-gray-200 line-clamp-5">
+                      "{getStorySnippet(testimonial)}"
+                    </p>
 
-                  <div className="border-t border-white/10 pt-6 mt-auto">
-                    <h4 className="text-lg font-bold text-white uppercase tracking-widest mb-1">{testimonial.author}</h4>
-                    <p className="text-sm text-accent uppercase tracking-wider">{testimonial.role}</p>
-                    <p className="text-xs text-gray-500 mt-4 uppercase tracking-widest group-hover:text-white transition-colors">Click to read full story</p>
-                  </div>
-                </div>
-              </ScrollReveal>
-            </div>
-          ))}
-        </div>
+                    <div className="border-t border-white/10 pt-6 mt-auto">
+                      <h4 className="text-lg font-bold text-white uppercase tracking-widest mb-1">{testimonial.display_name}</h4>
+                      <p className="text-sm text-accent uppercase tracking-wider">
+                        {testimonial.profile_role || "Member Spotlight"}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-4 uppercase tracking-widest group-hover:text-white transition-colors">
+                        Click to read full story
+                      </p>
+                    </div>
+                  </button>
+                </ScrollReveal>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      <Dialog open={selectedTestimonial !== null} onOpenChange={() => setSelectedTestimonial(null)}>
+      <Dialog open={selectedTestimonial !== null} onOpenChange={() => setSelectedTestimonialId(null)}>
         <DialogContent className="bg-black/95 border-white/10 text-white sm:max-w-2xl rounded-xl backdrop-blur-xl p-8 md:p-12">
           <DialogHeader className="mb-6">
             <DialogTitle className="text-3xl font-heading font-bold uppercase tracking-wide flex items-center gap-3">
               <Quote className="w-8 h-8 text-accent" />
-              {selectedTestimonial !== null && testimonials[selectedTestimonial].author}
+              {selectedTestimonial?.display_name}
             </DialogTitle>
             <DialogDescription className="text-accent uppercase tracking-wider font-medium">
-              {selectedTestimonial !== null && testimonials[selectedTestimonial].role}
+              {selectedTestimonial?.profile_role || "Member Spotlight"}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6">
-            <p className="text-xl leading-relaxed text-gray-200 font-light">
-              "{selectedTestimonial !== null && testimonials[selectedTestimonial].fullQuote}"
-            </p>
+            {selectedTestimonial?.why_i_joined && (
+              <p className="text-xl leading-relaxed text-gray-200 font-light">"{selectedTestimonial.why_i_joined}"</p>
+            )}
+            {selectedTestimonial?.short_bio && (
+              <p className="text-gray-300 leading-relaxed">{selectedTestimonial.short_bio}</p>
+            )}
+            {selectedTestimonial?.mission && (
+              <p className="text-gray-300 leading-relaxed italic">{selectedTestimonial.mission}</p>
+            )}
           </div>
         </DialogContent>
       </Dialog>

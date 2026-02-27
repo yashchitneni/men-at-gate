@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentAccessToken, supabaseRestFetch } from "@/lib/supabaseHttp";
@@ -55,6 +56,35 @@ export function findActiveFeaturedProfile(profiles: PublicBrotherhoodProfile[]) 
   if (scheduledFeatured) return scheduledFeatured;
 
   return profiles.find((profile) => profile.is_featured) || null;
+}
+
+function profilePublishSortValue(profile: PublicBrotherhoodProfile) {
+  const candidateDate = profile.publish_on_date || profile.published_at;
+  if (!candidateDate) return 0;
+
+  const timestamp = new Date(candidateDate).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+export function selectHomepageTestimonials(
+  profiles: PublicBrotherhoodProfile[],
+  options?: {
+    excludeProfileId?: string | null;
+    limit?: number;
+  },
+) {
+  const excludeProfileId = options?.excludeProfileId || null;
+  const limit = options?.limit ?? 3;
+
+  return [...profiles]
+    .filter((profile) => profile.profile_id !== excludeProfileId)
+    .filter((profile) => Boolean(profile.why_i_joined?.trim()))
+    .sort((a, b) => {
+      const dateDiff = profilePublishSortValue(b) - profilePublishSortValue(a);
+      if (dateDiff !== 0) return dateDiff;
+      return a.display_name.localeCompare(b.display_name);
+    })
+    .slice(0, limit);
 }
 
 interface SpotlightFormPayload {
@@ -339,6 +369,29 @@ export function useBrotherhoodProfileByProfileId(profileId: string | null) {
     },
     enabled: Boolean(profileId),
   });
+}
+
+export function useHomepageSpotlightContent(options?: { testimonialLimit?: number }) {
+  const testimonialLimit = options?.testimonialLimit ?? 3;
+  const directory = useBrotherhoodDirectory();
+  const members = directory.data || [];
+
+  const featured = useMemo(() => findActiveFeaturedProfile(members), [members]);
+  const testimonials = useMemo(
+    () =>
+      selectHomepageTestimonials(members, {
+        excludeProfileId: featured?.profile_id || null,
+        limit: testimonialLimit,
+      }),
+    [featured?.profile_id, members, testimonialLimit],
+  );
+
+  return {
+    ...directory,
+    members,
+    featured,
+    testimonials,
+  };
 }
 
 export function isSubmissionReadyForPublish(submission: SpotlightSubmission) {

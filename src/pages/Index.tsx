@@ -8,15 +8,18 @@ import Story from "@/components/Story";
 import Impact from "@/components/Impact";
 import GetInvolved from "@/components/GetInvolved";
 /* Events removed per feedback */
-/* Testimonials not shown on homepage per preference */
 import FeaturedMember from "@/components/FeaturedMember";
 import Vision from "@/components/Vision";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 import { useActiveFeaturedEvent } from "@/hooks/useFeaturedEvents";
+import { useHomepageSpotlightContent } from "@/hooks/useSpotlights";
 
 const Index = () => {
   const { data: featuredEvent } = useActiveFeaturedEvent();
+  const { featured, testimonials, isLoading: isSpotlightsLoading } = useHomepageSpotlightContent({
+    testimonialLimit: 3,
+  });
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -27,9 +30,9 @@ const Index = () => {
       <Mission />
       {/* <Pillars /> removed */}
       <Story />
-      <Impact />
+      <Impact testimonials={testimonials} isLoading={isSpotlightsLoading} />
       <GetInvolved />
-      <FeaturedMember />
+      <FeaturedMember featuredMember={featured} isLoading={isSpotlightsLoading} />
       {/* <Events /> removed */}
       <Vision />
       <FAQ />
