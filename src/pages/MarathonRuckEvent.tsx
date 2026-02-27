@@ -137,15 +137,17 @@ export default function MarathonRuckEvent() {
         <div className="container px-4 mx-auto">
           <div className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#e3e1d9]/10">
             {marathonRuckSpecs.map((spec, index) => (
-              <ScrollReveal key={spec.label}>
-                <div className="p-12 flex flex-col items-center text-center group">
+              <ScrollReveal key={spec.label} className="flex h-full">
+                <div className="p-12 flex flex-col items-center text-center group w-full h-full">
                   <p className="text-[11px] uppercase tracking-[0.4em] text-[#8a1c1c] font-bold mb-6">
                     {spec.label}
                   </p>
-                  <h3 className="text-3xl md:text-4xl font-heading font-black uppercase text-[#e3e1d9] mb-4">
-                    {spec.value}
-                  </h3>
-                  <p className="text-[#e3e1d9]/50 font-light leading-relaxed max-w-xs">
+                  <div className="flex-1 flex items-center justify-center mb-6 min-h-[80px]">
+                    <h3 className="text-3xl md:text-4xl font-heading font-black uppercase text-[#e3e1d9]">
+                      {spec.value}
+                    </h3>
+                  </div>
+                  <p className="text-[#e3e1d9]/50 font-light leading-relaxed max-w-xs mt-auto">
                     {spec.description}
                   </p>
                 </div>
