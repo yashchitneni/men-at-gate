@@ -22,32 +22,6 @@ function isEventActiveNow(event: FeaturedEvent, now = new Date()): boolean {
   return event.publish_status === "published" && event.is_active && startsOnOrBeforeNow && endsOnOrAfterNow;
 }
 
-function compareDateDesc(left?: string | null, right?: string | null) {
-  const leftValue = left ? new Date(left).getTime() : 0;
-  const rightValue = right ? new Date(right).getTime() : 0;
-  return rightValue - leftValue;
-}
-
-function sortFeaturedEventsByAdminFlow(events: FeaturedEvent[]) {
-  const publishRank: Record<FeaturedEvent["publish_status"], number> = {
-    published: 0,
-    draft: 1,
-    archived: 2,
-  };
-
-  return [...events].sort((left, right) => {
-    const publishOrder = publishRank[left.publish_status] - publishRank[right.publish_status];
-    if (publishOrder !== 0) return publishOrder;
-
-    if (left.publish_status === "published" && right.publish_status === "published") {
-      if (left.is_active !== right.is_active) return left.is_active ? -1 : 1;
-      return compareDateDesc(left.published_at, right.published_at) || compareDateDesc(left.created_at, right.created_at);
-    }
-
-    return compareDateDesc(left.created_at, right.created_at);
-  });
-}
-
 function normalizeOptionalValue(value?: string | null) {
   if (typeof value !== "string") return value ?? null;
   const trimmed = value.trim();
@@ -84,7 +58,9 @@ export function useFeaturedEvents(options?: { publishedOnly?: boolean }) {
     queryFn: async () => {
       let query = supabase
         .from("featured_events")
-        .select("*");
+        .select("*")
+        .order("priority", { ascending: false })
+        .order("created_at", { ascending: false });
 
       if (options?.publishedOnly) {
         query = query.eq("publish_status", "published");
@@ -92,7 +68,7 @@ export function useFeaturedEvents(options?: { publishedOnly?: boolean }) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return sortFeaturedEventsByAdminFlow(data as FeaturedEvent[]);
+      return data as FeaturedEvent[];
     },
   });
 }
@@ -165,7 +141,6 @@ type FeaturedEventUpsertInput = Partial<FeaturedEvent> & {
   hero_cta_url: string;
   template_key: FeaturedEventTemplateKey;
   publish_status: FeaturedEvent["publish_status"];
-  published_at?: string | null;
 };
 
 export function useSaveFeaturedEvent() {
@@ -195,7 +170,9 @@ export function useSaveFeaturedEvent() {
         published_at:
           payload.publish_status === "published"
             ? payload.published_at || new Date().toISOString()
-            : payload.published_at || null,
+            : payload.publish_status === "archived"
+              ? payload.published_at || null
+              : null,
         is_active: payload.publish_status === "published" ? Boolean(payload.is_active) : false,
       };
 
