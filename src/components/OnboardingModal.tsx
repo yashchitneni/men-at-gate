@@ -123,12 +123,18 @@ export function OnboardingModal() {
     setLoading(true);
 
     try {
+      let photoUploadWarning: string | null = null;
+
       if (photoFile) {
-        await uploadPhoto.mutateAsync({
-          userId: user.id,
-          file: photoFile,
-          isPrimary: true,
-        });
+        try {
+          await uploadPhoto.mutateAsync({
+            userId: user.id,
+            file: photoFile,
+            isPrimary: true,
+          });
+        } catch (error) {
+          photoUploadWarning = error instanceof Error ? error.message : 'Photo upload failed.';
+        }
       }
 
       const trimmedFirstName = firstName.trim();
@@ -158,10 +164,18 @@ export function OnboardingModal() {
         title: "You're in!",
         description: 'Welcome to the brotherhood. Good to have you.',
       });
+
+      if (photoUploadWarning) {
+        toast({
+          title: 'Profile saved without photo',
+          description: `${photoUploadWarning} You can upload a headshot later from Profile.`,
+          variant: 'destructive',
+        });
+      }
     } catch {
       toast({
         title: 'Error',
-        description: 'Failed to save. Try again.',
+        description: 'Failed to save your profile details. Try again.',
         variant: 'destructive',
       });
     } finally {

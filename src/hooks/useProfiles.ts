@@ -209,19 +209,43 @@ export function useUploadPhoto() {
       file: File;
       isPrimary?: boolean;
     }) => {
-      // Upload to storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${userId}/${Date.now()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('member-photos')
-        .upload(fileName, file);
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Please upload an image file.');
+      }
 
-      if (uploadError) throw uploadError;
+      const extensionFromName = file.name.includes('.') ? file.name.split('.').pop() : '';
+      const extensionFromMime = file.type.split('/')[1] || 'jpg';
+      const fileExt = (extensionFromName || extensionFromMime || 'jpg').toLowerCase();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+
+      async function uploadToBucket(bucket: string) {
+        const { error } = await supabase.storage
+          .from(bucket)
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: file.type,
+          });
+        return error;
+      }
+
+      // Primary bucket.
+      let uploadBucket = 'member-photos';
+      let uploadError = await uploadToBucket(uploadBucket);
+
+      // Fallback for environments that still use legacy bucket naming.
+      if (uploadError && /bucket.+not found/i.test(uploadError.message)) {
+        uploadBucket = 'member_photos';
+        uploadError = await uploadToBucket(uploadBucket);
+      }
+
+      if (uploadError) {
+        throw new Error(`Photo upload failed: ${uploadError.message}`);
+      }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('member-photos')
+        .from(uploadBucket)
         .getPublicUrl(fileName);
 
       // Insert photo record
@@ -233,7 +257,9 @@ export function useUploadPhoto() {
           is_primary: isPrimary,
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        throw new Error(`Photo metadata save failed: ${insertError.message}`);
+      }
 
       return publicUrl;
     },
