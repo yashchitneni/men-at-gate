@@ -36,9 +36,26 @@ const Mission = () => {
   return <section id="mission" className="py-24 bg-black relative overflow-hidden min-h-[800px] flex flex-col">
       <div className="container px-4 relative z-10 flex-1 flex flex-col">
         <ScrollReveal>
-          <div className="max-w-4xl mb-12">
-            <h2 className="text-4xl md:text-6xl font-heading font-black mb-6 uppercase tracking-tighter text-white">OUR PILLARS</h2>
-            <p className="text-xl text-gray-400 max-w-2xl">
+          <div className="max-w-4xl mb-16">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-px w-8 bg-accent" />
+              <p className="text-[10px] uppercase tracking-[0.5em] text-accent font-bold">
+                The Objective
+              </p>
+            </div>
+            <h2 className="text-5xl md:text-7xl lg:text-8xl font-heading font-black mb-6 uppercase tracking-tighter text-white leading-[0.9]">
+              OUR MISSION
+            </h2>
+            <p className="text-2xl md:text-3xl text-gray-300 max-w-2xl font-light leading-relaxed mb-12">
+              We provide challenges for men to become better leaders.
+            </p>
+
+            <div className="h-px w-full bg-white/10 mb-12" />
+
+            <h3 className="text-2xl md:text-3xl font-heading font-black mb-6 uppercase tracking-tight text-white/90">
+              OUR PILLARS
+            </h3>
+            <p className="text-lg text-gray-400 max-w-xl">
               We live by a simple but powerful set of values. These aren't just words on a wall—they are the standards we hold ourselves to every single day.
             </p>
           </div>
