@@ -47,7 +47,9 @@ const Hero = ({ featuredEvent = null }: HeroProps) => {
       <div className="relative z-20 container h-full flex flex-col justify-center px-4 md:px-8 lg:px-16">
         <div className="max-w-3xl">
           <h1 className="text-6xl md:text-8xl lg:text-9xl font-heading font-black leading-[0.9] mb-8 tracking-tighter uppercase text-accent animate-fade-in" style={{ animationDelay: "150ms" }}>
-            MEN IN THE ARENA
+            <span className="block">MEN</span>
+            <span className="block">IN THE</span>
+            <span className="block">ARENA</span>
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-xl leading-relaxed animate-fade-in font-light" style={{ animationDelay: "400ms" }}>
