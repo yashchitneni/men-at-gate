@@ -5,7 +5,7 @@ import Index from '../Index'
 describe('Index Page', () => {
   it('renders without crashing', () => {
     render(<Index />)
-    expect(screen.getByText('MEN IN THE ARENA')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/MEN.*IN THE.*ARENA/)
   })
 
   it('renders all major sections', () => {
