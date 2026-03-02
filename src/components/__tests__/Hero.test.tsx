@@ -5,7 +5,7 @@ import Hero from '../Hero'
 describe('Hero', () => {
   it('renders the main heading', () => {
     render(<Hero />)
-    expect(screen.getByText('MEN IN THE ARENA')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/MEN.*IN THE.*ARENA/)
   })
 
   it('renders CTA buttons', () => {
