@@ -17,54 +17,65 @@ interface TierProps {
   icon: React.ReactNode;
   tierLabel: string;
   tierName: string;
-  imagePlaceholder: string;
-  imageSrc?: string;
+  imageSrc: string;
+  imageAlt: string;
+  tagline: string;
   copy: string;
   details: string;
+  reverse?: boolean;
 }
 
-function TierSection({ icon, tierLabel, tierName, imagePlaceholder, imageSrc, copy, details }: TierProps) {
+function TierSection({ icon, tierLabel, tierName, imageSrc, imageAlt, tagline, copy, details, reverse }: TierProps) {
   return (
-    <section className="py-24 border-t border-white/5">
+    <section className="py-20 md:py-28">
       <div className="container px-4 mx-auto">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+        <div className={`max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-20 items-stretch ${reverse ? "lg:[direction:rtl]" : ""}`}>
           {/* Image */}
           <ScrollReveal>
-            <div className="aspect-[4/3] w-full bg-[#111] border border-white/10 flex items-center justify-center rounded-sm overflow-hidden">
-              {imageSrc ? (
-                <img src={imageSrc} alt={tierName} className="w-full h-full object-cover" />
-              ) : (
-                <p className="text-white/20 text-sm tracking-[0.3em] uppercase text-center px-8 font-light">
-                  {imagePlaceholder}
-                </p>
-              )}
+            <div className="relative group h-full min-h-[320px] lg:min-h-[480px]">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#8B0000]/20 to-transparent rounded-sm opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
+              <img
+                src={imageSrc}
+                alt={imageAlt}
+                className="w-full h-full object-cover rounded-sm border border-white/5 group-hover:border-[#8B0000]/30 transition-all duration-500"
+              />
             </div>
           </ScrollReveal>
 
-          {/* Content */}
+          {/* Content Card */}
           <ScrollReveal>
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-10 w-10 rounded-sm bg-[#8B0000]/20 border border-[#8B0000]/30 flex items-center justify-center text-[#8B0000]">
-                  {icon}
+            <div className={`h-full flex flex-col justify-center ${reverse ? "lg:[direction:ltr]" : ""}`}>
+              <div className="relative p-8 md:p-10 rounded-sm border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm hover:border-[#8B0000]/20 hover:bg-white/[0.035] transition-all duration-500 group">
+                {/* Subtle corner accent */}
+                <div className="absolute top-0 left-0 w-16 h-[2px] bg-gradient-to-r from-[#8B0000] to-transparent" />
+                <div className="absolute top-0 left-0 h-16 w-[2px] bg-gradient-to-b from-[#8B0000] to-transparent" />
+
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="h-11 w-11 rounded-sm bg-[#8B0000]/15 border border-[#8B0000]/25 flex items-center justify-center text-[#8B0000] group-hover:bg-[#8B0000]/25 transition-colors duration-300">
+                    {icon}
+                  </div>
+                  <p className="text-[10px] uppercase tracking-[0.5em] text-[#8B0000] font-bold">
+                    {tierLabel}
+                  </p>
                 </div>
-                <p className="text-[10px] uppercase tracking-[0.5em] text-[#8B0000] font-bold">
-                  {tierLabel}
+
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-heading font-black uppercase tracking-tight text-white mb-3 leading-[0.95]">
+                  {tierName}
+                </h2>
+
+                <p className="text-sm uppercase tracking-[0.3em] text-[#8B0000]/80 font-semibold mb-6">
+                  {tagline}
                 </p>
-              </div>
 
-              <h2 className="text-3xl md:text-4xl font-heading font-black uppercase tracking-tight text-white mb-6">
-                {tierName}
-              </h2>
-
-              <p className="text-lg text-white/70 leading-relaxed font-light mb-8">
-                {copy}
-              </p>
-
-              <div className="pl-6 border-l-2 border-[#8B0000]/40">
-                <p className="text-white/50 leading-relaxed text-sm">
-                  {details}
+                <p className="text-lg text-white/70 leading-relaxed font-light mb-8">
+                  {copy}
                 </p>
+
+                <div className="pl-6 border-l-2 border-[#8B0000]/30">
+                  <p className="text-white/40 leading-relaxed text-sm italic">
+                    {details}
+                  </p>
+                </div>
               </div>
             </div>
           </ScrollReveal>
@@ -85,10 +96,8 @@ export default function MarathonRuckSponsorship() {
 
       {/* Hero */}
       <section className="relative min-h-[85vh] flex items-center pt-20 overflow-hidden">
-        {/* Dark textured background */}
         <div className="absolute inset-0 bg-black" />
         <div className="absolute inset-0 gritty-overlay opacity-40" />
-        {/* Subtle radial glow */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(139,0,0,0.08)_0%,_transparent_70%)]" />
 
         <div className="container relative z-10 px-4 mx-auto">
@@ -131,62 +140,81 @@ export default function MarathonRuckSponsorship() {
         </div>
       </section>
 
+      {/* Divider */}
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
       {/* Tier 1 – Product Partner */}
       <TierSection
         icon={<Package className="h-5 w-5" />}
         tierLabel="Tier 1"
         tierName="Product Partner"
-        imagePlaceholder="[Action shot of rucking gear / nutrition]"
+        tagline="Fueling the Grind"
         imageSrc={ruckGearAction}
-        copy="Support the physical grind. Provide the fuel, hydration, or gear our ruckers need to endure the night."
-        details="Includes logo placement on digital materials and verbal recognition at the safety briefing."
+        imageAlt="Rucking gear and nutrition fueling the marathon"
+        copy="Your product becomes a lifeline. At Mile 18, when legs are screaming and the night is at its darkest, your fuel, hydration, or gear is what keeps men moving forward. This is brand association forged in fire—not a logo on a flyer."
+        details="Logo placement on digital materials · Verbal recognition at the safety briefing · Product placement at aid stations"
       />
+
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
       {/* Tier 2 – Activation Partner */}
       <TierSection
         icon={<Users className="h-5 w-5" />}
         tierLabel="Tier 2"
         tierName="Activation Partner"
-        imagePlaceholder="[Brand reps rucking or at a checkpoint]"
+        tagline="Boots on the Ground"
         imageSrc={ruckActivation}
-        copy="Boots on the ground. Don't just send your gear—send your team. Ruck the marathon with us or manage a dedicated 'Fuel Station' at a checkpoint."
-        details="Includes Tier 1 benefits + Social Media spotlight and direct face-to-face engagement with participants."
+        imageAlt="Brand representatives rucking alongside the team"
+        copy="Don't just send your gear—send your team. Ruck the marathon with us or manage a dedicated checkpoint. Shared hardship builds the deepest brand loyalty. When your people suffer alongside ours, you earn something no ad campaign can buy."
+        details="All Tier 1 benefits · Social media spotlight · Dedicated checkpoint or 'Fuel Station' · Direct face-to-face engagement with participants"
+        reverse
       />
+
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
       {/* Tier 3 – Visionary Partner */}
       <TierSection
         icon={<Landmark className="h-5 w-5" />}
         tierLabel="Tier 3"
         tierName="Visionary Partner"
-        imagePlaceholder="[Community impact / Finish line shot]"
+        tagline="Visionary Impact"
         imageSrc={ruckVisionary}
-        copy="Anchor the movement. Your capital investment funds the ruck logistics and the year-round mental health initiatives of Men in the Arena."
-        details="'Presented By' status. Premier logo placement on event apparel, banners, and the post-event documentary film."
+        imageAlt="Community finish line celebration"
+        copy="Anchor the movement. Your capital investment is the engine that scales the mission of Men in the Arena—funding the ruck logistics and the year-round mental health initiatives that change men's lives. This isn't sponsorship. This is legacy."
+        details="'Presented By' status · Premier logo on event apparel, banners & post-event documentary · All Tier 1 & 2 benefits · Speaking opportunity at the event"
       />
 
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
       {/* Final CTA */}
-      <section className="py-32 bg-black text-center border-t border-white/5">
-        <div className="container px-4 mx-auto">
+      <section className="py-32 md:py-40 bg-black text-center relative overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(139,0,0,0.06)_0%,_transparent_60%)]" />
+
+        <div className="container px-4 mx-auto relative z-10">
           <ScrollReveal>
             <div className="max-w-3xl mx-auto">
               <div className="w-12 h-1 bg-[#8B0000] mx-auto mb-10" />
               <h2 className="text-4xl md:text-6xl font-heading font-black uppercase mb-6 tracking-tight">
                 Get in the Arena
               </h2>
-              <p className="text-xl text-white/50 font-light mb-12 max-w-xl mx-auto">
+              <p className="text-xl text-white/50 font-light mb-14 max-w-xl mx-auto leading-relaxed">
                 Let's build something that matters. Reach out and we'll send you
                 the full partnership deck.
               </p>
               <Button
                 asChild
                 size="lg"
-                className="h-16 px-14 text-base font-bold tracking-[0.25em] uppercase bg-[#8B0000] hover:bg-[#6B0000] text-white rounded-none border-none transition-colors"
+                className="h-16 px-14 text-base font-bold tracking-[0.25em] uppercase bg-[#8B0000] hover:bg-[#A00000] text-white rounded-none border border-[#8B0000] hover:border-[#A00000] hover:shadow-[0_0_40px_rgba(139,0,0,0.3)] transition-all duration-300"
               >
                 <a href={CONTACT_HREF}>
                   <Mail className="h-5 w-5 mr-3" />
                   Secure Your Partnership
                 </a>
               </Button>
+              <p className="mt-6 text-xs text-white/25 tracking-[0.2em] uppercase">
+                {CONTACT_EMAIL}
+              </p>
             </div>
           </ScrollReveal>
         </div>
