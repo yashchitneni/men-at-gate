@@ -5,6 +5,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import ScrollReveal from "@/components/ScrollReveal";
+import ruckGearAction from "@/assets/ruck-gear-action.jpg";
 
 const CONTACT_EMAIL = "community@meninthearena.co";
 const CONTACT_SUBJECT = "Marathon Ruck 2026 – Partnership Inquiry";
@@ -15,21 +16,26 @@ interface TierProps {
   tierLabel: string;
   tierName: string;
   imagePlaceholder: string;
+  imageSrc?: string;
   copy: string;
   details: string;
 }
 
-function TierSection({ icon, tierLabel, tierName, imagePlaceholder, copy, details }: TierProps) {
+function TierSection({ icon, tierLabel, tierName, imagePlaceholder, imageSrc, copy, details }: TierProps) {
   return (
     <section className="py-24 border-t border-white/5">
       <div className="container px-4 mx-auto">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-          {/* Image placeholder */}
+          {/* Image */}
           <ScrollReveal>
             <div className="aspect-[4/3] w-full bg-[#111] border border-white/10 flex items-center justify-center rounded-sm overflow-hidden">
-              <p className="text-white/20 text-sm tracking-[0.3em] uppercase text-center px-8 font-light">
-                {imagePlaceholder}
-              </p>
+              {imageSrc ? (
+                <img src={imageSrc} alt={tierName} className="w-full h-full object-cover" />
+              ) : (
+                <p className="text-white/20 text-sm tracking-[0.3em] uppercase text-center px-8 font-light">
+                  {imagePlaceholder}
+                </p>
+              )}
             </div>
           </ScrollReveal>
 
@@ -129,6 +135,7 @@ export default function MarathonRuckSponsorship() {
         tierLabel="Tier 1"
         tierName="Product Partner"
         imagePlaceholder="[Action shot of rucking gear / nutrition]"
+        imageSrc={ruckGearAction}
         copy="Support the physical grind. Provide the fuel, hydration, or gear our ruckers need to endure the night."
         details="Includes logo placement on digital materials and verbal recognition at the safety briefing."
       />
