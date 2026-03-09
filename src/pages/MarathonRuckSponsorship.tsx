@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import ScrollReveal from "@/components/ScrollReveal";
 import ruckGearAction from "@/assets/ruck-gear-action.jpg";
 import ruckActivation from "@/assets/ruck-activation.jpg";
+import ruckVisionary from "@/assets/ruck-visionary.jpg";
 
 const CONTACT_EMAIL = "community@meninthearena.co";
 const CONTACT_SUBJECT = "Marathon Ruck 2026 – Partnership Inquiry";
@@ -158,6 +159,7 @@ export default function MarathonRuckSponsorship() {
         tierLabel="Tier 3"
         tierName="Visionary Partner"
         imagePlaceholder="[Community impact / Finish line shot]"
+        imageSrc={ruckVisionary}
         copy="Anchor the movement. Your capital investment funds the ruck logistics and the year-round mental health initiatives of Men in the Arena."
         details="'Presented By' status. Premier logo placement on event apparel, banners, and the post-event documentary film."
       />
