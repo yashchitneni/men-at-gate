@@ -472,20 +472,20 @@ export function useWorkoutHistory(limit = 24) {
           ),
         ] as string[];
 
-        const { data: assignments, error: assignmentError } = await db
-          .from('workout_lead_assignments')
+        const { data: assignments, error: assignmentError } = await (db
+          .from('workout_lead_assignments' as any)
           .select('*')
-          .in('id', assignmentIds);
+          .in('id', assignmentIds) as any) as { data: WorkoutLeadAssignment[] | null; error: Error | null };
 
         if (assignmentError) throw assignmentError;
 
         const scheduleEventIds = [...new Set((assignments || []).map((assignment) => assignment.schedule_event_id))];
         const scheduleEvents = scheduleEventIds.length > 0
-          ? await db
-              .from('sweatpals_schedule_events')
+          ? await (db
+              .from('sweatpals_schedule_events' as any)
               .select('*')
               .in('id', scheduleEventIds)
-              .lt('starts_at', startOfTodayIso)
+              .lt('starts_at', startOfTodayIso) as any)
               .then((result: { data: SweatpalsScheduleEvent[] | null; error: Error | null }) => {
                 if (result.error) throw result.error;
                 return result.data || [];
@@ -497,8 +497,8 @@ export function useWorkoutHistory(limit = 24) {
           ? await supabaseRestFetch<Profile[]>(`public_profiles?select=*&id=in.(${leaderIds.join(',')})`)
           : [];
 
-        const assignmentMap = new Map((assignments || []).map((assignment) => [assignment.id, assignment]));
-        const eventMap = new Map(scheduleEvents.map((event) => [event.id, event]));
+        const assignmentMap = new Map<string, WorkoutLeadAssignment>((assignments || []).map((assignment) => [assignment.id, assignment]));
+        const eventMap = new Map<string, SweatpalsScheduleEvent>(scheduleEvents.map((event) => [event.id, event]));
         const leaderMap = new Map(leaders.map((leader) => [leader.id, leader]));
 
         for (const submission of approvedSubmissions) {
@@ -1024,10 +1024,10 @@ export function useAllWorkoutSubmissions() {
   return useQuery({
     queryKey: ['workouts', 'submissions'],
     queryFn: async () => {
-      const { data: submissions, error } = await db
-        .from('workout_submissions')
+      const { data: submissions, error } = await (db
+        .from('workout_submissions' as any)
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any) as { data: WorkoutSubmission[] | null; error: Error | null };
 
       if (error) throw error;
       if (!submissions || submissions.length === 0) return [] as WorkoutSubmissionWithContext[];
@@ -1037,10 +1037,10 @@ export function useAllWorkoutSubmissions() {
 
       const [assignments, leaders] = await Promise.all([
         assignmentIds.length > 0
-          ? db
-              .from('workout_lead_assignments')
+          ? (db
+              .from('workout_lead_assignments' as any)
               .select('*')
-              .in('id', assignmentIds)
+              .in('id', assignmentIds) as any)
               .then((result: { data: WorkoutLeadAssignment[] | null; error: Error | null }) => {
                 if (result.error) throw result.error;
                 return result.data || [];
@@ -1053,10 +1053,10 @@ export function useAllWorkoutSubmissions() {
 
       const scheduleEventIds = [...new Set(assignments.map((assignment) => assignment.schedule_event_id))];
       const scheduleEvents = scheduleEventIds.length > 0
-        ? await db
-            .from('sweatpals_schedule_events')
+        ? await (db
+            .from('sweatpals_schedule_events' as any)
             .select('*')
-            .in('id', scheduleEventIds)
+            .in('id', scheduleEventIds) as any)
             .then((result: { data: SweatpalsScheduleEvent[] | null; error: Error | null }) => {
               if (result.error) throw result.error;
               return result.data || [];
@@ -1064,8 +1064,8 @@ export function useAllWorkoutSubmissions() {
         : [];
 
       const leaderMap = new Map(leaders.map((leader) => [leader.id, leader]));
-      const assignmentMap = new Map(assignments.map((assignment) => [assignment.id, assignment]));
-      const eventMap = new Map(scheduleEvents.map((event) => [event.id, event]));
+      const assignmentMap = new Map<string, WorkoutLeadAssignment>(assignments.map((assignment) => [assignment.id, assignment]));
+      const eventMap = new Map<string, SweatpalsScheduleEvent>(scheduleEvents.map((event) => [event.id, event]));
 
       return submissions.map((submission) => {
         const assignment = submission.assignment_id ? assignmentMap.get(submission.assignment_id) || null : null;
