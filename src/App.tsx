@@ -27,6 +27,7 @@ import ChapterLanding from "./pages/ChapterLanding";
 import Challenges from "./pages/Challenges";
 import EventsIndex from "./pages/EventsIndex";
 import MarathonRuckEvent from "./pages/MarathonRuckEvent";
+import MarathonRuckSponsorship from "./pages/MarathonRuckSponsorship";
 import AdminFeaturedEvents from "./pages/AdminFeaturedEvents";
 import AdminSweatpalsIntegration from "./pages/AdminSweatpalsIntegration";
 import AdminSpotlights from "./pages/AdminSpotlights";
