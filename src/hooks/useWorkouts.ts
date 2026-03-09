@@ -1037,10 +1037,10 @@ export function useAllWorkoutSubmissions() {
 
       const [assignments, leaders] = await Promise.all([
         assignmentIds.length > 0
-          ? db
-              .from('workout_lead_assignments')
+          ? (db
+              .from('workout_lead_assignments' as any)
               .select('*')
-              .in('id', assignmentIds)
+              .in('id', assignmentIds) as any)
               .then((result: { data: WorkoutLeadAssignment[] | null; error: Error | null }) => {
                 if (result.error) throw result.error;
                 return result.data || [];
