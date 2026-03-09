@@ -5,6 +5,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import ScrollReveal from "@/components/ScrollReveal";
+import ruckGearAction from "@/assets/ruck-gear-action.jpg";
 
 const CONTACT_EMAIL = "community@meninthearena.co";
 const CONTACT_SUBJECT = "Marathon Ruck 2026 – Partnership Inquiry";
