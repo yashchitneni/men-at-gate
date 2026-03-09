@@ -410,14 +410,21 @@ export function useHomepageSpotlightContent(options?: { testimonialLimit?: numbe
   const members = directory.data || [];
 
   const featured = useMemo(() => findActiveFeaturedProfile(members), [members]);
-  const testimonials = useMemo(
-    () =>
-      selectHomepageTestimonials(members, {
-        excludeProfileId: featured?.profile_id || null,
+  const testimonials = useMemo(() => {
+    const withoutFeatured = selectHomepageTestimonials(members, {
+      excludeProfileId: featured?.profile_id || null,
+      limit: testimonialLimit,
+    });
+
+    if (withoutFeatured.length === 0) {
+      return selectHomepageTestimonials(members, {
+        excludeProfileId: null,
         limit: testimonialLimit,
-      }),
-    [featured?.profile_id, members, testimonialLimit],
-  );
+      });
+    }
+
+    return withoutFeatured;
+  }, [featured?.profile_id, members, testimonialLimit]);
 
   return {
     ...directory,
