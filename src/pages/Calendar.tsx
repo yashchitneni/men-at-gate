@@ -127,7 +127,7 @@ const Calendar = () => {
                           {destinationUrl ? (
                             <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
                               <a href={destinationUrl} target="_blank" rel="noreferrer">
-                                View on SweatPals
+                                Join Workout
                                 <ExternalLink className="w-4 h-4 ml-2" />
                               </a>
                             </Button>
