@@ -658,6 +658,89 @@ export type Database = {
           },
         ]
       }
+      external_identity_link_events: {
+        Row: {
+          confidence: string
+          created_at: string
+          external_member_id: string
+          id: string
+          link_method: string
+          metadata: Json
+          profile_id: string
+          provider: string
+        }
+        Insert: {
+          confidence?: string
+          created_at?: string
+          external_member_id: string
+          id?: string
+          link_method: string
+          metadata?: Json
+          profile_id: string
+          provider?: string
+        }
+        Update: {
+          confidence?: string
+          created_at?: string
+          external_member_id?: string
+          id?: string
+          link_method?: string
+          metadata?: Json
+          profile_id?: string
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_identity_link_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_identity_link_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_identity_link_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_identity_link_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_identity_link_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_identity_link_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_identity_link_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
       external_member_identities: {
         Row: {
           auto_linked: boolean
@@ -753,64 +836,132 @@ export type Database = {
           },
         ]
       }
+      featured_event_blocks: {
+        Row: {
+          block_type: string
+          content_json: Json
+          created_at: string
+          featured_event_id: string
+          id: string
+          image_confirmed: boolean
+          image_url: string | null
+          is_enabled: boolean
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          block_type: string
+          content_json?: Json
+          created_at?: string
+          featured_event_id: string
+          id?: string
+          image_confirmed?: boolean
+          image_url?: string | null
+          is_enabled?: boolean
+          position: number
+          updated_at?: string
+        }
+        Update: {
+          block_type?: string
+          content_json?: Json
+          created_at?: string
+          featured_event_id?: string
+          id?: string
+          image_confirmed?: boolean
+          image_url?: string | null
+          is_enabled?: boolean
+          position?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "featured_event_blocks_featured_event_id_fkey"
+            columns: ["featured_event_id"]
+            isOneToOne: false
+            referencedRelation: "featured_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       featured_events: {
         Row: {
           badge_text: string | null
+          cover_image_url: string | null
           created_at: string
           end_at: string | null
           event_date_text: string | null
           event_path: string
           hero_cta_label: string | null
           hero_cta_url: string
+          hero_image_url: string | null
           id: string
           image_url: string | null
           is_active: boolean
+          prefill_source_json: Json
           priority: number
+          publish_status: string
+          published_at: string | null
           registration_url: string | null
           slug: string
           start_at: string | null
           subtitle: string | null
           summary: string | null
+          template_key: string
+          theme_json: Json
           title: string
           updated_at: string
         }
         Insert: {
           badge_text?: string | null
+          cover_image_url?: string | null
           created_at?: string
           end_at?: string | null
           event_date_text?: string | null
           event_path: string
           hero_cta_label?: string | null
           hero_cta_url: string
+          hero_image_url?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
+          prefill_source_json?: Json
           priority?: number
+          publish_status?: string
+          published_at?: string | null
           registration_url?: string | null
           slug: string
           start_at?: string | null
           subtitle?: string | null
           summary?: string | null
+          template_key?: string
+          theme_json?: Json
           title: string
           updated_at?: string
         }
         Update: {
           badge_text?: string | null
+          cover_image_url?: string | null
           created_at?: string
           end_at?: string | null
           event_date_text?: string | null
           event_path?: string
           hero_cta_label?: string | null
           hero_cta_url?: string
+          hero_image_url?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
+          prefill_source_json?: Json
           priority?: number
+          publish_status?: string
+          published_at?: string | null
           registration_url?: string | null
           slug?: string
           start_at?: string | null
           subtitle?: string | null
           summary?: string | null
+          template_key?: string
+          theme_json?: Json
           title?: string
           updated_at?: string
         }
@@ -1113,7 +1264,10 @@ export type Database = {
           chapter_id: string | null
           created_at: string
           email: string
+          first_name: string | null
           full_name: string | null
+          here_for: string[] | null
+          here_for_other: string | null
           id: string
           instagram_handle: string | null
           is_admin: boolean | null
@@ -1121,7 +1275,9 @@ export type Database = {
           is_core_member: boolean | null
           is_featured: boolean | null
           is_super_admin: boolean | null
+          last_name: string | null
           mission: string | null
+          onboarding_completed_at: string | null
           phone: string | null
           role: string | null
           shirt_size: string | null
@@ -1135,7 +1291,10 @@ export type Database = {
           chapter_id?: string | null
           created_at?: string
           email: string
+          first_name?: string | null
           full_name?: string | null
+          here_for?: string[] | null
+          here_for_other?: string | null
           id: string
           instagram_handle?: string | null
           is_admin?: boolean | null
@@ -1143,7 +1302,9 @@ export type Database = {
           is_core_member?: boolean | null
           is_featured?: boolean | null
           is_super_admin?: boolean | null
+          last_name?: string | null
           mission?: string | null
+          onboarding_completed_at?: string | null
           phone?: string | null
           role?: string | null
           shirt_size?: string | null
@@ -1157,7 +1318,10 @@ export type Database = {
           chapter_id?: string | null
           created_at?: string
           email?: string
+          first_name?: string | null
           full_name?: string | null
+          here_for?: string[] | null
+          here_for_other?: string | null
           id?: string
           instagram_handle?: string | null
           is_admin?: boolean | null
@@ -1165,7 +1329,9 @@ export type Database = {
           is_core_member?: boolean | null
           is_featured?: boolean | null
           is_super_admin?: boolean | null
+          last_name?: string | null
           mission?: string | null
+          onboarding_completed_at?: string | null
           phone?: string | null
           role?: string | null
           shirt_size?: string | null
@@ -1383,6 +1549,284 @@ export type Database = {
           },
         ]
       }
+      spotlight_submissions: {
+        Row: {
+          about_you_points: string[] | null
+          admin_notes: string | null
+          arena_meaning: string | null
+          consent_public_display: boolean
+          created_at: string
+          display_name: string
+          favorite_accomplishments: string | null
+          favorite_quotes: string[] | null
+          feature_end_date: string | null
+          feature_photo_urls: string[] | null
+          feature_start_date: string | null
+          headline: string | null
+          id: string
+          instagram_handle: string | null
+          is_featured: boolean
+          member_revision_note: string | null
+          mission: string | null
+          photo_url: string | null
+          profile_id: string
+          publish_on_date: string | null
+          published_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          short_bio: string | null
+          slug: string
+          status: string
+          supersedes_submission_id: string | null
+          updated_at: string
+          why_i_joined: string | null
+        }
+        Insert: {
+          about_you_points?: string[] | null
+          admin_notes?: string | null
+          arena_meaning?: string | null
+          consent_public_display?: boolean
+          created_at?: string
+          display_name: string
+          favorite_accomplishments?: string | null
+          favorite_quotes?: string[] | null
+          feature_end_date?: string | null
+          feature_photo_urls?: string[] | null
+          feature_start_date?: string | null
+          headline?: string | null
+          id?: string
+          instagram_handle?: string | null
+          is_featured?: boolean
+          member_revision_note?: string | null
+          mission?: string | null
+          photo_url?: string | null
+          profile_id: string
+          publish_on_date?: string | null
+          published_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          short_bio?: string | null
+          slug: string
+          status?: string
+          supersedes_submission_id?: string | null
+          updated_at?: string
+          why_i_joined?: string | null
+        }
+        Update: {
+          about_you_points?: string[] | null
+          admin_notes?: string | null
+          arena_meaning?: string | null
+          consent_public_display?: boolean
+          created_at?: string
+          display_name?: string
+          favorite_accomplishments?: string | null
+          favorite_quotes?: string[] | null
+          feature_end_date?: string | null
+          feature_photo_urls?: string[] | null
+          feature_start_date?: string | null
+          headline?: string | null
+          id?: string
+          instagram_handle?: string | null
+          is_featured?: boolean
+          member_revision_note?: string | null
+          mission?: string | null
+          photo_url?: string | null
+          profile_id?: string
+          publish_on_date?: string | null
+          published_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          short_bio?: string | null
+          slug?: string
+          status?: string
+          supersedes_submission_id?: string | null
+          updated_at?: string
+          why_i_joined?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spotlight_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_supersedes_submission_id_fkey"
+            columns: ["supersedes_submission_id"]
+            isOneToOne: false
+            referencedRelation: "public_brotherhood_profiles"
+            referencedColumns: ["spotlight_submission_id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_supersedes_submission_id_fkey"
+            columns: ["supersedes_submission_id"]
+            isOneToOne: false
+            referencedRelation: "spotlight_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sweatpals_schedule_events: {
+        Row: {
+          alias: string | null
+          checkout_url: string | null
+          community_id: string
+          community_username: string
+          created_at: string
+          ends_at: string | null
+          event_type: string | null
+          event_url: string | null
+          external_event_id: string
+          id: string
+          image_url: string | null
+          is_workout: boolean
+          location: string | null
+          payload_json: Json
+          provider: string
+          starts_at: string
+          synced_at: string
+          timezone: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          alias?: string | null
+          checkout_url?: string | null
+          community_id: string
+          community_username: string
+          created_at?: string
+          ends_at?: string | null
+          event_type?: string | null
+          event_url?: string | null
+          external_event_id: string
+          id?: string
+          image_url?: string | null
+          is_workout?: boolean
+          location?: string | null
+          payload_json?: Json
+          provider?: string
+          starts_at: string
+          synced_at?: string
+          timezone?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          alias?: string | null
+          checkout_url?: string | null
+          community_id?: string
+          community_username?: string
+          created_at?: string
+          ends_at?: string | null
+          event_type?: string | null
+          event_url?: string | null
+          external_event_id?: string
+          id?: string
+          image_url?: string | null
+          is_workout?: boolean
+          location?: string | null
+          payload_json?: Json
+          provider?: string
+          starts_at?: string
+          synced_at?: string
+          timezone?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_badges: {
         Row: {
           badge_id: string
@@ -1598,6 +2042,95 @@ export type Database = {
           },
         ]
       }
+      workout_guides: {
+        Row: {
+          content_json: Json
+          created_at: string
+          id: string
+          is_active: boolean
+          role_scope: string
+          slug: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          version_label: string | null
+        }
+        Insert: {
+          content_json?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          role_scope?: string
+          slug: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          version_label?: string | null
+        }
+        Update: {
+          content_json?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          role_scope?: string
+          slug?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          version_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_guides_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_guides_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_guides_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_guides_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_guides_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_guides_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_guides_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
       workout_interest: {
         Row: {
           created_at: string
@@ -1668,6 +2201,246 @@ export type Database = {
           },
           {
             foreignKeyName: "workout_interest_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
+      workout_lead_assignments: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          day_of_reminder_sent_at: string | null
+          id: string
+          leader_id: string
+          schedule_event_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          day_of_reminder_sent_at?: string | null
+          id?: string
+          leader_id: string
+          schedule_event_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          day_of_reminder_sent_at?: string | null
+          id?: string
+          leader_id?: string
+          schedule_event_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_lead_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_schedule_event_id_fkey"
+            columns: ["schedule_event_id"]
+            isOneToOne: true
+            referencedRelation: "sweatpals_schedule_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_schedule_event_id_fkey"
+            columns: ["schedule_event_id"]
+            isOneToOne: true
+            referencedRelation: "upcoming_leadable_workouts"
+            referencedColumns: ["schedule_event_id"]
+          },
+        ]
+      }
+      workout_lead_requests: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          schedule_event_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          schedule_event_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          schedule_event_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_lead_requests_schedule_event_id_fkey"
+            columns: ["schedule_event_id"]
+            isOneToOne: false
+            referencedRelation: "sweatpals_schedule_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_requests_schedule_event_id_fkey"
+            columns: ["schedule_event_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_leadable_workouts"
+            referencedColumns: ["schedule_event_id"]
+          },
+          {
+            foreignKeyName: "workout_lead_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_requests_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "upcoming_workout"
@@ -1877,6 +2650,7 @@ export type Database = {
           admin_feedback: string | null
           approved_at: string | null
           approved_by: string | null
+          assignment_id: string | null
           created_at: string | null
           feedback_requested_at: string | null
           feedback_requested_by: string | null
@@ -1895,6 +2669,7 @@ export type Database = {
           admin_feedback?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          assignment_id?: string | null
           created_at?: string | null
           feedback_requested_at?: string | null
           feedback_requested_by?: string | null
@@ -1913,6 +2688,7 @@ export type Database = {
           admin_feedback?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          assignment_id?: string | null
           created_at?: string | null
           feedback_requested_at?: string | null
           feedback_requested_by?: string | null
@@ -1976,6 +2752,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "upcoming_workout"
             referencedColumns: ["leader_id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_leadable_workouts"
+            referencedColumns: ["assignment_id"]
+          },
+          {
+            foreignKeyName: "workout_submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "workout_lead_assignments"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "workout_submissions_feedback_requested_by_fkey"
@@ -2191,9 +2981,11 @@ export type Database = {
       core_roster: {
         Row: {
           bio: string | null
+          first_name: string | null
           full_name: string | null
           id: string | null
           instagram_handle: string | null
+          last_name: string | null
           mission: string | null
           primary_photo_url: string | null
           role: string | null
@@ -2298,31 +3090,113 @@ export type Database = {
         }
         Relationships: []
       }
+      public_brotherhood_profiles: {
+        Row: {
+          about_you_points: string[] | null
+          arena_meaning: string | null
+          display_name: string | null
+          favorite_accomplishments: string | null
+          favorite_quotes: string[] | null
+          feature_end_date: string | null
+          feature_photo_urls: string[] | null
+          feature_start_date: string | null
+          headline: string | null
+          instagram_handle: string | null
+          is_featured: boolean | null
+          mission: string | null
+          photo_url: string | null
+          profile_id: string | null
+          profile_role: string | null
+          publish_on_date: string | null
+          published_at: string | null
+          short_bio: string | null
+          slug: string | null
+          spotlight_submission_id: string | null
+          why_i_joined: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spotlight_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spotlight_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
+      }
       public_profiles: {
         Row: {
           bio: string | null
+          first_name: string | null
           full_name: string | null
           id: string | null
           instagram_handle: string | null
           is_core_member: boolean | null
+          last_name: string | null
           mission: string | null
           role: string | null
         }
         Insert: {
           bio?: string | null
+          first_name?: string | null
           full_name?: string | null
           id?: string | null
           instagram_handle?: string | null
           is_core_member?: boolean | null
+          last_name?: string | null
           mission?: string | null
           role?: string | null
         }
         Update: {
           bio?: string | null
+          first_name?: string | null
           full_name?: string | null
           id?: string | null
           instagram_handle?: string | null
           is_core_member?: boolean | null
+          last_name?: string | null
           mission?: string | null
           role?: string | null
         }
@@ -2337,6 +3211,74 @@ export type Database = {
           race_name: string | null
         }
         Relationships: []
+      }
+      upcoming_leadable_workouts: {
+        Row: {
+          assigned_leader_id: string | null
+          assigned_leader_name: string | null
+          assignment_id: string | null
+          ends_at: string | null
+          event_alias: string | null
+          event_url: string | null
+          external_event_id: string | null
+          is_assigned: boolean | null
+          location: string | null
+          pending_requests: number | null
+          schedule_event_id: string | null
+          starts_at: string | null
+          title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_lead_assignments_leader_id_fkey"
+            columns: ["assigned_leader_id"]
+            isOneToOne: false
+            referencedRelation: "core_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_leader_id_fkey"
+            columns: ["assigned_leader_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_leader_id_fkey"
+            columns: ["assigned_leader_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_attendance_30d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_leader_id_fkey"
+            columns: ["assigned_leader_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_workout_leaders_90d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_leader_id_fkey"
+            columns: ["assigned_leader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_leader_id_fkey"
+            columns: ["assigned_leader_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_lead_assignments_leader_id_fkey"
+            columns: ["assigned_leader_id"]
+            isOneToOne: false
+            referencedRelation: "upcoming_workout"
+            referencedColumns: ["leader_id"]
+          },
+        ]
       }
       upcoming_workout: {
         Row: {
@@ -2353,6 +3295,41 @@ export type Database = {
       }
     }
     Functions: {
+      approve_workout_lead_request: {
+        Args: { p_request_id: string }
+        Returns: string
+      }
+      assign_workout_leader_direct: {
+        Args: {
+          p_leader_id: string
+          p_note?: string
+          p_schedule_event_id: string
+        }
+        Returns: string
+      }
+      claim_sweatpals_identity_for_profile: {
+        Args: { p_profile_id: string; p_provider?: string }
+        Returns: {
+          linked_attendance_facts: number
+          linked_external_events: number
+          linked_identities: number
+          rollups_refreshed: boolean
+        }[]
+      }
+      configure_workout_leader_reminder_schedule: {
+        Args: { p_minute?: number; p_mode?: string; p_secret: string }
+        Returns: number
+      }
+      current_user_is_admin_or_super_admin: { Args: never; Returns: boolean }
+      get_workout_leader_reminder_schedule: {
+        Args: never
+        Returns: {
+          active: boolean
+          command: string
+          jobid: number
+          schedule: string
+        }[]
+      }
       refresh_event_rollups: { Args: never; Returns: undefined }
       refresh_member_activity_rollups: { Args: never; Returns: undefined }
       refresh_member_event_rollups: { Args: never; Returns: undefined }
