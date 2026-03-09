@@ -118,7 +118,8 @@ export default function MarathonRuckSponsorship() {
 
             <ScrollReveal>
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-heading font-black uppercase leading-[0.9] mb-8 tracking-tighter">
-                Partner with{" "}
+                Partner with
+                <br />
                 <span className="text-[#8B0000]">the Mission</span>
               </h1>
             </ScrollReveal>
