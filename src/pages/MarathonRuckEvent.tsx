@@ -172,7 +172,7 @@ export default function MarathonRuckEvent() {
                 </p>
                 <Button asChild size="lg" className="h-14 px-10 text-sm font-bold tracking-[0.2em] uppercase bg-[#e3e1d9] text-[#0f0f0f] hover:bg-white rounded-none transition-colors">
                   <a href="mailto:community@meninthearena.co?subject=Marathon%20Ruck%20Sponsorship">
-                    Request Partner Kit
+                    Become a Sponsor / Partner
                   </a>
                 </Button>
               </div>
