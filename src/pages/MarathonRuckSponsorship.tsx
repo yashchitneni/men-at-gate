@@ -135,6 +135,7 @@ export default function MarathonRuckSponsorship() {
         tierLabel="Tier 1"
         tierName="Product Partner"
         imagePlaceholder="[Action shot of rucking gear / nutrition]"
+        imageSrc={ruckGearAction}
         copy="Support the physical grind. Provide the fuel, hydration, or gear our ruckers need to endure the night."
         details="Includes logo placement on digital materials and verbal recognition at the safety briefing."
       />
