@@ -171,9 +171,9 @@ export default function MarathonRuckEvent() {
                   Align your brand with brotherhood, resilience, and actionable outcomes for men's mental health. We are looking for partners who refuse to let men walk alone.
                 </p>
                 <Button asChild size="lg" className="h-14 px-10 text-sm font-bold tracking-[0.2em] uppercase bg-[#e3e1d9] text-[#0f0f0f] hover:bg-white rounded-none transition-colors">
-                  <a href="mailto:community@meninthearena.co?subject=Marathon%20Ruck%20Sponsorship">
+                  <Link to="/events/marathon-ruck/sponsor">
                     Become a Sponsor / Partner
-                  </a>
+                  </Link>
                 </Button>
               </div>
             </ScrollReveal>

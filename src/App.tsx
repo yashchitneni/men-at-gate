@@ -27,6 +27,7 @@ import ChapterLanding from "./pages/ChapterLanding";
 import Challenges from "./pages/Challenges";
 import EventsIndex from "./pages/EventsIndex";
 import MarathonRuckEvent from "./pages/MarathonRuckEvent";
+import MarathonRuckSponsorship from "./pages/MarathonRuckSponsorship";
 import AdminFeaturedEvents from "./pages/AdminFeaturedEvents";
 import AdminSweatpalsIntegration from "./pages/AdminSweatpalsIntegration";
 import AdminSpotlights from "./pages/AdminSpotlights";
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/challenges" element={<Challenges />} />
             <Route path="/events" element={<EventsIndex />} />
             <Route path="/events/marathon-ruck" element={<MarathonRuckEvent />} />
+            <Route path="/events/marathon-ruck/sponsor" element={<MarathonRuckSponsorship />} />
             <Route path="/races" element={<Races />} />
             <Route path="/races/submit" element={<RaceSubmit />} />
             <Route path="/workouts" element={<Workouts />} />
