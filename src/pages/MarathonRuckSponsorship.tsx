@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import ScrollReveal from "@/components/ScrollReveal";
 import ruckGearAction from "@/assets/ruck-gear-action.jpg";
+import ruckActivation from "@/assets/ruck-activation.jpg";
 
 const CONTACT_EMAIL = "community@meninthearena.co";
 const CONTACT_SUBJECT = "Marathon Ruck 2026 – Partnership Inquiry";
@@ -146,6 +147,7 @@ export default function MarathonRuckSponsorship() {
         tierLabel="Tier 2"
         tierName="Activation Partner"
         imagePlaceholder="[Brand reps rucking or at a checkpoint]"
+        imageSrc={ruckActivation}
         copy="Boots on the ground. Don't just send your gear—send your team. Ruck the marathon with us or manage a dedicated 'Fuel Station' at a checkpoint."
         details="Includes Tier 1 benefits + Social Media spotlight and direct face-to-face engagement with participants."
       />
