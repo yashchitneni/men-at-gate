@@ -497,8 +497,8 @@ export function useWorkoutHistory(limit = 24) {
           ? await supabaseRestFetch<Profile[]>(`public_profiles?select=*&id=in.(${leaderIds.join(',')})`)
           : [];
 
-        const assignmentMap = new Map((assignments || []).map((assignment) => [assignment.id, assignment]));
-        const eventMap = new Map(scheduleEvents.map((event) => [event.id, event]));
+        const assignmentMap = new Map<string, WorkoutLeadAssignment>((assignments || []).map((assignment) => [assignment.id, assignment]));
+        const eventMap = new Map<string, SweatpalsScheduleEvent>(scheduleEvents.map((event) => [event.id, event]));
         const leaderMap = new Map(leaders.map((leader) => [leader.id, leader]));
 
         for (const submission of approvedSubmissions) {
