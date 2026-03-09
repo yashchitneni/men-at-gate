@@ -1024,10 +1024,10 @@ export function useAllWorkoutSubmissions() {
   return useQuery({
     queryKey: ['workouts', 'submissions'],
     queryFn: async () => {
-      const { data: submissions, error } = await db
-        .from('workout_submissions')
+      const { data: submissions, error } = await (db
+        .from('workout_submissions' as any)
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any) as { data: WorkoutSubmission[] | null; error: Error | null };
 
       if (error) throw error;
       if (!submissions || submissions.length === 0) return [] as WorkoutSubmissionWithContext[];
