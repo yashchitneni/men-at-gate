@@ -137,7 +137,7 @@ const Navigation = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu> : <Button className="bg-accent hover:bg-accent/90 text-white font-bold uppercase tracking-wider" onClick={() => setAuthModalOpen(true)}>
-                Join Now
+                Step Into The Arena
               </Button>}
           </div>
 
@@ -188,7 +188,7 @@ const Navigation = () => {
           setAuthModalOpen(true);
           setIsOpen(false);
         }}>
-                Join Now
+                Step Into The Arena
               </Button>}
           </div>}
       </div>

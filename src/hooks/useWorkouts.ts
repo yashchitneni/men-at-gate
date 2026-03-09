@@ -913,6 +913,35 @@ export function useAssignWorkoutLeaderDirect() {
   });
 }
 
+export function useInviteAndAssignWorkoutLeader() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      email,
+      scheduleEventId,
+    }: {
+      email: string;
+      scheduleEventId: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('workout-invite-assign', {
+        body: { email, schedule_event_id: scheduleEventId },
+      });
+
+      if (error) throw error;
+      return data as { status: string; leader_id: string; is_new_user: boolean };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts', 'leadable'] });
+      queryClient.invalidateQueries({ queryKey: ['workouts', 'lead-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['workouts', 'assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['workouts', 'my-assigned'] });
+      queryClient.invalidateQueries({ queryKey: ['workouts', 'submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
+    },
+  });
+}
+
 export function useMyWorkoutAssignment(assignmentId: string) {
   return useQuery({
     queryKey: ['workouts', 'my-assigned', assignmentId],

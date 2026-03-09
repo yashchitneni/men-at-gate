@@ -8,6 +8,7 @@ import {
   useApproveWorkoutLeadRequest,
   useRejectWorkoutLeadRequest,
   useAssignWorkoutLeaderDirect,
+  useInviteAndAssignWorkoutLeader,
   useAllWorkoutSubmissions,
   useApproveSubmission,
   useRequestSubmissionChanges,
@@ -75,6 +76,7 @@ export default function AdminWorkouts() {
   const approveLeadRequest = useApproveWorkoutLeadRequest();
   const rejectLeadRequest = useRejectWorkoutLeadRequest();
   const assignLeaderDirect = useAssignWorkoutLeaderDirect();
+  const inviteAndAssign = useInviteAndAssignWorkoutLeader();
   const approveSubmission = useApproveSubmission();
   const requestChanges = useRequestSubmissionChanges();
   const upsertWorkoutGuide = useUpsertWorkoutGuide();
@@ -86,6 +88,7 @@ export default function AdminWorkouts() {
 
   const [selectedScheduleEventId, setSelectedScheduleEventId] = useState<string | null>(null);
   const [selectedLeaderId, setSelectedLeaderId] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
   const [selectedSubmission, setSelectedSubmission] = useState<WorkoutSubmissionWithContext | null>(null);
   const [adminFeedback, setAdminFeedback] = useState('');
   const [guideTitle, setGuideTitle] = useState('Workout Leader Guidelines');
@@ -218,6 +221,32 @@ export default function AdminWorkouts() {
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to assign leader.',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  async function handleInviteAssign() {
+    if (!selectedScheduleEventId || !inviteEmail.trim()) return;
+
+    try {
+      const result = await inviteAndAssign.mutateAsync({
+        email: inviteEmail.trim(),
+        scheduleEventId: selectedScheduleEventId,
+      });
+      toast({
+        title: result.is_new_user ? 'Invite sent & leader assigned' : 'Leader assigned',
+        description: result.is_new_user
+          ? `${inviteEmail} has been invited and assigned. They'll receive an email.`
+          : `${inviteEmail} has been assigned. They'll receive an email.`,
+      });
+      setAssignModalOpen(false);
+      setInviteEmail('');
+      setSelectedLeaderId('');
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to invite and assign.',
         variant: 'destructive',
       });
     }
@@ -845,7 +874,7 @@ export default function AdminWorkouts() {
                 <div className="space-y-4 pt-2">
                   <div className="space-y-2">
                     <Label>Member</Label>
-                    <Select value={selectedLeaderId} onValueChange={setSelectedLeaderId}>
+                    <Select value={selectedLeaderId} onValueChange={(value) => { setSelectedLeaderId(value); setInviteEmail(''); }}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select member" />
                       </SelectTrigger>
@@ -869,7 +898,40 @@ export default function AdminWorkouts() {
                     ) : (
                       <UserCheck className="mr-2 h-4 w-4" />
                     )}
-                    Save Assignment
+                    Assign Leader
+                  </Button>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Or invite by email</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Email address</Label>
+                    <Input
+                      type="email"
+                      placeholder="someone@example.com"
+                      value={inviteEmail}
+                      onChange={(e) => { setInviteEmail(e.target.value); setSelectedLeaderId(''); }}
+                    />
+                  </div>
+
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    onClick={handleInviteAssign}
+                    disabled={!inviteEmail.trim() || !selectedScheduleEventId || inviteAndAssign.isPending}
+                  >
+                    {inviteAndAssign.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <UserCheck className="mr-2 h-4 w-4" />
+                    )}
+                    Invite & Assign
                   </Button>
                 </div>
               </DialogContent>

@@ -8,6 +8,7 @@ import {
   useWorkoutGuide,
 } from '@/hooks/useWorkouts';
 import { parseLeaderGuideContent } from '@/lib/workoutGuides';
+import { AuthModal } from '@/components/AuthModal';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -33,12 +34,13 @@ export default function WorkoutSubmit() {
   const [workoutPlan, setWorkoutPlan] = useState('');
   const [message, setMessage] = useState('');
   const [leadershipNote, setLeadershipNote] = useState('');
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/workouts');
+      setAuthModalOpen(true);
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading]);
 
   useEffect(() => {
     if (authLoading || assignmentLoading) return;
@@ -109,6 +111,29 @@ export default function WorkoutSubmit() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <section className="pt-24 pb-20">
+          <div className="container px-4">
+            <div className="max-w-md mx-auto text-center space-y-4">
+              <h1 className="text-2xl font-bold font-heading">Sign in to continue</h1>
+              <p className="text-muted-foreground">
+                You need to sign in to access your workout assignment.
+              </p>
+              <Button className="bg-accent hover:bg-accent/90" onClick={() => setAuthModalOpen(true)}>
+                Sign In
+              </Button>
+            </div>
+          </div>
+        </section>
+        <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
+        <Footer />
       </div>
     );
   }

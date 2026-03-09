@@ -22,7 +22,7 @@ const Footer = () => {
             size="lg" 
             className="bg-accent hover:bg-accent/90 text-accent-foreground mb-12"
           >
-            Join Now
+            Step Into The Arena
           </Button>
 
           <div className="border-t border-primary-foreground/20 pt-8">
