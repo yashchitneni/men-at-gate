@@ -125,7 +125,7 @@ export default function MarathonRuckSponsorship() {
 
             <ScrollReveal>
               <p className="text-xl md:text-2xl uppercase tracking-[0.15em] text-white/80 font-medium mb-8">
-                The 2nd Annual Marathon Ruck: March 2026. 26.2 Miles. Overnight.
+                The 2nd Annual Marathon Ruck: May 1st, 2026. 26.2 Miles. Overnight.
                 <br className="hidden md:block" /> No man walks alone.
               </p>
             </ScrollReveal>
