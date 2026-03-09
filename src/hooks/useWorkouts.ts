@@ -1053,10 +1053,10 @@ export function useAllWorkoutSubmissions() {
 
       const scheduleEventIds = [...new Set(assignments.map((assignment) => assignment.schedule_event_id))];
       const scheduleEvents = scheduleEventIds.length > 0
-        ? await db
-            .from('sweatpals_schedule_events')
+        ? await (db
+            .from('sweatpals_schedule_events' as any)
             .select('*')
-            .in('id', scheduleEventIds)
+            .in('id', scheduleEventIds) as any)
             .then((result: { data: SweatpalsScheduleEvent[] | null; error: Error | null }) => {
               if (result.error) throw result.error;
               return result.data || [];
