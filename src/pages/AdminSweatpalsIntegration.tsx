@@ -123,7 +123,7 @@ export default function AdminSweatpalsIntegration() {
 
   async function handleSyncSchedule() {
     try {
-      const result = await syncSchedule.mutateAsync();
+      const result = await syncSchedule.mutateAsync({});
       toast({
         title: "Schedule sync complete",
         description: `${result.upserted} schedule events synced (${result.workouts} workouts).`,

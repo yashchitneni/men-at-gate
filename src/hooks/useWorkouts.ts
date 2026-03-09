@@ -472,10 +472,10 @@ export function useWorkoutHistory(limit = 24) {
           ),
         ] as string[];
 
-        const { data: assignments, error: assignmentError } = await db
-          .from('workout_lead_assignments')
+        const { data: assignments, error: assignmentError } = await (db
+          .from('workout_lead_assignments' as any)
           .select('*')
-          .in('id', assignmentIds);
+          .in('id', assignmentIds) as any) as { data: WorkoutLeadAssignment[] | null; error: Error | null };
 
         if (assignmentError) throw assignmentError;
 
