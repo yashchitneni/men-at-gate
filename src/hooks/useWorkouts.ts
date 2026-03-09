@@ -1064,8 +1064,8 @@ export function useAllWorkoutSubmissions() {
         : [];
 
       const leaderMap = new Map(leaders.map((leader) => [leader.id, leader]));
-      const assignmentMap = new Map(assignments.map((assignment) => [assignment.id, assignment]));
-      const eventMap = new Map(scheduleEvents.map((event) => [event.id, event]));
+      const assignmentMap = new Map<string, WorkoutLeadAssignment>(assignments.map((assignment) => [assignment.id, assignment]));
+      const eventMap = new Map<string, SweatpalsScheduleEvent>(scheduleEvents.map((event) => [event.id, event]));
 
       return submissions.map((submission) => {
         const assignment = submission.assignment_id ? assignmentMap.get(submission.assignment_id) || null : null;
