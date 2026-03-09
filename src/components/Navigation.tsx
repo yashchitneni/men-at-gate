@@ -150,7 +150,7 @@ const Navigation = () => {
         </div>
 
         {/* Mobile Menu */}
-        {isOpen && <div className="md:hidden absolute top-full left-0 w-full bg-background/95 backdrop-blur-md border-b border-border p-4 flex flex-col gap-4 animate-fade-in">
+        {isOpen && <div className="md:hidden absolute top-full left-0 w-full bg-background/95 backdrop-blur-md border-b border-border p-4 flex flex-col gap-4 animate-fade-in max-h-[calc(100dvh-4rem)] overflow-y-auto">
             <Link to="/events" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
               Events
             </Link>
@@ -168,9 +168,16 @@ const Navigation = () => {
                 Create Workout Plan ({pendingWorkoutCount})
               </Link>
             )}
-            <Link to="/donate" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
-              Donate
-            </Link>
+            {user && (
+              <Link to="/profile" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
+                My Profile
+              </Link>
+            )}
+            {profile?.is_admin && (
+              <Link to="/admin" className="text-lg font-medium hover:text-accent transition-colors" onClick={() => setIsOpen(false)}>
+                Admin Dashboard
+              </Link>
+            )}
             {user ? <Button variant="outline" className="w-full" onClick={() => {
           void handleSignOut();
           setIsOpen(false);
