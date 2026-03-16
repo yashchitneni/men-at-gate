@@ -41,7 +41,7 @@ export default function SponsorMarquee() {
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.filter = "brightness(0) invert(1)";
-                  e.currentTarget.style.opacity = "0.8";
+                  e.currentTarget.style.opacity = "1";
                 }}
               />
             </div>
