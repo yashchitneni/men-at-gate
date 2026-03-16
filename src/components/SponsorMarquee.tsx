@@ -4,10 +4,10 @@ import goruckLogo from "@/assets/sponsors/goruck.png";
 import dottirLogo from "@/assets/sponsors/dottir.webp";
 
 const sponsors = [
-  { name: "Switchback", logo: switchbackLogo },
-  { name: "My Fit Foods", logo: myfitfoodsLogo },
-  { name: "GORUCK", logo: goruckLogo },
-  { name: "Dóttir", logo: dottirLogo },
+  { name: "Switchback", logo: switchbackLogo, className: "h-14 md:h-20" },
+  { name: "My Fit Foods", logo: myfitfoodsLogo, className: "h-10 md:h-14" },
+  { name: "GORUCK", logo: goruckLogo, className: "h-14 md:h-20" },
+  { name: "Dóttir", logo: dottirLogo, className: "h-14 md:h-20" },
 ];
 
 // Duplicate for seamless loop
