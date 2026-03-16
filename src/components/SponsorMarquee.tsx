@@ -33,7 +33,7 @@ export default function SponsorMarquee() {
               <img
                 src={sponsor.logo}
                 alt={sponsor.name}
-                className="h-8 md:h-12 w-auto max-w-[140px] md:max-w-[180px] object-contain brightness-0 invert opacity-80 hover:opacity-100 hover:filter-none transition-all duration-300"
+                className="h-8 md:h-12 w-auto max-w-[140px] md:max-w-[180px] object-contain brightness-0 invert opacity-100 hover:filter-none transition-all duration-300"
                 style={{ filter: "brightness(0) invert(1)" }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.filter = "none";
@@ -41,7 +41,7 @@ export default function SponsorMarquee() {
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.filter = "brightness(0) invert(1)";
-                  e.currentTarget.style.opacity = "0.8";
+                  e.currentTarget.style.opacity = "1";
                 }}
               />
             </div>
