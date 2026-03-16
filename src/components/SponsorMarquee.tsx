@@ -16,7 +16,7 @@ const marqueeItems = [...sponsors, ...sponsors];
 export default function SponsorMarquee() {
   return (
     <section className="py-12 md:py-16 bg-[#0f0f0f] border-t border-b border-white/[0.06] overflow-hidden">
-      <p className="text-center text-[10px] uppercase tracking-[0.5em] text-[#e3e1d9]/30 font-bold mb-8">
+      <p className="text-center text-[10px] uppercase tracking-[0.5em] text-[#e3e1d9]/70 font-bold mb-8">
         Our Partners
       </p>
       <div className="relative">
