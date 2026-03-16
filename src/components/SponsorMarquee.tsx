@@ -33,7 +33,7 @@ export default function SponsorMarquee() {
               <img
                 src={sponsor.logo}
                 alt={sponsor.name}
-                className="h-10 md:h-14 w-auto max-w-[180px] md:max-w-[240px] object-contain brightness-0 invert opacity-100 hover:filter-none transition-all duration-300"
+                className={`${sponsor.className} w-auto max-w-[240px] md:max-w-[300px] object-contain brightness-0 invert opacity-100 hover:filter-none transition-all duration-300`}
                 style={{ filter: "brightness(0) invert(1)" }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.filter = "none";
