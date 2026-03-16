@@ -198,6 +198,9 @@ export default function MarathonRuckEvent() {
         </div>
       </section>
 
+      {/* Sponsor Logo Marquee */}
+      <SponsorMarquee />
+
       {/* Quote */}
       <section className="py-24 bg-[#141414] relative">
         <div className="absolute inset-0 gritty-overlay opacity-30" />
