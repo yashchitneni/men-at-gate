@@ -158,6 +158,9 @@ export default function MarathonRuckEvent() {
         </div>
       </section>
 
+      {/* Sponsor Logo Marquee */}
+      <SponsorMarquee />
+
       {/* Partner/Sponsor Section - Clean List Layout */}
       <section id="sponsor" className="py-32 bg-[#0f0f0f] relative overflow-hidden">
         <div className="container px-4 mx-auto">
@@ -197,9 +200,6 @@ export default function MarathonRuckEvent() {
           </div>
         </div>
       </section>
-
-      {/* Sponsor Logo Marquee */}
-      <SponsorMarquee />
 
       {/* Quote */}
       <section className="py-24 bg-[#141414] relative">

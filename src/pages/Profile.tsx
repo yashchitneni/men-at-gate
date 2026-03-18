@@ -990,7 +990,7 @@ export default function Profile() {
                         disabled={submitSpotlight.isPending || saveSpotlightDraft.isPending}
                       >
                         {submitSpotlight.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                        Submit for review
+                        Submit
                       </Button>
                       <Button type="button" variant="ghost" asChild>
                         <Link to="/brotherhood">View Public Directory</Link>
