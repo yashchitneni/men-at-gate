@@ -15,7 +15,7 @@ import {
 } from "@/data/events";
 import { useFeaturedEventBySlug } from "@/hooks/useFeaturedEvents";
 import ScrollReveal from "@/components/ScrollReveal";
-import SponsorMarquee from "@/components/SponsorMarquee";
+import SponsorLogos from "@/components/SponsorLogos";
 
 export default function MarathonRuckEvent() {
   const { data: featuredEvent } = useFeaturedEventBySlug(MARATHON_RUCK_SLUG);
@@ -158,8 +158,8 @@ export default function MarathonRuckEvent() {
         </div>
       </section>
 
-      {/* Sponsor Logo Marquee */}
-      <SponsorMarquee />
+      {/* Sponsor Logos */}
+      <SponsorLogos />
 
       {/* Partner/Sponsor Section - Clean List Layout */}
       <section id="sponsor" className="py-32 bg-[#0f0f0f] relative overflow-hidden">
