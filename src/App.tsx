@@ -33,6 +33,7 @@ import AdminSweatpalsIntegration from "./pages/AdminSweatpalsIntegration";
 import AdminSpotlights from "./pages/AdminSpotlights";
 import LegacyMemberRedirect from "./pages/LegacyMemberRedirect";
 import NotFound from "./pages/NotFound";
+import Transformation from "./pages/Transformation";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/admin/spotlights" element={<AdminSpotlights />} />
             <Route path="/admin/integrations/sweatpals" element={<AdminSweatpalsIntegration />} />
             <Route path="/workout-submit/:assignmentId" element={<WorkoutSubmit />} />
+            <Route path="/transformation" element={<Transformation />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
